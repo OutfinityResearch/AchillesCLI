@@ -79,7 +79,7 @@ function setupEventListeners() {
         if (process.stdin.isTTY) {
             process.stdin.setRawMode(false);
         }
-        console.log('\nExiting Ploinky. Goodbye!');
+        console.log('\nExiting AchillesCLI. Goodbye!');
     });
 }
 
