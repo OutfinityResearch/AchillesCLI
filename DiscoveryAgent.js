@@ -79,12 +79,11 @@ class DiscoveryAgent {
 Here are the available subagents:
 ${agentDescriptions}
 
-Respond with a JSON object containing two keys:
+Respond with a JSON object containing one key:
 - "agent": The name of the most suitable agent. If no agent is suitable based on its description, set this to null.
-- "reasoning": A brief explanation (1-2 sentences) of why the chosen agent is suitable for the request, referencing its description. If no agent is suitable, explain why.
 
-Example for a suitable agent: {"agent": "GitAgent", "reasoning": "The user's request involves Git operations, and GitAgent's description clearly states it handles Git commands."}
-Example for no suitable agent: {"agent": null, "reasoning": "None of the available subagents have a description that matches the user's request."}`;
+Example for a suitable agent: {"agent": "GitAgent"}
+Example for no suitable agent: {"agent": null}`;
 
         const routingHistory = [
             { role: 'system', message: systemPrompt },
@@ -95,45 +94,10 @@ Example for no suitable agent: {"agent": null, "reasoning": "None of the availab
         console.log(`LLM Routing Response: ${responseJson}`); // For debugging and transparency
         try {
             const choice = JSON.parse(responseJson);
-            if (choice.reasoning) {
-                console.log(`Routing Reasoning: ${choice.reasoning}`);
-            }
             return choice.agent; // This can be null if no agent was found
         } catch (e) {
             console.log(`Error: Could not parse routing response from LLM.`);
             return null;
-        }
-    }
-
-    /**
-     * Performs an LLM-powered code review of a subagent's source code against a task.
-     * @param {string} agentName The name of the agent to review.
-     * @param {string} task The user's task description.
-     * @param {AbortSignal} signal The signal to abort the LLM call.
-     * @returns {Promise<boolean>} True if the agent is suitable, false otherwise.
-     */
-    async reviewSubagent(agentName, task, signal) {
-        console.log(`\nPerforming LLM code review for ${agentName}...`);
-        let subAgentSpecs = this.subagentSpecs[agentName];
-        const agentPath = path.join(SUBAGENT_DIR, `${agentName}.js`);
-        try {
-            const agentCode = await fs.readFile(agentPath, 'utf-8');
-            const systemPrompt = `You are a code reviewer. Your task is to determine if the provided script is suitable for completing the user's request.
-Respond with ONLY a JSON object with a single key "suitable" and a boolean value.
-
-User request: "${task}"
-
-Agent specs:
-${subAgentSpecs}
-
-Is this agent suitable for the request?`;
-
-            const responseJson = await callLLM([{ role: 'system', message: systemPrompt }], signal);
-            const result = JSON.parse(responseJson);
-            return result.suitable === true;
-        } catch (e) {
-            console.log(`Warning: Could not determine agent suitability. Assuming not suitable. Error: ${e.message}`);
-            return false;
         }
     }
 
@@ -144,16 +108,57 @@ Is this agent suitable for the request?`;
      * @returns {Promise<string|null>} The name of the newly generated agent, or null on failure.
      */
     async generateSubagent(task, signal) {
+        const topicPrompt = `You are a topic analysis expert. Your job is to analyze the user's task and identify the main technical topic or domain it relates to.
+ Respond with ONLY a VALID JSON object with a single key "topic". The topic should be a single, concise word in PascalCase (e.g., "FileSystem", "Git", "Docker", "HttpRequest").
+ User Task: "${task}"`;
+        const topicResponseJson = await callLLM([{ role: 'system', message: topicPrompt }], signal);
+        let topic;
+        try {
+            const topicResponse = JSON.parse(topicResponseJson);
+            if (topicResponse.topic) {
+                topic = topicResponse.topic;
+                console.log(`Topic identified: ${topic}`);
+            }
+        } catch (e) {
+            console.warn(`Could not determine a specific topic.`);
+            return null;
+        }
+
         console.log(`\nGenerating a new subagent for task: "${task}"`);
         // In a real implementation, this would be a much more sophisticated prompt.
-        const systemPrompt = `You are a JavaScript code generation expert. Based on the user's task, create a new subagent.
-The subagent must be a class that exports itself. It needs a 'name' property and an 'execute' method.
-The 'execute' method should take (task, chatHistory, signal) as arguments.
+        const systemPrompt = `You are a JavaScript code generation expert. Based on this topic: ${topic}, create a new subagent.
+The subagent code must follow the following template:
+
+'''
+const { callLLM } = require('../LLMClient.js');
+
+/**
+ * A general-purpose agent for conversational tasks and answering questions.
+ * It uses the LLM to generate responses without executing any code or using tools.
+ */
+class GenericAgent {
+    constructor() {
+        this.name = 'GenericAgent';
+    }
+    async execute(task, chatHistory, signal) {
+        // The chatHistory already contains the latest user prompt.
+        // We can add a system prompt to guide the LLM's behavior for this specific agent.
+        const systemPrompt = {
+            role: 'system',
+            message: 'You are a helpful general-purpose AI assistant.'
+        };
+
+        return await callLLM([systemPrompt, ...chatHistory], signal);
+    }
+}
+
+module.exports = GenericAgent;
+'''
 
 Respond with ONLY a JSON object with three keys: "agentName", "agentCode", and "agentSpec".
 'agentName' should be a concise PascalCase name for the agent.
 'agentCode' should be the full JavaScript code for the agent class.
-'agentSpec' should be a one-sentence natural language description of what the agent does.
+'agentSpec' should be a natural language description of what the agent does.
 
 User Task: "${task}"`;
 
@@ -199,15 +204,7 @@ User Task: "${task}"`;
             console.log(`\nRouter determined no existing subagent is suitable. Attempting to generate a new one.`);
         } else if (this.subagents[agentName]) { // Check if the suggested agent actually exists
             console.log(`\nFound suitable agent: ${agentName}.`);
-            const isSuitable = await this.reviewSubagent(agentName, task, signal);
-
-            if (isSuitable) {
-                console.log(`\nCode review passed. Executing ${agentName}...`);
-                agentToExecute = this.subagents[agentName];
-            } else {
-                console.log(`\nCode review failed for ${agentName}. Attempting to generate a new agent.`);
-                agentName = null; // Clear agent name to trigger generation
-            }
+            agentToExecute = this.subagents[agentName];
         }
         // If agentName was not null but this.subagents[agentName] was false,
         // it means the LLM suggested an agent name that doesn't exist.
@@ -222,7 +219,9 @@ User Task: "${task}"`;
                 agentToExecute = this.subagents[newAgentName];
                 agentName = newAgentName;
             } else {
-                return "Failed to find or create a suitable agent for your task.";
+                console.log("\nFailed to find or create a suitable agent for your task. using GenericAgent instead.");
+                agentName = "GenericAgent";
+                agentToExecute = this.subagents[agentName];
             }
         }
 
