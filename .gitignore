@@ -1,0 +1,16 @@
+# Dependencies
+/node_modules
+
+# Local Scripts & Secrets
+# The run.sh script can contain sensitive API keys and should not be committed.
+/run.sh
+
+
+# macOS specific
+.DS_Store
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.sln
