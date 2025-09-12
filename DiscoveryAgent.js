@@ -79,8 +79,8 @@ class DiscoveryAgent {
         const systemPrompt = `You are a coordinator for AchillesCLI, an AI assistant whose primary purpose is to help users generate JavaScript projects, including creating specifications and requirements.
 
 Your task is to determine if the user's request is related to this purpose.
-- If the request IS related to JavaScript project generation, requirements, or specifications, select the most suitable subagent from the list below based on its description.
-- If the request is NOT related to JavaScript project generation (e.g., asking to cure cancer, write a poem, etc.), you must not select any agent.
+- If the request IS related to the JavaScript project, requirements, or specifications, select the most suitable subagent from the list below based on its description.
+- If the request is NOT related to the JavaScript project (e.g., asking to cure cancer, write a poem, etc.), you must not select any agent.
 
 Here are the available subagents:
 ${agentDescriptions}

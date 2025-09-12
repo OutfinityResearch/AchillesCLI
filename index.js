@@ -1,4 +1,3 @@
-
 const readline = require('readline');
 const os = require('os');
 const DiscoveryAgent = require('./DiscoveryAgent.js');

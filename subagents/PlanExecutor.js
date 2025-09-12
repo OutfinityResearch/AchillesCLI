@@ -23,42 +23,27 @@ class PlanExecutor {
             return "The plan is empty. Nothing to execute.";
         }
 
+        const { folderStructure, contents } = plan;
+
         try {
-            // First pass: create all files from the plan
-            for (const file of plan) {
+            // 1. Combine all files to be created into a single list
+            const allFiles = [...contents];
+            if (folderStructure && folderStructure.filePath) {
+                allFiles.push(folderStructure);
+            }
+
+            // 2. Create all the files
+            for (const file of allFiles) {
                 const filePath = path.resolve(process.cwd(), file.filePath);
                 await fs.mkdir(path.dirname(filePath), { recursive: true });
                 await fs.writeFile(filePath, file.content);
                 console.log(`   - ✅ Created ${file.filePath}`);
             }
 
-            // Second pass: Ask LLM to identify and then process the folder structure file
-            const findStructureFilePrompt = `
-You are a plan analysis expert. Given a JSON array representing a project plan, your task is to identify which file is intended to describe the project's folder structure.
-The plan is an array of objects, each with "filePath" and "content". Look for a file whose content describes a tree-like structure of directories.
-
-Respond with ONLY a JSON object with a single key "structureFilePath". The value should be the exact filePath of the structure file from the plan. If no such file is found, the value should be null.
-
-Project Plan:
-\`\`\`json
-${JSON.stringify(plan, null, 2)}
-\`\`\`
-`;
-            const structureFileResponseJson = await callLLM([{ role: 'system', message: findStructureFilePrompt }], signal);
-            let structureFilePath = null;
-            try {
-                const result = JSON.parse(structureFileResponseJson);
-                structureFilePath = result.structureFilePath;
-            } catch (e) {
-                console.warn(`Could not identify folder structure file from LLM response: ${structureFileResponseJson}. Skipping additional folder creation.`);
-            }
-
-            if (structureFilePath) {
-                const folderStructureFile = plan.find(file => file.filePath === structureFilePath);
-                if (folderStructureFile) {
-                    console.log(`\nProcessing folder structure from ${folderStructureFile.filePath}...`);
-
-                    const systemPrompt = `
+            // 3. If a folder structure file exists, parse it and create the directories
+            if (folderStructure && folderStructure.content) {
+                console.log(`\nProcessing folder structure from ${folderStructure.filePath}...`);
+                const systemPrompt = `
 You are a file structure expert. Your task is to read a natural language description of a project's folder structure and convert it into a valid JSON array of directory paths.
 Only include directories, not files mentioned in the structure.
 
@@ -66,29 +51,25 @@ The output MUST be a JSON object with a single key "directories", which is an ar
 Example input:
 - src
   - components
-    - Button.js
   - utils
 - public
-  - index.html
 
 Example output:
 {"directories": ["src", "src/components", "src/utils", "public"]}
 
 Natural language structure to parse:
 \`\`\`
-${folderStructureFile.content}
+${folderStructure.content}
 \`\`\`
 `;
-                    const responseJson = await callLLM([{ role: 'system', message: systemPrompt }], signal);
-                    const { directories } = JSON.parse(responseJson);
-
-                    if (directories && directories.length > 0) {
-                        console.log("   - Creating additional directories from structure file...");
-                        for (const dir of directories) {
-                            const dirPath = path.resolve(process.cwd(), dir);
-                            await fs.mkdir(dirPath, { recursive: true });
-                            console.log(`     - ✅ Created directory ${dir}`);
-                        }
+                const responseJson = await callLLM([{ role: 'system', message: systemPrompt }], signal);
+                const { directories } = JSON.parse(responseJson);
+                if (directories && directories.length > 0) {
+                    console.log("   - Creating additional directories from structure file...");
+                    for (const dir of directories) {
+                        const dirPath = path.resolve(process.cwd(), dir);
+                        await fs.mkdir(dirPath, { recursive: true });
+                        console.log(`     - ✅ Created directory ${dir}`);
                     }
                 }
             }
