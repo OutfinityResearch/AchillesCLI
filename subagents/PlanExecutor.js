@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const { callLLM } = require('../LLMClient.js');
+const { retryLLMForJson } = require('../LLMClientHelper.js');
 
 /**
  * An agent that executes a file creation plan.
@@ -62,8 +63,16 @@ Natural language structure to parse:
 ${folderStructure.content}
 \`\`\`
 `;
-                const responseJson = await callLLM([{ role: 'system', message: systemPrompt }], signal);
-                const { directories } = JSON.parse(responseJson);
+                let directories;
+                try {
+                    const responseText = await callLLM([{ role: 'system', message: systemPrompt }], signal);
+                    const result = JSON.parse(responseText);
+                    directories = result.directories;
+                } catch (error) {
+                    console.warn(`Initial LLM call failed for folder structure parsing. Error: ${error.message}`);
+                    const result = await retryLLMForJson([{ role: 'system', message: systemPrompt }], error, signal);
+                    directories = result.directories;
+                }
                 if (directories && directories.length > 0) {
                     console.log("   - Creating additional directories from structure file...");
                     for (const dir of directories) {

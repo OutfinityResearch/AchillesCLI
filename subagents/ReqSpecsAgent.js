@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const { callLLM } = require('../LLMClient.js');
+const { retryLLMForJson } = require('../LLMClientHelper.js');
 
 /**
  * An agent specialized in helping the user define and create project requirement
@@ -46,10 +47,20 @@ Example:
   }
 }
 `;
-        const responseJson = await callLLM([{ role: 'system', message: systemPrompt }, ...chatHistory], signal);
+        const chatContext = [{ role: 'system', message: systemPrompt }, ...chatHistory];
 
         try {
-            const { plan } = JSON.parse(responseJson);
+            let plan;
+            try {
+                const responseText = await callLLM(chatContext, signal);
+                const result = JSON.parse(responseText);
+                plan = result.plan;
+            } catch (error) {
+                console.warn(`Initial LLM call failed for plan generation. Error: ${error.message}`);
+                const result = await retryLLMForJson(chatContext, error, signal);
+                plan = result.plan;
+            }
+
             const { folderStructure, contents } = plan;
 
             let planSummary = "Here is the proposed plan:\n\n";
@@ -69,7 +80,7 @@ Example:
             // Return a structured object as a JSON string for the DiscoveryAgent to parse
             return JSON.stringify({ plan, summary: planSummary });
         } catch (e) {
-            console.error(`[ReqSpecsAgent] Error processing action: ${e.message}. LLM response was: ${responseJson}`);
+            console.error(`[ReqSpecsAgent] Error processing action after multiple retries: ${e.message}`);
             return JSON.stringify({ plan: {}, summary: "I had trouble generating a valid plan. Could you please rephrase your request?" });
         }
     }

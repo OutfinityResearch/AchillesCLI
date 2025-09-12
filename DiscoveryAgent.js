@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const { callLLM } = require("./LLMClient.js");
+const { retryLLMForJson } = require("./LLMClientHelper.js");
 
 const SUBAGENT_DIR = path.join(__dirname, 'subagents');
 const SPECS_DIR = path.join(__dirname, 'specs');
@@ -96,13 +97,20 @@ Example for an unsuitable task: {"agent": null}`;
             { role: 'human', message: `User request: "${task}"` }
         ];
 
-        const responseJson = await callLLM(routingHistory, signal);
         try {
-            const choice = JSON.parse(responseJson);
+            const responseText = await callLLM(routingHistory, signal);
+            const choice = JSON.parse(responseText);
             return choice.agent; // This can be null if no agent was found
-        } catch (e) {
-            console.log(`Error: Could not parse routing response from LLM: ${responseJson}`);
-            return null;
+        } catch (error) {
+            console.warn(`Initial LLM call failed for routing. Error: ${error.message}`);
+            // In the catch block, we now trigger the retry mechanism.
+            try {
+                const choice = await retryLLMForJson(routingHistory, error, signal);
+                return choice.agent;
+            } catch (retryError) {
+                console.error(`Error: Could not get a valid routing response from LLM after multiple retries. ${retryError.message}`);
+                return null;
+            }
         }
     }
 
@@ -117,20 +125,31 @@ Example for an unsuitable task: {"agent": null}`;
         // 1. If a plan is pending confirmation, handle the user's response (y/n).
         if (this.pendingPlan) {
             const userResponse = task.toLowerCase().trim();
-            const planExecutor = this.subagents['PlanExecutor'];
-
-            if (!planExecutor) {
-                this.pendingPlan = null;
-                return "I can't execute the plan because the 'PlanExecutor' agent is missing.";
-            }
 
             if (userResponse === 'y' || userResponse === 'yes') {
-                const executionResult = await planExecutor.execute(this.pendingPlan, chatHistory, signal);
-                this.pendingPlan = null; // Clear the plan after execution attempt
-                return executionResult;
-            } else {
-                this.pendingPlan = null; // If response is not 'y' or 'yes', cancel.
+                const planExecutor = this.subagents['PlanExecutor'];
+                if (!planExecutor) {
+                    this.pendingPlan = null;
+                    return "I can't execute the plan because the 'PlanExecutor' agent is missing.";
+                }
+                return await planExecutor.execute(this.pendingPlan, chatHistory, signal);
+            } else if (userResponse === 'n' || userResponse === 'no') {
+                this.pendingPlan = null; // If response is 'n' or 'no', cancel.
                 return "Plan creation cancelled.";
+            } else {
+                // This is a modification request.
+                console.log(`\nRequest to modify existing plan...`);
+                const reqAgent = this.subagents['ReqSpecsAgent'];
+                // The last message in chatHistory is the user's modification request.
+                // We add a system message before it with the current plan context.
+                const modificationHistory = chatHistory.slice(0, -1);
+                modificationHistory.push({ role: 'system', message: `The user is requesting a modification to the following plan: ${JSON.stringify(this.pendingPlan)}` });
+                modificationHistory.push(chatHistory[chatHistory.length - 1]);
+
+                const responseString = await reqAgent.execute(task, modificationHistory, signal);
+                const { plan, summary } = JSON.parse(responseString);
+                this.pendingPlan = plan; // Update the pending plan
+                return summary; // Return the new summary
             }
         }
 
@@ -143,8 +162,8 @@ Example for an unsuitable task: {"agent": null}`;
             // Special handling for the requirements generation workflow
             if (agentNameToActivate === 'ReqSpecsAgent') {
                 console.log(`\nActivating agent: ${agentNameToActivate}...`);
-                const responseJson = await agentToExecute.execute(task, chatHistory, signal);
-                const { plan, summary } = JSON.parse(responseJson);
+                const responseString = await agentToExecute.execute(task, chatHistory, signal);
+                const { plan, summary } = JSON.parse(responseString);
                 this.pendingPlan = plan; // Store the plan for confirmation
                 return summary;
             }
@@ -166,7 +185,12 @@ Example for an unsuitable task: {"agent": null}`;
         };
 
         // Use the LLM to generate a user-friendly message.
-        return await callLLM([systemPrompt, ...chatHistory], signal);
+        try {
+            return await callLLM([systemPrompt, ...chatHistory], signal);
+        } catch (error) {
+            console.error(`\nAn error occurred while generating fallback message: ${error.message}\n`);
+            return null;
+        }
     }
 }
 
