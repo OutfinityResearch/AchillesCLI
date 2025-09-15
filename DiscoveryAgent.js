@@ -10,17 +10,12 @@ const SPECS_DIR = path.join(__dirname, 'specs');
  * It can analyze a user's request and decide whether to use an existing subagent or generate a new one.
  */
 class DiscoveryAgent {
-    /**
-     * @param {object} persistoClient - An abstraction layer for the database.
-     */
-    constructor(persistoClient) {
-        this.persistoClient = persistoClient;
+    constructor() {
         this.subagents = {}; // Holds instantiated subagents
         this.subagentSpecs = {}; // Holds natural language specs for each agent
-        this.roles = {}; // Holds available roles and their descriptions
-        this.currentUserRole = 'default'; // The current user's role for the session
         this.currentPlan = null; // Holds the plan being worked on.
         this.pendingConfirmation = false; // True when waiting for y/n from the user.
+        this.isProjectAnalyzed = false; // Flag to ensure project analysis runs only once.
     }
 
     /**
@@ -28,10 +23,86 @@ class DiscoveryAgent {
      * This should be called after the agent is instantiated.
      */
     async initialize() {
+        console.log('Initializing DiscoveryAgent...');
         await this.loadSubagents();
         // await this.loadRoles(); // To be implemented
-        console.log('DiscoveryAgent initialized.');
         console.log(`Found ${Object.keys(this.subagents).length} subagents.`);
+        console.log('Initialization complete. Agent is ready.');
+    }
+
+    /**
+     * Scans the current directory for project files and constructs an initial plan.
+     */
+    async constructPlanFromFiles() {
+        console.log("Scanning project directory for existing files...");
+        const allFiles = await this._getAllProjectFiles(process.cwd());
+
+        if (allFiles.length === 0) {
+            console.log("No project files found to construct a plan from.");
+            return;
+        }
+
+        let fullContent = "";
+
+        console.log("Reading project files...");
+        for (const file of allFiles) {
+            try {
+                const content = await fs.readFile(file, 'utf-8');
+                // Add a separator with the file path to give the LLM context for each piece of content.
+                fullContent += `--- FILE: ${path.relative(process.cwd(), file)} ---\n${content}\n\n`;
+            } catch (error) {
+                // This can happen with binary files or files with restricted permissions.
+                console.warn(`Warning: Could not read file ${file}. Skipping. Error: ${error.message}`);
+            }
+        }
+
+        if (!fullContent.trim()) {
+            console.log("Project files are empty. No plan constructed.");
+            return;
+        }
+
+        // Chunking logic to handle large amounts of file content
+        const MAX_CHUNK_SIZE = 16000; // Approx. 4k tokens
+        const chunks = [];
+        for (let i = 0; i < fullContent.length; i += MAX_CHUNK_SIZE) {
+            chunks.push(fullContent.substring(i, i + MAX_CHUNK_SIZE));
+        }
+
+        console.log(`Analyzing ${allFiles.length} files in ${chunks.length} chunk(s)...`);
+
+        let tempPlan = null;
+
+        for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            const isFirstChunk = i === 0;
+            const isLastChunk = i === chunks.length - 1;
+
+            const systemPrompt = isFirstChunk
+                ? `You are a Project Architect. Analyze the following project files and create an initial project plan. Your response MUST be a valid JSON object with a single key, "plan". The "plan" object must have "requirements" and "specifications" keys, which are arrays of objects. Each object in the arrays must have "path", "content", and "dependencies". Classify files as 'requirements' if they describe high-level needs and 'specifications' if they describe what a code file will do.`
+                : `You are a Project Architect. Refine the existing project plan based on the additional file content provided. The current plan is: ${JSON.stringify(tempPlan)}`;
+
+            const prompt = `File content chunk ${i + 1}/${chunks.length}:\n\n${chunk}\n\nBased on this, ${isFirstChunk ? 'create' : 'refine'} the plan. Your response MUST be a valid JSON object.`;
+
+            try {
+                const responseText = await callLLM([{ role: 'system', message: systemPrompt }], prompt);
+                tempPlan = JSON.parse(responseText).plan; // Assuming the LLM returns { "plan": ... }
+                console.log(`   - Chunk ${i + 1}/${chunks.length} processed.`);
+            } catch (error) {
+                console.error(`Error processing chunk ${i + 1}: ${error.message}. Attempting to retry...`);
+                try {
+                    const result = await retryLLMForJson([{ role: 'system', message: systemPrompt }], prompt, error);
+                    tempPlan = result.plan;
+                } catch (retryError) {
+                    console.error(`Failed to process chunk ${i + 1} after retries. Aborting plan construction.`);
+                    return;
+                }
+            }
+        }
+
+        if (tempPlan) {
+            this.currentPlan = tempPlan;
+            console.log("Successfully constructed an initial project plan from existing files.");
+        }
     }
 
     /**
@@ -60,6 +131,31 @@ class DiscoveryAgent {
         } catch (error) {
             console.error('Error loading subagents:', error);
         }
+    }
+
+    /**
+     * Recursively gets all file paths in a directory, ignoring common patterns.
+     * @param {string} dirPath The directory to scan.
+     * @param {Array<string>} [arrayOfFiles] Used for recursion.
+     * @returns {Promise<Array<string>>} A list of file paths.
+     */
+    async _getAllProjectFiles(dirPath, arrayOfFiles = []) {
+        const ignore = new Set(['node_modules', '.git', '.vscode', 'DS_Store']);
+        try {
+            const files = await fs.readdir(dirPath);
+
+            for (const file of files) {
+                if (ignore.has(path.basename(file))) continue;
+
+                const fullPath = path.join(dirPath, file);
+                if ((await fs.stat(fullPath)).isDirectory()) {
+                    await this._getAllProjectFiles(fullPath, arrayOfFiles);
+                } else {
+                    arrayOfFiles.push(fullPath);
+                }
+            }
+        } catch (error) { /* Ignore errors from reading restricted directories */ }
+        return arrayOfFiles;
     }
 
     /**
@@ -122,6 +218,12 @@ Example for an unsuitable task: {"agent": null}`;
      * @returns {Promise<string>} The final response from the executed subagent.
      */
     async handleTask(userPrompt, chatHistory) {
+        // On the first user request, analyze the project files to build initial context.
+        if (!this.isProjectAnalyzed) {
+            await this.constructPlanFromFiles();
+            this.isProjectAnalyzed = true;
+        }
+
         // 1. If we are waiting for a y/n confirmation.
         if (this.pendingConfirmation) {
             const userResponse = userPrompt.toLowerCase().trim();
@@ -129,11 +231,9 @@ Example for an unsuitable task: {"agent": null}`;
             if (userResponse === 'y' || userResponse === 'yes') {
                 const planExecutor = this.subagents['PlanExecutor'];
                 const executionResult = await planExecutor.execute(this.currentPlan, chatHistory);
-                this.currentPlan = null;
                 this.pendingConfirmation = false;
                 return executionResult;
             } else if (userResponse === 'n' || userResponse === 'no') {
-                this.currentPlan = null;
                 this.pendingConfirmation = false;
                 return "Plan creation cancelled.";
             } else {
