@@ -117,23 +117,17 @@ Example for an unsuitable task: {"agent": null}`;
 
     /**
      * Main task handling logic. It routes the request, reviews or generates a subagent, and executes it.
-     * @param {string} task The user's input.
+     * @param {string} userPrompt The user's input.
      * @param {Array<object>} chatHistory The full conversation history.
-     * @param {AbortSignal} signal The signal to abort the LLM call.
      * @returns {Promise<string>} The final response from the executed subagent.
      */
-    async handleTask(task, chatHistory, services) {
+    async handleTask(userPrompt, chatHistory) {
         // 1. If we are waiting for a y/n confirmation.
         if (this.pendingConfirmation) {
-            const userResponse = task.toLowerCase().trim();
+            const userResponse = userPrompt.toLowerCase().trim();
 
             if (userResponse === 'y' || userResponse === 'yes') {
                 const planExecutor = this.subagents['PlanExecutor'];
-                if (!planExecutor) {
-                    this.currentPlan = null;
-                    this.pendingConfirmation = false;
-                    return "I can't execute the plan because the 'PlanExecutor' agent is missing.";
-                }
                 const executionResult = await planExecutor.execute(this.currentPlan, chatHistory);
                 this.currentPlan = null;
                 this.pendingConfirmation = false;
@@ -152,16 +146,16 @@ Example for an unsuitable task: {"agent": null}`;
                 modificationHistory.push({ role: 'system', message: `The user is requesting a modification to the following plan: ${JSON.stringify(this.currentPlan)}` });
                 modificationHistory.push(chatHistory[chatHistory.length - 1]);
 
-                const responseString = await reqAgent.execute(task, modificationHistory, services);
-                const { plan, summary } = JSON.parse(responseString);
+                const responseString = await reqAgent.execute(userPrompt, modificationHistory, this.currentPlan);
+                const { plan, summary, pendingConfirmation } = JSON.parse(responseString);
                 this.currentPlan = plan; // Update the current plan
-                this.pendingConfirmation = true; // Still pending confirmation
+                this.pendingConfirmation = pendingConfirmation;
                 return summary; // Return the new summary
             }
         }
 
         // 2. If no confirmation is pending, route to find an agent.
-        const agentNameToActivate = await this.routeToAgent(task);
+        const agentNameToActivate = await this.routeToAgent(userPrompt);
 
         if (agentNameToActivate && this.subagents[agentNameToActivate]) {
             const agentToExecute = this.subagents[agentNameToActivate];
@@ -169,16 +163,16 @@ Example for an unsuitable task: {"agent": null}`;
             // Special handling for the requirements generation workflow
             if (agentNameToActivate === 'SpecsAgent') {
                 console.log(`\nActivating agent: ${agentNameToActivate}...`);
-                const responseString = await agentToExecute.execute(task, chatHistory, services);
-                const { plan, summary } = JSON.parse(responseString);
+                const responseString = await agentToExecute.execute(userPrompt, chatHistory);
+                const { plan, summary, pendingConfirmation } = JSON.parse(responseString);
                 this.currentPlan = plan; // Store the plan
-                this.pendingConfirmation = true; // Set flag to wait for y/n
+                this.pendingConfirmation = pendingConfirmation; // Set flag to wait for y/n
                 return summary;
             }
 
             // Standard execution for other agents
             console.log(`\nExecuting agent: ${agentNameToActivate}...`);
-            return await agentToExecute.execute(task, chatHistory, services);
+            return await agentToExecute.execute(userPrompt, chatHistory);
         }
 
         // 3. If no suitable agent could be found, inform the user.
@@ -194,7 +188,7 @@ Example for an unsuitable task: {"agent": null}`;
 
         // Use the LLM to generate a user-friendly message.
         try {
-            return await callLLM([systemPrompt, ...chatHistory.slice(0, -1)], task);
+            return await callLLM([systemPrompt, ...chatHistory.slice(0, -1)], userPrompt);
         } catch (error) {
             console.error(`\nAn error occurred while generating fallback message: ${error.message}\n`);
             return null;
