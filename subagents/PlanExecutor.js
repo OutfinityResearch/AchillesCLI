@@ -15,10 +15,9 @@ class PlanExecutor {
      * Receives a plan and creates the specified files and directories.
      * @param {Array<object>} plan An array of objects, each with 'filePath' and 'content'.
      * @param {Array<object>} chatHistory The full conversation history (not used by this agent).
-     * @param {AbortSignal} signal The signal to abort the LLM call.
      * @returns {Promise<string>} A status message indicating success or failure.
      */
-    async execute(plan, chatHistory, signal) {
+    async execute(plan, chatHistory) {
         console.log("\nExecuting the plan...");
         if (!plan || plan.length === 0) {
             return "The plan is empty. Nothing to execute.";
@@ -64,13 +63,14 @@ ${folderStructure.content}
 \`\`\`
 `;
                 let directories;
+                const history = [{ role: 'system', message: systemPrompt }];
                 try {
-                    const responseText = await callLLM([{ role: 'system', message: systemPrompt }], signal);
+                    const responseText = await callLLM(history, ""); // No additional prompt needed here
                     const result = JSON.parse(responseText);
                     directories = result.directories;
                 } catch (error) {
                     console.warn(`Initial LLM call failed for folder structure parsing. Error: ${error.message}`);
-                    const result = await retryLLMForJson([{ role: 'system', message: systemPrompt }], error, signal);
+                    const result = await retryLLMForJson(history, "", error);
                     directories = result.directories;
                 }
                 if (directories && directories.length > 0) {

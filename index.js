@@ -1,6 +1,7 @@
 const readline = require('readline');
 const os = require('os');
 const DiscoveryAgent = require('./DiscoveryAgent.js');
+const { cancelRequests } = require('./LLMClient.js');
 const {
     theme,
     displayIntro,
@@ -27,7 +28,6 @@ const agent = new DiscoveryAgent(persistoClient);
 const chatHistory = [];
 const chatState = {
     isGenerating: false,
-    abortController: null,
     justHandledCommand: false, // Flag to prevent 'enter' leak from menus
 };
 
@@ -67,9 +67,7 @@ function setupEventListeners() {
             process.exit();
         }
         if (chatState.isGenerating && key.name === 'escape') {
-            if (chatState.abortController) {
-                chatState.abortController.abort();
-            }
+            cancelRequests();
         }
     });
 
@@ -97,11 +95,10 @@ async function startChat() {
         chatHistory.push({ role: 'human', message: userInput });
 
         chatState.isGenerating = true;
-        chatState.abortController = new AbortController();
         startThinkingAnimation('Thinking...');
 
         try {
-            const aiResponse = await agent.handleTask(userInput, chatHistory, chatState.abortController.signal);
+            const aiResponse = await agent.handleTask(userInput, chatHistory);
 
             if (aiResponse === undefined) { // Cancelled
                 console.log('\nGeneration stopped.');
@@ -115,7 +112,6 @@ async function startChat() {
             chatHistory.pop();
         } finally {
             chatState.isGenerating = false;
-            chatState.abortController = null;
             stopThinkingAnimation();
         }
 

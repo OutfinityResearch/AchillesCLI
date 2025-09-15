@@ -7,7 +7,7 @@ const { retryLLMForJson } = require('../LLMClientHelper.js');
  * An agent specialized in helping the user define and create project requirement
  * and specification documents.
  */
-class ReqSpecsAgent {
+class SpecsAgent {
     constructor() {
         this.name = 'ReqSpecsAgent';
     }
@@ -16,10 +16,9 @@ class ReqSpecsAgent {
      * Generates a plan for project requirements and folder structure.
      * @param {string} task The user's input/task.
      * @param {Array<object>} chatHistory The full conversation history.
-     * @param {AbortSignal} signal The signal to abort the LLM call.
      * @returns {Promise<string>} A JSON string containing the plan and a summary for the user.
      */
-    async execute(task, chatHistory, signal) {
+    async execute(task, chatHistory) {
         const systemPrompt = `
 You are the "Requirements and Specifications Agent". Your goal is to generate a complete plan for a new JavaScript project based on the user's request.
 
@@ -47,17 +46,18 @@ Example:
   }
 }
 `;
-        const chatContext = [{ role: 'system', message: systemPrompt }, ...chatHistory];
+        const history = [{ role: 'system', message: systemPrompt }, ...chatHistory.slice(0, -1)];
+        const prompt = chatHistory[chatHistory.length - 1].message;
 
         try {
             let plan;
             try {
-                const responseText = await callLLM(chatContext, signal);
+                const responseText = await callLLM(history, prompt);
                 const result = JSON.parse(responseText);
                 plan = result.plan;
             } catch (error) {
                 console.warn(`Initial LLM call failed for plan generation. Error: ${error.message}`);
-                const result = await retryLLMForJson(chatContext, error, signal);
+                const result = await retryLLMForJson(history, prompt, error);
                 plan = result.plan;
             }
 
@@ -86,4 +86,4 @@ Example:
     }
 }
 
-module.exports = ReqSpecsAgent;
+module.exports = SpecsAgent;
