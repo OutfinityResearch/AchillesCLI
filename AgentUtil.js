@@ -67,12 +67,25 @@ const displayIntro = (log) => {
     console.log(`Welcome to AchillesCLI, your AI-powered command-line assistant.`);
     console.log('');
 };
-
+/**
+ * Simple template renderer
+ * Replaces ${varName} placeholders in a string with provided values.
+ *
+ * @param {string} promptTemplate - The template string containing placeholders.
+ * @param {object} data - Key-value pairs for replacement.
+ * @returns {string} - The rendered string.
+ */
+function constructPrompt(promptTemplate, data = {}) {
+    return promptTemplate.replace(/\$\$(\w+)/g, (_, key) => {
+        return key in data ? data[key] : "";
+    });
+}
 module.exports = {
     displayIntro,
     startThinkingAnimation,
     stopThinkingAnimation,
     theme,
     BOX_CHARS,
-    stripAnsi
+    stripAnsi,
+    constructPrompt
 };
