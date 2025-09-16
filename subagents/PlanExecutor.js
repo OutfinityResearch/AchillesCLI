@@ -35,6 +35,7 @@ class PlanExecutor {
             for (const file of allFiles) {
                 const filePath = path.resolve(process.cwd(), file.path);
                 await fs.mkdir(path.dirname(filePath), { recursive: true });
+                file.content += "\nFiles: " + JSON.stringify(file.dependencies);
                 await fs.writeFile(filePath, file.content);
                 console.log(`   - ✅ Created ${file.path}`);
             }

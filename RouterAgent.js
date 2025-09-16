@@ -6,14 +6,14 @@ const { retryLLMForJson } = require("./LLMClientHelper.js");
 const SUBAGENT_DIR = path.join(__dirname, 'subagents');
 const SPECS_DIR = path.join(__dirname, 'specs');
 /**
- * The DiscoveryAgent operates in a development context, designed for creating and testing new subagents.
+ * The RouterAgent operates in a development context, designed for creating and testing new subagents.
  * It can analyze a user's request and decide whether to use an existing subagent or generate a new one.
  */
-class DiscoveryAgent {
+class RouterAgent {
     constructor() {
         this.subagents = {}; // Holds instantiated subagents
         this.subagentSpecs = {}; // Holds natural language specs for each agent
-        this.currentPlan = null; // Holds the plan being worked on.
+        this.context = null; // Holds the plan being worked on.
         this.pendingConfirmation = false; // True when waiting for y/n from the user.
         this.isProjectAnalyzed = false; // Flag to ensure project analysis runs only once.
     }
@@ -23,7 +23,7 @@ class DiscoveryAgent {
      * This should be called after the agent is instantiated.
      */
     async initialize() {
-        console.log('Initializing DiscoveryAgent...');
+        console.log('Initializing RouterAgent...');
         await this.loadSubagents();
         // await this.loadRoles(); // To be implemented
         console.log(`Found ${Object.keys(this.subagents).length} subagents.`);
@@ -100,7 +100,7 @@ class DiscoveryAgent {
         }
 
         if (tempPlan) {
-            this.currentPlan = tempPlan;
+            this.context = tempPlan;
             console.log("Successfully constructed an initial project plan from existing files.");
         }
     }
@@ -161,7 +161,6 @@ class DiscoveryAgent {
     /**
      * Analyzes the user's prompt and routes it to the most appropriate subagent.
      * @param {string} task The user's task.
-     * @param {AbortSignal} signal The signal to abort the LLM call.
      * @returns {Promise<string|null>} The name of the most appropriate agent, or null.
      */
     async routeToAgent(task) {
@@ -230,10 +229,17 @@ Example for an unsuitable task: {"agent": null}`;
 
             if (userResponse === 'y' || userResponse === 'yes') {
                 const planExecutor = this.subagents['PlanExecutor'];
-                const executionResult = await planExecutor.execute(this.currentPlan, chatHistory);
+                if (!planExecutor) {
+                    this.context = null;
+                    this.pendingConfirmation = false;
+                    return "I can't execute the plan because the 'PlanExecutor' agent is missing.";
+                }
+                const executionResult = await planExecutor.execute(this.context, chatHistory);
+                this.context = null;
                 this.pendingConfirmation = false;
                 return executionResult;
             } else if (userResponse === 'n' || userResponse === 'no') {
+                this.context = null;
                 this.pendingConfirmation = false;
                 return "Plan creation cancelled.";
             } else {
@@ -243,12 +249,12 @@ Example for an unsuitable task: {"agent": null}`;
                 // The last message in chatHistory is the user's modification request.
                 // We add a system message before it with the current plan context.
                 const modificationHistory = chatHistory.slice(0, -1);
-                modificationHistory.push({ role: 'system', message: `The user is requesting a modification to the following plan: ${JSON.stringify(this.currentPlan)}` });
+                modificationHistory.push({ role: 'system', message: `The user is requesting a modification to the following plan: ${JSON.stringify(this.context)}` });
                 modificationHistory.push(chatHistory[chatHistory.length - 1]);
 
-                const responseString = await reqAgent.execute(userPrompt, modificationHistory, this.currentPlan);
+                const responseString = await reqAgent.execute(userPrompt, modificationHistory, this.context);
                 const { plan, summary, pendingConfirmation } = JSON.parse(responseString);
-                this.currentPlan = plan; // Update the current plan
+                this.context = plan; // Update the current plan
                 this.pendingConfirmation = pendingConfirmation;
                 return summary; // Return the new summary
             }
@@ -265,7 +271,7 @@ Example for an unsuitable task: {"agent": null}`;
                 console.log(`\nActivating agent: ${agentNameToActivate}...`);
                 const responseString = await agentToExecute.execute(userPrompt, chatHistory);
                 const { plan, summary, pendingConfirmation } = JSON.parse(responseString);
-                this.currentPlan = plan; // Store the plan
+                this.context = plan; // Store the plan
                 this.pendingConfirmation = pendingConfirmation; // Set flag to wait for y/n
                 return summary;
             }
@@ -296,4 +302,4 @@ Example for an unsuitable task: {"agent": null}`;
     }
 }
 
-module.exports = DiscoveryAgent;
+module.exports = RouterAgent;

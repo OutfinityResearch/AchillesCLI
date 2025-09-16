@@ -1,5 +1,3 @@
-const fs = require('fs/promises');
-const path = require('path');
 const { callLLM } = require('../LLMClient.js');
 const { retryLLMForJson } = require('../LLMClientHelper.js');
 
@@ -17,12 +15,12 @@ class SpecsAgent {
      * This method acts as a dispatcher, deciding whether to create a new plan or modify an existing one.
      * @param {string} task The user's input/task.
      * @param {Array<object>} chatHistory The full conversation history.
-     * @param {object|null} currentPlan The existing plan to modify, if any.
+     * @param {object|null} context The existing plan to modify, if any.
      * @returns {Promise<string>} A JSON string containing the plan and a summary for the user.
      */
-    async execute(task, chatHistory, currentPlan = null) {
-        if (currentPlan) {
-            return await this.modifyPlan(task, currentPlan);
+    async execute(task, chatHistory, context = null) {
+        if (context) {
+            return await this.modifyPlan(task, context);
         } else {
             return await this.createPlan(task, chatHistory);
         }
@@ -30,16 +28,17 @@ class SpecsAgent {
 
     /**
      * Modifies an existing project plan based on user input.
-     * @param {string} task The user's modification request.
-     * @param {object} currentPlan The existing plan to modify.
+     * @param {string} userInput The user's modification request.
+     * @param {object} context The existing plan to modify.
      * @returns {Promise<string>} A JSON string with the updated plan and a summary of changes.
      */
-    async modifyPlan(task, currentPlan) {
+    async modifyPlan(userInput, context) {
         const systemPrompt = `
 You are the "Project Architect Agent". Your goal is to modify an existing project plan based on a user's request.
 
 You will be given the current plan and a modification request. You MUST return a delta of the changes.
-When modifying, you must trace the dependencies and identify all affected files.
+When modifying, you must trace the dependencies and identify all affected files. 
+You can take the initiative and add changes of your own that you think might align with what the user is trying to achieve.
 
 Your response MUST be a JSON object with a single key, "delta". The "delta" object must have the following keys:
 - "add": An object with "requirements" and "specifications" arrays for any new files.
@@ -49,13 +48,13 @@ Your response MUST be a JSON object with a single key, "delta". The "delta" obje
 
 Current Plan:
 \`\`\`json
-${JSON.stringify(currentPlan, null, 2)}
+${JSON.stringify(context, null, 2)}
 \`\`\`
 
 Based on the user's request, what is the delta of changes?`;
 
         const history = [{ role: 'system', message: systemPrompt }];
-        const prompt = `User's modification request: "${task}"`;
+        const prompt = `User's modification request: "${userInput}"`;
 
         try {
             let delta;
@@ -70,9 +69,9 @@ Based on the user's request, what is the delta of changes?`;
             }
 
             // Apply the delta to create the new plan
-            const newPlan = this.applyDelta(currentPlan, delta);
+            const newPlan = this.applyDelta(context, delta);
 
-            const plansAreDifferent = JSON.stringify(currentPlan) !== JSON.stringify(newPlan);
+            const plansAreDifferent = JSON.stringify(context) !== JSON.stringify(newPlan);
             let summary;
             if (plansAreDifferent) {
                 summary = delta.changeSummary ? `${delta.changeSummary}\n\nDo you want to apply these changes? (y/n)` : "An update was made. Do you want to apply the changes? (y/n)";
@@ -84,7 +83,7 @@ Based on the user's request, what is the delta of changes?`;
 
         } catch (e) {
             console.error(`[SpecsAgent] Error processing modification after multiple retries: ${e.message}`);
-            return JSON.stringify({ plan: currentPlan, summary: "I had trouble modifying the plan. The current plan remains unchanged. Please try again.", pendingConfirmation: false });
+            return JSON.stringify({ plan: context, summary: "I had trouble modifying the plan. The current plan remains unchanged. Please try again.", pendingConfirmation: false });
         }
     }
 
@@ -96,16 +95,13 @@ Based on the user's request, what is the delta of changes?`;
      */
     async createPlan(task, chatHistory) {
         const systemPrompt = `
-You are the "Project Architect Agent". Your goal is to create and maintain a detailed project plan as a dependency graph.
-
-**Analyze the user's request and the conversation history.**
-- If the history contains an existing plan (in a system message), you MUST treat the user's request as a modification to that plan. When modifying, you must trace the dependencies and update any affected files.
-- If there is no existing plan, generate a new one from scratch.
+You are the "Project Architect Agent". Your goal is to create a detailed project plan as a two way dependency graph based on the user's request. 
+You can expand on the user’s idea, filling in missing details with reasonable assumptions, use knowledge of similar project plans from the past as reference points, suggest tools, resources, or best practices commonly used for similar projects.
 
 The plan should include:
-1.  **Requirement Files**: High-level project needs.
-2.  **Specification Files**: '.specs' files that describe what a future code file will do.
-3.  **Dependency Links**: Requirements should link to the specs that implement them.
+1.  **Requirement Files**: High-level project needs explained and what files are responsible for fulfilling those needs.
+2.  **Specification Files**: '.specs' files that describe what is the purpose of that file, describes functions that are in that file, describes its relationship with other files in the project. Describe techniques, patterns that will be used. 
+3.  **Dependency Links**: Each requirement should list the path of the files that affect/implement that requirement. Each .specs file should list the files in which it is used and list the files it uses
 
 Your response MUST be a JSON object with a single key, "plan".
 The "plan" object must have the following keys:
@@ -152,7 +148,7 @@ Example:
 
             const { requirements, specifications, changeSummary } = plan;
 
-            let planSummary = "Here is the proposed plan:\n\n";
+            let planSummary = `${changeSummary}\n\n`;
 
             // Add requirement files to summary
             if (requirements && requirements.length > 0) {

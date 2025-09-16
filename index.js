@@ -1,6 +1,6 @@
 const readline = require('readline');
 const os = require('os');
-const DiscoveryAgent = require('./DiscoveryAgent.js');
+const RouterAgent = require('./RouterAgent.js');
 const { cancelRequests } = require('./LLMClient.js');
 const {
     theme,
@@ -11,7 +11,7 @@ const {
 } = require('./AgentUtil.js');
 
 // Check for required environment variables
-const requiredEnv = ['LLM_PROVIDER', 'LLM_MODEL', 'LLM_API_KEY', 'LLM_BASE_URL'];
+const requiredEnv = ['LLM_API_KEY'];
 const missingEnv = requiredEnv.filter(v => !process.env[v]);
 
 if (missingEnv.length > 0) {
@@ -23,7 +23,7 @@ if (missingEnv.length > 0) {
 // The persistoClient is part of the agent's dependencies.
 // For now, we'll pass null as a placeholder.
 const persistoClient = null;
-const agent = new DiscoveryAgent(persistoClient);
+const agent = new RouterAgent(persistoClient);
 
 const chatHistory = [];
 const chatState = {
@@ -125,7 +125,7 @@ async function startChat() {
 async function main() {
     setupEventListeners();
     displayIntro();
-    await agent.initialize(); // Initialize the DiscoveryAgent (loads subagents, etc.)
+    await agent.initialize(); // Initialize the RouterAgent (loads subagents, etc.)
     startChat();
 }
 
