@@ -33,75 +33,100 @@ class RouterAgent {
     /**
      * Scans the current directory for project files and constructs an initial plan.
      */
-    async constructPlanFromFiles() {
-        console.log("Scanning project directory for existing files...");
-        const allFiles = await this._getAllProjectFiles(process.cwd());
+    async constructContextFromFiles() {
+        console.log("Scanning for 'requirements' directory to initialize context...");
+        let reqDirPath;
+        try {
+            const entries = await fs.readdir(process.cwd());
+            const reqDirName = entries.find(entry => entry.toLowerCase() === 'requirements');
+            if (reqDirName) {
+                reqDirPath = path.join(process.cwd(), reqDirName);
+            }
+        } catch (error) {
+            console.log("Could not scan current directory. Skipping initial plan construction.");
+            return;
+        }
+
+        if (!reqDirPath) {
+            console.log("No 'requirements' directory found. Skipping initial plan construction.");
+            return;
+        }
+
+        const allFiles = await this._getAllProjectFiles(reqDirPath);
 
         if (allFiles.length === 0) {
-            console.log("No project files found to construct a plan from.");
+            console.log("'requirements' directory is empty. No plan to construct.");
             return;
         }
 
-        let fullContent = "";
-
-        console.log("Reading project files...");
-        for (const file of allFiles) {
-            try {
-                const content = await fs.readFile(file, 'utf-8');
-                // Add a separator with the file path to give the LLM context for each piece of content.
-                fullContent += `--- FILE: ${path.relative(process.cwd(), file)} ---\n${content}\n\n`;
-            } catch (error) {
-                // This can happen with binary files or files with restricted permissions.
-                console.warn(`Warning: Could not read file ${file}. Skipping. Error: ${error.message}`);
-            }
-        }
-
-        if (!fullContent.trim()) {
-            console.log("Project files are empty. No plan constructed.");
-            return;
-        }
-
-        // Chunking logic to handle large amounts of file content
         const MAX_CHUNK_SIZE = 16000; // Approx. 4k tokens
-        const chunks = [];
-        for (let i = 0; i < fullContent.length; i += MAX_CHUNK_SIZE) {
-            chunks.push(fullContent.substring(i, i + MAX_CHUNK_SIZE));
-        }
-
-        console.log(`Analyzing ${allFiles.length} files in ${chunks.length} chunk(s)...`);
-
+        let chunkContent = "";
         let tempPlan = null;
+        let chunkIndex = 0;
 
-        for (let i = 0; i < chunks.length; i++) {
-            const chunk = chunks[i];
-            const isFirstChunk = i === 0;
-            const isLastChunk = i === chunks.length - 1;
-
-            const systemPrompt = isFirstChunk
-                ? `You are a Project Architect. Analyze the following project files and create an initial project plan. Your response MUST be a valid JSON object with a single key, "plan". The "plan" object must have "requirements" and "specifications" keys, which are arrays of objects. Each object in the arrays must have "path", "content", and "dependencies". Classify files as 'requirements' if they describe high-level needs and 'specifications' if they describe what a code file will do.`
-                : `You are a Project Architect. Refine the existing project plan based on the additional file content provided. The current plan is: ${JSON.stringify(tempPlan)}`;
-
-            const prompt = `File content chunk ${i + 1}/${chunks.length}:\n\n${chunk}\n\nBased on this, ${isFirstChunk ? 'create' : 'refine'} the plan. Your response MUST be a valid JSON object.`;
-
-            try {
-                const responseText = await callLLM([{ role: 'system', message: systemPrompt }], prompt);
-                tempPlan = JSON.parse(responseText).plan; // Assuming the LLM returns { "plan": ... }
-                console.log(`   - Chunk ${i + 1}/${chunks.length} processed.`);
-            } catch (error) {
-                console.error(`Error processing chunk ${i + 1}: ${error.message}. Attempting to retry...`);
+        console.log(`Reading and analyzing ${allFiles.length} files from '${path.basename(reqDirPath)}' directory...`);
+        try {
+            for (const file of allFiles) {
                 try {
-                    const result = await retryLLMForJson([{ role: 'system', message: systemPrompt }], prompt, error);
-                    tempPlan = result.plan;
-                } catch (retryError) {
-                    console.error(`Failed to process chunk ${i + 1} after retries. Aborting plan construction.`);
-                    return;
+                    const content = await fs.readFile(file, 'utf-8');
+                    const fileBlock = `--- FILE: ${path.relative(process.cwd(), file)} ---\n${content}\n\n`;
+
+                    if (chunkContent.length + fileBlock.length > MAX_CHUNK_SIZE && chunkContent) {
+                        // Process the current chunk before it gets too large
+                        tempPlan = await this._processChunk(chunkContent, tempPlan, ++chunkIndex);
+                        chunkContent = ""; // Reset for the next chunk
+                    }
+                    chunkContent += fileBlock;
+                } catch (readError) {
+                    console.warn(`Warning: Could not read file ${file}. Skipping. Error: ${readError.message}`);
                 }
             }
-        }
+
+            // Process the final remaining chunk
+            if (chunkContent) {
+                tempPlan = await this._processChunk(chunkContent, tempPlan, ++chunkIndex);
+            }
+        } catch (error) { /* The _processChunk method will log the final error */ return; }
 
         if (tempPlan) {
             this.context = tempPlan;
-            console.log("Successfully constructed an initial project plan from existing files.");
+            console.log("Successfully constructed an initial project plan from the requirements directory.");
+        }
+    }
+
+    /**
+     * Helper method to process a single chunk of file content with the LLM.
+     * @param {string} chunk The string content of the chunk.
+     * @param {object|null} currentPlan The plan from the previous chunk, if any.
+     * @param {number} chunkIndex The index of the current chunk.
+     * @returns {Promise<object>} The updated plan.
+     */
+    async _processChunk(chunk, currentPlan, chunkIndex) {
+        const isFirstChunk = currentPlan === null;
+        console.log(`   - Analyzing file content chunk ${chunkIndex}...`);
+
+        const systemPrompt = isFirstChunk
+            ? `You are a Project Architect. You have been given the content of files from a 'requirements' directory. Your task is to analyze these requirements and generate a complete, initial project plan. This plan should include not only the original requirements but also the corresponding '.specs' files that would be needed to implement them. Your response MUST be a valid JSON object with a single key, "plan". The "plan" object must have "requirements" and "specifications" keys, which are arrays of objects. Each object in the arrays must have "path", "content", and "dependencies".`
+            : `You are a Project Architect. Refine the existing project plan based on the additional file content provided. The current plan is: ${JSON.stringify(currentPlan)}`;
+
+        const prompt = `File content chunk:\n\n${chunk}\n\nBased on this, ${isFirstChunk ? 'create' : 'refine'} the plan. Your response MUST be a valid JSON object.`;
+
+        try {
+            let resultPlan;
+            try {
+                const responseText = await callLLM([{ role: 'system', message: systemPrompt }], prompt);
+                resultPlan = JSON.parse(responseText).plan;
+            } catch (error) {
+                console.warn(`Initial LLM call failed for chunk ${chunkIndex}. Error: ${error.message}`);
+                const result = await retryLLMForJson([{ role: 'system', message: systemPrompt }], prompt, error);
+                resultPlan = result.plan;
+            }
+            console.log(`   - Chunk ${chunkIndex} processed successfully.`);
+            return resultPlan;
+        } catch (retryError) {
+            console.error(`Failed to process chunk ${chunkIndex} after retries. Aborting plan construction.`);
+            // Re-throw the error to stop the entire constructPlanFromFiles process
+            throw retryError;
         }
     }
 
@@ -219,7 +244,7 @@ Example for an unsuitable task: {"agent": null}`;
     async handleTask(userPrompt, chatHistory) {
         // On the first user request, analyze the project files to build initial context.
         if (!this.isProjectAnalyzed) {
-            await this.constructPlanFromFiles();
+            await this.constructContextFromFiles();
             this.isProjectAnalyzed = true;
         }
 

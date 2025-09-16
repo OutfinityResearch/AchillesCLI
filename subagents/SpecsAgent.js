@@ -1,5 +1,7 @@
 const { callLLM } = require('../LLMClient.js');
 const { retryLLMForJson } = require('../LLMClientHelper.js');
+const fs = require('fs/promises');
+const path = require('path');
 
 /**
  * An agent specialized in helping the user define and create project requirement
@@ -37,15 +39,23 @@ class SpecsAgent {
 You are the "Project Architect Agent". Your goal is to modify an existing project plan based on a user's request.
 
 You will be given the current plan and a modification request. You MUST return a delta of the changes.
-When modifying, you must trace the dependencies and identify all affected files. 
+When modifying, you must trace the dependencies and identify all affected files and modify their content too. 
 You can take the initiative and add changes of your own that you think might align with what the user is trying to achieve.
 
-Your response MUST be a JSON object with a single key, "delta". The "delta" object must have the following keys:
-- "add": An object with "requirements" and "specifications" arrays for any new files.
-- "modify": An object with "requirements" and "specifications" arrays for any modified files.
-- "delete": An object with "requirements" and "specifications" arrays containing the paths of any deleted files.
+You can decide if you require more information about which specifications you need to modify/delete. 
+In this case your response should only be a VALID json object with 2 keys "requireInfo", a boolean and "files" listing the files needed that I need to provide to make your changes.
+Example : {"requireInfo": true, "files":["/src/web-components/auth.js", "/src/web-components/front-page.js"]}
+
+If you decide you have enough information to proceed your response MUST be a JSON object with a single key, "delta". The "delta" object must have the following keys:
+- "add": An object with "requirements" and "specifications" arrays with "files" objects for any new files.
+- "modify": An object with "requirements" and "specifications" arrays with "files" objects for any modified files.
+- "delete": An object with "requirements" and "specifications" arrays of strings, where each string is the path of a file to be deleted.
 - "changeSummary": A natural language summary of the changes you have made.
 
+"files" objects have 3 keys: 
+- "path": path of the file
+- "content": content of the file
+- "dependencies": an array of file paths representing the files that are dependent on this one
 Current Plan:
 \`\`\`json
 ${JSON.stringify(context, null, 2)}
@@ -58,13 +68,47 @@ Based on the user's request, what is the delta of changes?`;
 
         try {
             let delta;
+            let result;
             try {
                 const responseText = await callLLM(history, prompt);
-                const result = JSON.parse(responseText);
-                delta = result.delta;
+                result = JSON.parse(responseText);
             } catch (error) {
                 console.warn(`Initial LLM call failed for plan modification. Error: ${error.message}`);
-                const result = await retryLLMForJson(history, prompt, error);
+                result = await retryLLMForJson(history, prompt, error);
+            }
+
+            // Check if the LLM needs more information before providing a delta
+            if (result.requireInfo && Array.isArray(result.files) && result.files.length > 0) {
+                console.log(`\nAgent requires more information. Reading ${result.files.length} additional files...`);
+
+                let additionalContent = "";
+                for (const filePath of result.files) {
+                    try {
+                        const fullPath = path.resolve(process.cwd(), filePath);
+                        const content = await fs.readFile(fullPath, 'utf-8');
+                        additionalContent += `--- FILE: ${filePath} ---\n${content}\n\n`;
+                        console.log(`   - Read ${filePath}`);
+                    } catch (e) {
+                        console.warn(`   - Warning: Could not read requested file: ${filePath}`);
+                        additionalContent += `--- FILE: ${filePath} ---\n[Error: Could not read file content]\n\n`;
+                    }
+                }
+
+                // Create a temporary history for the follow-up call
+                const tempHistory = [
+                    ...history, // Original system prompt
+                    { role: 'human', message: prompt }, // Original user request
+                    { role: 'ai', message: JSON.stringify(result) }, // LLM's request for info
+                    { role: 'system', message: `Here is the content of the files you requested:\n\n${additionalContent}` } // The new info
+                ];
+                const followUpPrompt = "Now, based on all the information provided, please provide the JSON response with the 'delta' of changes.";
+
+                // Second call to get the delta
+                const responseText = await callLLM(tempHistory, followUpPrompt);
+                const finalResult = JSON.parse(responseText);
+                delta = finalResult.delta;
+            } else {
+                // The first response contained the delta directly
                 delta = result.delta;
             }
 
@@ -105,7 +149,7 @@ The plan should include:
 
 Your response MUST be a JSON object with a single key, "plan".
 The "plan" object must have the following keys:
-- "requirements": An array of objects. Each object must have "path" (string), "content" (string), and "dependencies" (an array of file paths it depends on).
+- "requirements": An array of objects. Each object must have "path" (string), "content" (string), and "dependencies" (an array of file paths it depends on). When creating the paths you must have a requirements folder and a src folder
 - "specifications": An array of objects. Each object must have "path" (string), "content" (string), and "dependencies" (an array of file paths it depends on).
 - "changeSummary": A natural language summary of the changes you have made to the plan.
 DO NOT respond with anything else except the valid json.
@@ -192,11 +236,16 @@ Example:
         // Handle Modifications
         const modifyReqs = delta.modify?.requirements || [];
         const modifySpecs = delta.modify?.specifications || [];
-        for (const modFile of [...modifyReqs, ...modifySpecs]) {
-            const collection = modFile.type === 'requirement' ? newPlan.requirements : newPlan.specifications;
-            const index = collection.findIndex(f => f.path === modFile.path);
+        for (const modFile of modifyReqs) {
+            const index = newPlan.requirements.findIndex(f => f.path === modFile.path);
             if (index !== -1) {
-                collection[index] = modFile; // Replace the old file with the modified one
+                newPlan.requirements[index] = modFile; // Replace the old file with the modified one
+            }
+        }
+        for (const modFile of modifySpecs) {
+            const index = newPlan.specifications.findIndex(f => f.path === modFile.path);
+            if (index !== -1) {
+                newPlan.specifications[index] = modFile; // Replace the old file with the modified one
             }
         }
 
