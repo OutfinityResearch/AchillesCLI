@@ -25,7 +25,6 @@ if (missingEnv.length > 0) {
 const persistoClient = null;
 const agent = new RouterAgent(persistoClient);
 
-const chatHistory = [];
 const chatState = {
     isGenerating: false,
     justHandledCommand: false, // Flag to prevent 'enter' leak from menus
@@ -92,24 +91,19 @@ async function startChat() {
             return;
         }
 
-        chatHistory.push({ role: 'human', message: userInput });
-
         chatState.isGenerating = true;
         startThinkingAnimation('Thinking...');
 
         try {
-            const aiResponse = await agent.handleTask(userInput, chatHistory);
+            const aiResponse = await agent.handleTask(userInput);
 
             if (aiResponse === undefined) { // Cancelled
                 console.log('\nGeneration stopped.');
-                chatHistory.pop();
             } else if (aiResponse) {
                 console.log(`\n${theme.primary}${aiResponse}${theme.reset}\n`);
-                chatHistory.push({ role: 'ai', message: aiResponse });
             }
         } catch (error) {
             console.error(`\n${theme.error}An error occurred: ${error.message}${theme.reset}\n`);
-            chatHistory.pop();
         } finally {
             chatState.isGenerating = false;
             stopThinkingAnimation();

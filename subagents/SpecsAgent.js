@@ -15,16 +15,15 @@ class SpecsAgent {
     /**
      * Generates a plan for project requirements and folder structure.
      * This method acts as a dispatcher, deciding whether to create a new plan or modify an existing one.
-     * @param {string} task The user's input/task.
-     * @param {Array<object>} chatHistory The full conversation history.
+     * @param {string} userInput The user's input.
      * @param {object|null} context The existing plan to modify, if any.
      * @returns {Promise<string>} A JSON string containing the plan and a summary for the user.
      */
-    async execute(task, chatHistory, context = null) {
+    async execute(userInput, context = null) {
         if (context) {
-            return await this.modifyPlan(task, context);
+            return await this.modifyPlan(userInput, context);
         } else {
-            return await this.createPlan(task, chatHistory);
+            return await this.createPlan(userInput);
         }
     }
 
@@ -118,7 +117,27 @@ Based on the user's request, what is the delta of changes?`;
             const plansAreDifferent = JSON.stringify(context) !== JSON.stringify(newPlan);
             let summary;
             if (plansAreDifferent) {
-                summary = delta.changeSummary ? `${delta.changeSummary}\n\nDo you want to apply these changes? (y/n)` : "An update was made. Do you want to apply the changes? (y/n)";
+                summary = delta.changeSummary ? `${delta.changeSummary}\n` : 'Here are the proposed changes:\n';
+
+                const addedFiles = (delta.add?.requirements || []).concat(delta.add?.specifications || []);
+                if (addedFiles.length > 0) {
+                    summary += "\n**Files to be Added:**\n";
+                    addedFiles.forEach(file => { summary += `- ${file.path}\n`; });
+                }
+
+                const modifiedFiles = (delta.modify?.requirements || []).concat(delta.modify?.specifications || []);
+                if (modifiedFiles.length > 0) {
+                    summary += "\n**Files to be Modified:**\n";
+                    modifiedFiles.forEach(file => { summary += `- ${file.path}\n`; });
+                }
+
+                const deletedFiles = (delta.delete?.requirements || []).concat(delta.delete?.specifications || []);
+                if (deletedFiles.length > 0) {
+                    summary += "\n**Files to be Deleted:**\n";
+                    deletedFiles.forEach(path => { summary += `- ${path}\n`; });
+                }
+
+                summary += "\nDo you want to apply these changes? (y/n)";
             } else {
                 summary = "No changes were detected in the plan.";
             }
@@ -133,11 +152,10 @@ Based on the user's request, what is the delta of changes?`;
 
     /**
      * Creates a new project plan from scratch.
-     * @param {string} task The user's initial request.
-     * @param {Array<object>} chatHistory The conversation history.
+     * @param {string} userInput The user's initial request.
      * @returns {Promise<string>} A JSON string with the new plan and a summary.
      */
-    async createPlan(task, chatHistory) {
+    async createPlan(userInput) {
         const systemPrompt = `
 You are the "Project Architect Agent". Your goal is to create a detailed project plan as a two way dependency graph based on the user's request. 
 You can expand on the user’s idea, filling in missing details with reasonable assumptions, use knowledge of similar project plans from the past as reference points, suggest tools, resources, or best practices commonly used for similar projects.
@@ -175,13 +193,11 @@ Example:
   }
 }
         `;
-        const history = [{ role: 'system', message: systemPrompt }, ...chatHistory.slice(0, -1)];
-        const prompt = chatHistory[chatHistory.length - 1].message;
-
+        const history = [{ role: 'system', message: systemPrompt }];
         try {
             let plan;
             try {
-                const responseText = await callLLM(history, prompt);
+                const responseText = await callLLM(history, userInput);
                 const result = JSON.parse(responseText);
                 plan = result.plan;
             } catch (error) {
