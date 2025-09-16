@@ -47,6 +47,10 @@ class SpecsAgent {
                 const responseText = await callLLM(history, prompt);
                 result = JSON.parse(responseText);
             } catch (error) {
+                // Check if the error is due to request abortion (ESC pressed)
+                if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                    throw error; // Re-throw abort errors immediately
+                }
                 console.warn(`Initial LLM call failed for plan modification. Error: ${error.message}`);
                 result = await retryLLMForJson(history, prompt, error);
             }
@@ -140,8 +144,12 @@ class SpecsAgent {
                 const result = JSON.parse(responseText);
                 plan = result.plan;
             } catch (error) {
+                // Check if the error is due to request abortion (ESC pressed)
+                if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                    throw error; // Re-throw abort errors immediately
+                }
                 console.warn(`Initial LLM call failed for plan generation. Error: ${error.message}`);
-                const result = await retryLLMForJson(history, prompt, error);
+                const result = await retryLLMForJson(history, userInput, error);
                 plan = result.plan;
             }
 

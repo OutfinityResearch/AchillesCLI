@@ -10,6 +10,12 @@ const { callLLM } = require('./LLMClient.js');
  * @throws {Error} If all retry attempts fail.
  */
 async function retryLLMForJson(history, prompt, initialError, maxRetries = 2) {
+    // Check if the initial error is due to request abortion (ESC pressed)
+    if (initialError.name === 'AbortError' || initialError.message.includes('aborted')) {
+        console.log('Request was aborted by user. Cancelling retries.');
+        throw initialError; // Don't retry if the request was intentionally aborted
+    }
+
     let lastError = null;
     // Create a mutable copy of the context for the retry attempts
     const retryHistory = [...history];
@@ -23,6 +29,13 @@ async function retryLLMForJson(history, prompt, initialError, maxRetries = 2) {
             return JSON.parse(responseText); // Success!
         } catch (error) {
             lastError = error;
+
+            // Check if this retry attempt was aborted (ESC pressed during retry)
+            if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                console.log('Request was aborted by user during retry. Cancelling remaining retries.');
+                throw error; // Stop retrying if the request was intentionally aborted
+            }
+
             console.warn(`Retry attempt ${attempt} failed: ${error.message}`);
 
             if (attempt < maxRetries) {

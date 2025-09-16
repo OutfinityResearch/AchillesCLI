@@ -83,7 +83,7 @@ async function callLLMWithModel(modelName, historyArray, prompt){
     }
 }
 
-async function cancelRequests(){
+function cancelRequests(){
     llmCalls.forEach(controller => controller.abort());
     llmCalls.length = 0; // Clear the array
 }

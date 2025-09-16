@@ -118,6 +118,10 @@ class RouterAgent {
                 const responseText = await callLLM([{ role: 'system', message: systemPrompt }], prompt);
                 resultPlan = JSON.parse(responseText).plan;
             } catch (error) {
+                // Check if the error is due to request abortion (ESC pressed)
+                if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                    throw error; // Re-throw abort errors immediately
+                }
                 console.warn(`Initial LLM call failed for chunk ${chunkIndex}. Error: ${error.message}`);
                 const result = await retryLLMForJson([{ role: 'system', message: systemPrompt }], prompt, error);
                 resultPlan = result.plan;
@@ -211,12 +215,20 @@ class RouterAgent {
             const choice = JSON.parse(responseText);
             return choice.agent; // This can be null if no agent was found
         } catch (error) {
+            // Check if the error is due to request abortion (ESC pressed)
+            if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                throw error; // Re-throw abort errors immediately
+            }
             console.warn(`Initial LLM call failed for routing. Error: ${error.message}`);
             // In the catch block, we now trigger the retry mechanism.
             try {
                 const choice = await retryLLMForJson(history, prompt, error);
                 return choice.agent;
             } catch (retryError) {
+                // Check if the retry error is due to request abortion
+                if (retryError.name === 'AbortError' || retryError.message.includes('aborted')) {
+                    throw retryError; // Re-throw abort errors immediately
+                }
                 console.error(`Error: Could not get a valid routing response from LLM after multiple retries. ${retryError.message}`);
                 return null;
             }
