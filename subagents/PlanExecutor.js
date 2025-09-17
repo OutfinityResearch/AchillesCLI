@@ -33,9 +33,11 @@ class PlanExecutor {
 
             // Create all the files
             for (const file of allFiles) {
-                const filePath = path.resolve(process.cwd(), file.path);
+                // Sanitize the path to ensure it's always relative and prevent writing to the root directory.
+                const safeRelativePath = file.path.startsWith('/') ? file.path.substring(1) : file.path;
+                const filePath = path.resolve(process.cwd(), safeRelativePath);
                 await fs.mkdir(path.dirname(filePath), { recursive: true });
-                file.content += "\nFiles: " + JSON.stringify(file.dependencies);
+                file.content += "\nDependencies: " + JSON.stringify(file.dependencies);
                 await fs.writeFile(filePath, file.content);
                 console.log(`   - ✅ Created ${file.path}`);
             }

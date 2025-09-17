@@ -9,7 +9,7 @@ function convertContext(chatContext) {
         } else if(reply.role === "ai") {
             convertedReply.role = "assistant";
         } else if(reply.role === "system") {
-            convertedReply.role = "developer";
+            convertedReply.role = "system";
         }
         convertedContext.push(convertedReply);
     }

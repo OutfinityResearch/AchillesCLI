@@ -135,38 +135,81 @@ class SpecsAgent {
      * @returns {Promise<string>} A JSON string with the new plan and a summary.
      */
     async createPlan(userInput) {
-        const systemPrompt = prompts.createPlanPrompt;
-        const history = [{ role: 'system', message: systemPrompt }];
         try {
-            let plan;
+            // --- Step 1: Generate Main SRS Document ---
+            console.log("   - Generating main SRS document...");
+            const srsTemplate = prompts.SRSDocumentTemplate;
+            const srsSystemPrompt = `You are a Project Architect. Based on the user's request, create a SRS Document based on the Template given below.
+            Add missing pieces of information that the user left out based on how the standard is for that sort of project.
+            Your response MUST be the full SRS Document content`;
+            const srsHistory = [{ role: 'system', message: srsSystemPrompt }];
+            const srsPrompt = `User Request: "${userInput}"\n\nSRS Template:\n${srsTemplate}`;
+
+            let mainSRS;
             try {
-                const responseText = await callLLM(history, userInput);
-                const result = JSON.parse(responseText);
-                plan = result.plan;
+                const srsResponseText = await callLLM(srsHistory, srsPrompt);
+                mainSRS = {
+                    path: 'requirements/Project Main SRS.txt',
+                    content: srsResponseText
+                };
             } catch (error) {
-                // Check if the error is due to request abortion (ESC pressed)
                 if (error.name === 'AbortError' || error.message.includes('aborted')) {
                     throw error; // Re-throw abort errors immediately
                 }
-                console.warn(`Initial LLM call failed for plan generation. Error: ${error.message}`);
-                const result = await retryLLMForJson(history, userInput, error);
-                plan = result.plan;
+                console.warn(`Initial LLM call failed for SRS generation. Error: ${error.message}`);
             }
 
-            const { requirements, specifications, changeSummary } = plan;
+            // --- Step 2: Generate Detailed Feature Documents based on the Main SRS ---
+            console.log("   - Generating detailed feature documents based on SRS...");
+            const featureSystemPrompt = `You are a Project Architect. You have been given a main SRS document. Your task is to create a separate, detailed requirement file for each major feature listed in the SRS document's "System Features" section. 
+            Use the "Individual Feature Specification Template" from the SRS for each file. Your response MUST be a valid JSON object with two keys: "featureFiles" (an array of file objects, each with "path" and "content") and "changeSummary" (a brief summary of the plan you created).`;
+            const featureHistory = [{ role: 'system', message: featureSystemPrompt }];
+            const featurePrompt = `Main SRS Document Content:\n\n${mainSRS.content}`;
 
-            let planSummary = `${changeSummary}\n\n`;
+            let finalResult;
+            try {
+                const featureResponseText = await callLLM(featureHistory, featurePrompt);
+                finalResult = JSON.parse(featureResponseText);
+            } catch (error) {
+                if (error.name === 'AbortError' || error.message.includes('aborted')) throw error;
+                console.warn(`Initial LLM call failed for detailed feature generation. Error: ${error.message}`);
+                finalResult = await retryLLMForJson(featureHistory, featurePrompt, error);
+            }
+
+            const allRequirements = [mainSRS, ...(finalResult.featureFiles || [])];
+
+            // --- Step 3: Generate .specs files based on all requirements ---
+            console.log("   - Generating .specs files based on all requirements...");
+            const specsSystemPrompt = constructPrompt(prompts.createSpecsPrompt, { requirements: JSON.stringify(allRequirements) })
+            const specsHistory = [{ role: 'system', message: specsSystemPrompt }];
+            let specsResult;
+            try {
+                const specsResponseText = await callLLM(specsHistory);
+                specsResult = JSON.parse(specsResponseText);
+            } catch (error) {
+                if (error.name === 'AbortError' || error.message.includes('aborted')) throw error;
+                console.warn(`Initial LLM call failed for .specs generation. Error: ${error.message}`);
+                specsResult = await retryLLMForJson(specsHistory, specsPrompt, error);
+            }
+
+            // Update the requirements with the new dependencies returned by the LLM
+            const updatedRequirements = allRequirements.map(req => {
+                if (specsResult.requirementDependencies && specsResult.requirementDependencies[req.path]) {
+                    return { ...req, dependencies: specsResult.requirementDependencies[req.path] };
+                }
+                return req;
+            });
+
+            const plan = {
+                requirements: updatedRequirements,
+                specifications: specsResult.specifications || [],
+            };
+
+            let planSummary = `${finalResult.changeSummary}\n\n`;
 
             // Add requirement files to summary
-            if (requirements && requirements.length > 0) {
-                requirements.forEach(file => {
-                    planSummary += `📄 **${file.path}**\n\`\`\`\n${file.content}\n\`\`\`\n\n`;
-                });
-            }
-
-            // Add specification files to summary
-            if (specifications && specifications.length > 0) {
-                specifications.forEach(file => {
+            if (plan.requirements && plan.requirements.length > 0) {
+                plan.requirements.forEach(file => {
                     planSummary += `📄 **${file.path}**\n\`\`\`\n${file.content}\n\`\`\`\n\n`;
                 });
             }
@@ -176,7 +219,7 @@ class SpecsAgent {
             // Return a structured object as a JSON string for the DiscoveryAgent to parse
             return JSON.stringify({ plan, summary: planSummary, pendingConfirmation: true });
         } catch (e) {
-            console.error(`[ReqSpecsAgent] Error processing action after multiple retries: ${e.message}`);
+            console.error(`[SpecsAgent] Error during plan creation after multiple retries: ${e.message}`);
             return JSON.stringify({ plan: {}, summary: "I had trouble generating a valid plan. Could you please rephrase your request?", pendingConfirmation: false });
         }
     }
