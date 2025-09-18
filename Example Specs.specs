@@ -1,0 +1,60 @@
+Module: Authentication Controller
+
+Description:
+This file defines the behavior of the authentication controller, which handles HTTP requests related to user authentication.
+It coordinates between the user model, database service, and token service to implement signup, login, logout, and token verification.
+
+Functions:
+
+signup(request, response)
+Input: HTTP request body { username, email, password }
+Output: JSON { userId, token }
+Purpose: Creates a new user account, validates inputs, saves user to database, and issues a token.
+
+login(request, response)
+Input: HTTP request body { email, password }
+Output: JSON { userId, token }
+Purpose: Authenticates user credentials and returns a valid session token.
+
+logout(request, response)
+Input: HTTP request header with Authorization: Bearer <token>
+Output: JSON { success: true }
+Purpose: Invalidates the user’s token and ends the session.
+
+verifyToken(request, response, next)
+Input: HTTP request header with Authorization: Bearer <token>
+Output: If valid, attaches userId to request context; otherwise returns error response.
+Purpose: Middleware function to protect routes requiring authentication.
+
+Input/Output Format:
+
+Input: HTTP requests (JSON payloads, headers).
+
+Output: JSON responses with status codes and data.
+
+Relationships:
+
+Depends on:
+src/models/user.model.specs for validating and persisting user data.
+src/services/token.service.specs for token generation and verification.
+src/services/db.specs for database operations.
+
+Used by:
+src/routes/auth.routes.specs to map HTTP routes to controller functions.
+
+Notes:
+
+Responses must conform to a consistent API error format.
+
+All sensitive data (passwords, tokens) must be excluded from logs.
+
+This file is part of the core authentication feature and directly linked to requirements/feature_user_authentication.md.
+
+Dependencies:
+{
+  "dependencies": [
+    "src/models/user.model.specs",
+    "src/services/token.service.specs",
+    "src/services/db.specs"
+  ]
+}

@@ -4,6 +4,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const {constructPrompt} = require("../AgentUtil.js")
 const prompts = require("../prompts/SpecsAgent.js")
+const {createSpecsPrompt} = require("../prompts/SpecsAgent");
 /**
  * An agent specialized in helping the user define and create project requirement
  * and specification documents.
@@ -189,7 +190,7 @@ class SpecsAgent {
             } catch (error) {
                 if (error.name === 'AbortError' || error.message.includes('aborted')) throw error;
                 console.warn(`Initial LLM call failed for .specs generation. Error: ${error.message}`);
-                specsResult = await retryLLMForJson(specsHistory, specsPrompt, error);
+                specsResult = await retryLLMForJson(specsHistory, prompts.createSpecsPrompt, error);
             }
 
             // Update the requirements with the new dependencies returned by the LLM

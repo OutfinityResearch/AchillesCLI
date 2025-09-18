@@ -20,7 +20,8 @@ function convertContext(chatContext) {
 async function callLLM(chatContext) {
     let convertedContext = convertContext(chatContext);
     let result;
-    result = await fetch(process.env.LLM_BASE_URL, {
+    let fullURL = process.env.LLM_BASE_URL +`${process.env.LLM_MODEL}:generateContent?key=${process.env.LLM_API_KEY}`
+    result = await fetch(fullURL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

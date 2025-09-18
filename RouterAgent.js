@@ -2,7 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { callLLM } = require("./LLMClient.js");
 const { retryLLMForJson } = require("./LLMClientHelper.js");
-const {constructPrompt} = require("./AgentUtil.js")
+const {constructPrompt, createFiles} = require("./AgentUtil.js")
 const prompts = require("./prompts/RouterAgent.js")
 const SUBAGENT_DIR = path.join(__dirname, 'subagents');
 const SPECS_DIR = path.join(__dirname, 'specs');
@@ -252,8 +252,7 @@ class RouterAgent {
             const userResponse = userPrompt.toLowerCase().trim();
 
             if (userResponse === 'y' || userResponse === 'yes') {
-                const planExecutor = this.subagents['PlanExecutor'];
-                const executionResult = await planExecutor.execute(this.context);
+                const executionResult = await createFiles(this.context);
                 this.context = null;
                 this.pendingConfirmation = false;
                 return executionResult;
