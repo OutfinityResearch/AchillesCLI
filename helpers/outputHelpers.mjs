@@ -1,4 +1,4 @@
-import { getLLMStats } from '../../../utils/LLMLogger.mjs';
+import { getLLMStats } from 'achillesAgentLib/utils/LLMLogger.mjs';
 import {
     COLOR_INFO,
     COLOR_WARN,

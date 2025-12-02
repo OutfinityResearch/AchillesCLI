@@ -4,10 +4,9 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
-import { SkilledAgent } from 'achillesAgentLib/SkilledAgents';
-import { RecursiveSkilledAgent } from '../../RecursiveSkilledAgents/RecursiveSkilledAgent.mjs';
+import { RecursiveSkilledAgent } from 'achillesAgentLib/RecursiveSkilledAgents/RecursiveSkilledAgent.mjs';
 import GampRSP from './GampRSP.mjs';
-import { configureLLMLogger } from '../../utils/LLMLogger.mjs';
+import { configureLLMLogger } from 'achillesAgentLib/utils/LLMLogger.mjs';
 import MemoryManager from './helpers/MemoryManager.mjs';
 import {
     initHistory,
@@ -67,17 +66,17 @@ const DEFAULT_CONTINUATION_PROMPT = '... ';
 
 class AchillesCLI {
     constructor({
-        startDirs = [],
-        workspaceRoot = process.cwd(),
-        llmAgent = null,
-        promptReader = null,
-        output = process.stdout,
-        listTimeoutMs = 1500,
-        autoBootstrapMode = null,
-        interactive = false,
-        requirePlanConfirmation = null,
-        announceStepProgress = null,
-    } = {}) {
+                    startDirs = [],
+                    workspaceRoot = process.cwd(),
+                    llmAgent = null,
+                    promptReader = null,
+                    output = process.stdout,
+                    listTimeoutMs = 1500,
+                    autoBootstrapMode = null,
+                    interactive = false,
+                    requirePlanConfirmation = null,
+                    announceStepProgress = null,
+                } = {}) {
         const skillDirs = ensureArray(startDirs);
         this._customPromptReader = typeof promptReader === 'function' ? promptReader : null;
         this.output = output || process.stdout;
@@ -145,13 +144,7 @@ class AchillesCLI {
             ...(skillDirs.length ? skillDirs : [this.workspaceRoot]),
         ].map((dir) => path.resolve(dir));
 
-        this.skilledAgent = new SkilledAgent({
-            llmAgent: this.llmAgent,
-            promptReader: this.promptReader,
-        });
-
         this.recursiveAgent = new RecursiveSkilledAgent({
-            skilledAgent: this.skilledAgent,
             startDir: this.skillSearchRoots[0],
         });
 
@@ -286,8 +279,8 @@ class AchillesCLI {
         this.cancelRequested = true;
         this.output.write(`${this.colors.warn}[info] Cancelling current plan: ${reason}${this.colors.reset}\n`);
         try {
-            if (this.skilledAgent && typeof this.skilledAgent.cancelTasks === 'function') {
-                this.skilledAgent.cancelTasks();
+            if (this.llmAgent && typeof this.llmAgent.cancel === 'function') {
+                this.llmAgent.cancel();
             }
         } catch {
             // ignore cancellation errors
