@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AchillesCLI Architecture</title>
+  <link rel="stylesheet" href="../reference/style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="nav-header">
+      <h1>AchillesCLI Architecture</h1>
+      <small>
+        <a href="../index.html">Home</a> ·
+        <a href="../specs/matrix.html">Specs</a>
+      </small>
+    </div>
+
+    <div class="section-intro">
+      <p>
+        AchillesCLI is a layered terminal tool: a thin CLI shell orchestrates LLM-backed skills, plans, and a managed `.specs`
+        workspace. The flow mirrors GAMP: URS → FS/NFS → DS → Tests, with a DS per file as the technical source of truth.
+      </p>
+    </div>
+
+    <h2>Runtime layers</h2>
+    <ul>
+      <li><strong>CLI Shell</strong> (`achilles-cli.mjs`): parses commands, manages history, prompts, cancellation, and interactive loop.</li>
+      <li><strong>Planning & Execution</strong> (`planService`, `intentionToSkill`, `executionHelpers`): builds LLM plans, executes skills, resumes or cancels.</li>
+      <li><strong>Skill Runtime</strong> (`RecursiveSkilledAgent` from achillesAgentLib): registers local skills, resolves orchestrators, runs with review mode.</li>
+      <li><strong>Memory</strong> (`MemoryManager`): global/user/session memories, routed by LLM into `.history_*` snapshots.</li>
+      <li><strong>Specs Workspace</strong> (`GampRSP`): creates `.specs`, manages URS/FS/NFS/DS files, traceability, HTML docs.</li>
+      <li><strong>Bootstrap</strong> (`bootstrapHelpers`): auto-runs default steps (e.g., ignore-files) and caches completion.</li>
+    </ul>
+
+    <h2>Data directories</h2>
+    <ul>
+      <li><code>.specs/</code>: URS.md, FS.md, NFS.md, DS/*, .ignore, .llm_logs, .llm_stats, html_docs/.</li>
+      <li><code>docs/specs/</code>: Published specification set (this documentation) with DS-per-file mirror.</li>
+      <li><code>docs/architecture/</code>: HTML narratives of runtime layers and flows.</li>
+    </ul>
+
+    <h2>Key flows</h2>
+    <ol>
+      <li><strong>Bootstrap</strong>: detect `.specs`; if missing, create URS/FS/NFS skeletons, DS/, ignore list.</li>
+      <li><strong>Task intake</strong>: user enters free text or commands; LLM planner emits skill steps; user may confirm.</li>
+      <li><strong>Execution</strong>: skills run with context (workspace, specsRoot, memories, language contract); actions update specs.</li>
+      <li><strong>Memory & Resume</strong>: summaries routed to global/user/session; pending plans persisted in-process for /resume.</li>
+      <li><strong>Spec publishing</strong>: `GampRSP.generateHtmlDocs()` renders html_docs for browsing; docs/specs mirrored for static docs.</li>
+    </ol>
+
+    <h2>LLM & skills</h2>
+    <p>
+      AchillesCLI wraps <code>LLMAgent</code> (fast/deep modes, cancellation, debug logging) and executes local skills discovered under
+      <code>.AchillesSkills</code> (workspace or CLI bundle). The planner prefers orchestrator skills for high-level tasks and warns when none exist.
+    </p>
+
+    <div class="footer-nav">
+      <span>AchillesCLI · Architecture</span>
+      <span><a href="../specs/matrix.html">Specification Matrix</a></span>
+    </div>
+  </div>
+</body>
+</html>

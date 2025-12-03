@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AchillesCLI Documentation</title>
+  <link rel="stylesheet" href="reference/style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="nav-header">
+      <h1>AchillesCLI Documentation</h1>
+      <small>
+        <a href="index.html">Home</a> ·
+        <a href="specs/matrix.html">Specification Matrix</a> ·
+        <a href="architecture/overview.html">Architecture</a>
+      </small>
+    </div>
+
+    <div class="section-intro">
+      <p>
+        AchillesCLI is a terminal-first companion that drives GAMP-style specification authoring with an LLM-assisted skill system.
+        It manages URS/FS/NFS/DS documents, links them to tests, and lets you rebuild code safely when projects drift or break.
+      </p>
+    </div>
+
+    <h2>What it is</h2>
+    <p>
+      A REPL that talks to an LLM agent plus dynamic skills. It generates and maintains GAMP artifacts:
+      <strong>URS</strong> (User Requirements), <strong>FS</strong> (Functional Specs),
+      <strong>NFS</strong> (Non-Functional Specs), and <strong>DS</strong> (Design Specs) — both global and per file.
+    </p>
+
+    <h2>Why it matters</h2>
+    <p>
+      Specifications become the safety net for rapid development and recovery. If code is corrupted, the spec corpus and DS-per-file trail
+      allow regeneration from scratch while preserving intent, traceability, and tests.
+    </p>
+
+    <h2>How it works</h2>
+    <ul>
+      <li>LLM + skill catalog orchestrator produces plans and executes actions.</li>
+      <li>Bootstrap creates a managed <code>.specs</code> workspace with URS/FS/NFS/DS and logs.</li>
+      <li>Skills enforce relationships between URS ↔ FS/NFS ↔ DS ↔ tests, warn on contradictions, and auto-update linked docs.</li>
+      <li>Memory layers: Global rules, User preferences (language), Session context (conversation + plans).</li>
+    </ul>
+
+    <h2>CLI controls</h2>
+    <ul>
+      <li><code>/lang &lt;language&gt;</code> — set spec language.</li>
+      <li><code>/run &lt;skill&gt; &lt;&lt;prompt&gt;&gt;</code> — execute a skill directly.</li>
+      <li><code>/list</code> — list skills; <code>/model fast|deep</code> — switch model tier.</li>
+      <li><code>/debug on|off</code> — toggle verbose logs.</li>
+      <li><code>/specs [filter]</code> — view spec sections; <code>/cancel</code> — abort running plan.</li>
+      <li><code>/continue</code> or <code>/resume [extra]</code> — resume a paused plan.</li>
+      <li><code>/exit</code> — quit.</li>
+    </ul>
+
+    <h2>Explore</h2>
+    <p>
+      Browse the <a href="specs/matrix.html">specification matrix</a> for URS/FS/NFS/DS or jump to the
+      <a href="architecture/overview.html">architecture view</a>. Use <a href="specsLoader.html?spec=URS.md">specsLoader</a>
+      to read any Markdown as HTML.
+    </p>
+
+    <div class="footer-nav">
+      <span>AchillesCLI · GAMP-driven specs workspace</span>
+      <span>
+        <a href="specs/matrix.html">Specs</a>
+        <a href="architecture/overview.html">Architecture</a>
+      </span>
+    </div>
+  </div>
+</body>
+</html>
