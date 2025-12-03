@@ -9,7 +9,6 @@ CLI entrypoint that wires LLM agent, recursive skill runner, memory, bootstrap, 
 
 ## Architecture
 - Builds AchillesCLI with workspace/specs roots, colors, history, and debug mode.
-- Parses command-line arguments (--skills, --bootstrap-mode, --assume-yes, --confirm-plan, --no-progress, --non-interactive) to configure startup options.
 - Configures GampRSP + LLM logger, initializes memory containers, registers skills from search roots.
 - Provides helpers for planning, execution, single-skill runs, spec viewing, and interactive loop startup.
 

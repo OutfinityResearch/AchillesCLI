@@ -82,7 +82,7 @@ Version: v1.0 (1700000001008)
 Status: active
 
 ### Description
-Implement commands: /list, /run (supports inline prompts via <<instructions>> syntax), /continue|/resume, /cancel, /specs, /debug, /model, /lang, /status, /exit with clear prompts and defaults.
+Implement commands: /list, /run, /continue|/resume, /cancel, /specs, /debug, /model, /lang, /status, /exit with clear prompts and defaults.
 
 ### Traceability
 - Source URS: URS-010

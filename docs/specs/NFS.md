@@ -49,7 +49,7 @@ Version: v1.0 (1700000002005)
 Status: active
 
 ### Description
-Expose debug mode to print LLM invocations and execution status; surface plan/skill previews; emit status summaries including log/stat file locations and duration buckets. Use consistent ANSI color styling for info, warn, error, and debug messages.
+Expose debug mode to print LLM invocations and execution status; surface plan/skill previews; emit status summaries including log/stat file locations and duration buckets.
 
 ### Traceability
 - Linked URS: URS-010

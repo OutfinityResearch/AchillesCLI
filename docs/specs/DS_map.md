@@ -36,3 +36,17 @@ Each source file has a matching DS under `docs/specs/DS/DS-XXX-*.md`. Global DS 
 | DS-029 | Global Language & Guidance | Language contract enforcement, guidance injection, model modes |
 | DS-030 | Global Bootstrap & Safety Rails | Bootstrap modes/steps, cancellation/resume, warnings |
 | DS-031 | Global Testing Conventions | Test harness approach and expectations |
+| DS-032 | .AchillesSkills/gamp/utils/specPlanner.mjs | Spec planner utility for actions and execution |
+| DS-033 | .AchillesSkills/gamp/update-specs/update-specs.js | LLM-driven spec updates |
+| DS-034 | .AchillesSkills/gamp/ignore-files/ignore-files.js | Ignore list management |
+| DS-035 | .AchillesSkills/gamp/generate-docs/generate-docs.js | HTML docs generation |
+| DS-036 | .AchillesSkills/gamp/build-code/build-code.js | Build code stubs from DS file impact |
+| DS-037 | .AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js | Repair code/tests from DS context |
+| DS-038 | .AchillesSkills/gamp/reverse-specs/reverse-specs.js | Reverse-engineer specs from code |
+| DS-039 | .AchillesSkills/gamp/run-tests/run-tests.js | Run project test suites |
+| DS-040 | .AchillesSkills/gamp/spec-review/spec-review.js | Spec review/summary skill |
+| DS-041 | .AchillesSkills/gamp/refactor-design/refactor-design.js | Design/refactor spec alignment |
+| DS-042 | .AchillesSkills/gamp/generic-skill/generic-skill.js | Generic LLM skill fallback |
+| DS-043 | .AchillesSkills/gamp/spec-mentor/spec-mentor.js | Spec mentor/education skill |
+| DS-044 | .AchillesSkills/gamp/mock-build/mock-build.js | Spec preview (non-mutating) |
+| DS-045 | .AchillesSkills/gamp/spec-help/spec-help.js | Spec help/overview skill |
