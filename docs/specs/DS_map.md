@@ -31,3 +31,8 @@ Each source file has a matching DS under `docs/specs/DS/DS-XXX-*.md`. Global DS 
 | DS-024 | tests/gamp/refactor-design.test.mjs | Refactor/design tests |
 | DS-025 | tests/gamp/generic-skill.test.mjs | Generic skill behavior tests |
 | DS-026 | tests/gamp/spec-mentor.test.mjs | Spec mentor tests |
+| DS-027 | Global Architecture | Layered runtime overview (CLI, planning, execution, skills, specs, memory) |
+| DS-028 | Global Specs & Traceability | Workspace layout, URS/FS/NFS/DS lifecycle, traceability, publishing |
+| DS-029 | Global Language & Guidance | Language contract enforcement, guidance injection, model modes |
+| DS-030 | Global Bootstrap & Safety Rails | Bootstrap modes/steps, cancellation/resume, warnings |
+| DS-031 | Global Testing Conventions | Test harness approach and expectations |
