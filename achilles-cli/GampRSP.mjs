@@ -1,7 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const VERSION_HEADER = (title) => `# ${title}\n\n## Version\n- current: v1.0\n- timestamp: ${Date.now()}\n`;
+const formatTimestamp = (value = Date.now()) => {
+    const ms = Number.isFinite(Number(value)) ? Number(value) : Date.now();
+    return new Date(ms).toISOString();
+};
+
+const VERSION_HEADER = (title) => `# ${title}\n\n## Version\n- current: v1.0\n- timestamp: ${formatTimestamp()}\n`;
 
 const DEFAULT_DOCS = [
     { filename: 'URS.md', title: 'User Requirements Specification' },
@@ -92,7 +97,7 @@ const replaceChapter = (content, heading, newBody) => {
 
 const buildChapter = ({ id, title, description, extra = '' }) => [
     `## ${id} – ${title}`,
-    `Version: v1.0 (${Date.now()})`,
+    `Version: v1.0 (${formatTimestamp()})`,
     'Status: active',
     '',
     '### Description',
@@ -346,15 +351,15 @@ class GampRSP {
     }
 
     createDS(title, description, architecture, ursId, reqId) {
-        const ids = this.listDSIds();
-        const id = nextId(ids, 'DS');
-        const timestamp = Date.now();
-        const payload = [
-            `# ${id} – ${title}`,
-            '',
-            '## Version',
-            '- current: v1.0',
-            `- timestamp: ${timestamp}`,
+    const ids = this.listDSIds();
+    const id = nextId(ids, 'DS');
+    const timestamp = Date.now();
+    const payload = [
+        `# ${id} – ${title}`,
+        '',
+        '## Version',
+        '- current: v1.0',
+        `- timestamp: ${formatTimestamp(timestamp)}`,
             '',
             '## Scope & Intent',
             description || 'Pending design elaboration.',

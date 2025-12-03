@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003006
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Run skills with language contracts, build arguments, print plans/executions, preview spec actions, and format results for memory/logging.

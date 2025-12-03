@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003014
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Drive the CLI REPL: parse commands, route to handlers, trigger planning/execution, and manage exit conditions.

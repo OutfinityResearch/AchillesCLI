@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003016
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Provide ANSI color constants for consistent CLI output (info, warn, error, debug, reset).

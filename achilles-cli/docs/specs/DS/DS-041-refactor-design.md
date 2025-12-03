@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003041
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Capture refactor requests as DS updates and optionally move code stubs into new files, per `oskill.md`: parse target modules, update/create DS with new descriptions and file impacts, and invoke build-code to mirror refreshed design.

@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003043
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Guide operators through URS/FS/NFS/DS/tests before changes, per `oskill.md`: load specs (truncated), propose bullet ideas for updates, emphasise traceability and embedded verification, and request user confirmation before acting.

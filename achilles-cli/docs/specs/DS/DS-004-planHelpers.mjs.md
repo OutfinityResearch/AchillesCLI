@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003004
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Construct planner prompt text with task context, orchestrator metadata, specification guidance, and language contract.

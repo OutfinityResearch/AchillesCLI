@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003009
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Resolve and summarize specification sections, list recent DS entries, and fetch section text by ID for previews and /specs output.

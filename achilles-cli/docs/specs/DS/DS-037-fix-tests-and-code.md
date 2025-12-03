@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003037
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Iteratively fix tests and code, per `oskill.md`: run `run-tests`, collect failures, append diagnostics to DS, rerun `build-code`, and stop when passing or no actionable failures; limit attempts and surface remediation summary.

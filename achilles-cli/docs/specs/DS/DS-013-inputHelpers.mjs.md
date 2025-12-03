@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003013
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Manage readline lifecycle, history persistence, command completion, keypress handling, raw mode pausing, and multi-line prompt parsing.

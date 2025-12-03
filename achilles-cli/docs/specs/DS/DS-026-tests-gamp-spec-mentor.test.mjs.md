@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003026
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Test spec mentor flows and educational outputs when requesting spec guidance or summaries.

@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003033
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 LLM-driven specification authoring/updating: parse change requests, emit concrete spec actions (URS/FS/NFS/DS/test/describeFile), and keep traceability intact without running builders/tests. Mirrors `oskill.md` expectations (concise titles, verbatim descriptions, reuse IDs, max ~3 tests).

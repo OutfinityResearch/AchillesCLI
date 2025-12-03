@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003030
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Define bootstrap modes/steps and safety behaviors (cancellation, resume, contradiction/scope warnings) across the CLI.

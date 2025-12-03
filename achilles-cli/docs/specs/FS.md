@@ -1,7 +1,7 @@
 # AchillesCLI Functional Specification (FS)
 
 ## FS-001 – LLM Planning & Skills Orchestration
-Version: v1.0 (1700000001001)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -12,7 +12,7 @@ Use an LLM planner to transform user intent into ordered skill executions, prefe
 - Linked DS: DS-001, DS-004
 
 ## FS-002 – Interactive & Non-Interactive CLI Loop
-Version: v1.0 (1700000001002)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -23,7 +23,7 @@ Provide an interactive readline loop with history, command completion, cancellat
 - Linked DS: DS-001, DS-005, DS-006
 
 ## FS-003 – Spec Relationship Management
-Version: v1.0 (1700000001003)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -34,7 +34,7 @@ Create and maintain URS/FS/NFS/DS documents under a managed specs root, updating
 - Linked DS: DS-002, DS-003, DS-009
 
 ## FS-004 – DS Coverage (Global & Per File)
-Version: v1.0 (1700000001004)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -45,7 +45,7 @@ Support global DS documents for shared architecture and DS-per-file entries desc
 - Linked DS: DS-003, DS-007, DS-014
 
 ## FS-005 – Session Memory & Resume
-Version: v1.0 (1700000001005)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -56,7 +56,7 @@ Detect resume intent, persist pending plans in-memory, and allow resuming with o
 - Linked DS: DS-005, DS-010
 
 ## FS-006 – Contradiction & Scope Warnings
-Version: v1.0 (1700000001006)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -67,7 +67,7 @@ Warn or block when new spec content conflicts with existing scope or traceabilit
 - Linked DS: DS-003, DS-005
 
 ## FS-007 – Auto-Updates & Bootstrap
-Version: v1.0 (1700000001007)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -78,7 +78,7 @@ Bootstrap a fresh workspace (.specs, ignore list, DS directories), rerun only on
 - Linked DS: DS-002, DS-008
 
 ## FS-008 – CLI Command Set
-Version: v1.0 (1700000001008)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -89,7 +89,7 @@ Implement commands: /list, /run, /continue|/resume, /cancel, /specs, /debug, /mo
 - Linked DS: DS-001, DS-005, DS-006
 
 ## FS-009 – Language Preference Enforcement
-Version: v1.0 (1700000001009)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -100,7 +100,7 @@ Honor /lang for future prompts; inject a language contract into planner and skil
 - Linked DS: DS-001, DS-011
 
 ## FS-010 – Spec-Based Code Recovery Path
-Version: v1.0 (1700000001010)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description

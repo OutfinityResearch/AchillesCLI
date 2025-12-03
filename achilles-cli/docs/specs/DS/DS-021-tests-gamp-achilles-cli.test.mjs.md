@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003021
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 End-to-end CLI tests covering bootstrap, language contract, spec focus, action previews, /lang behavior, /specs command, status output, and resume handling.

@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003003
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Convert free-text tasks into ordered skill steps via LLM planner, embedding language contract and orchestrator catalog.

@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003015
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Utility helpers for truthy parsing, array coercion, skill implementation detection, and plan parsing from various shapes.

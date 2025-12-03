@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003032
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Utility for spec skills to talk to GampRSP: summarize specs, parse planner output, and apply spec actions (URS/FS/NFS/DS/test/file-impact).

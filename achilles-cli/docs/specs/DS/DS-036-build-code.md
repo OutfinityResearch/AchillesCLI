@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003036
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Regenerate code artifacts from DS file-impact sections, per `oskill.md`: parse `### File:` blocks, ensure files/directories exist, inject DS banners, update timestamps only when specs changed, and avoid overwriting manual code if banner is present.

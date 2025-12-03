@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003045
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Explain the GAMP spec stack and how to interact with it, per `oskill.md`: concise refresher on URS → FS/NFS → DS → Tests, traceability, per-requirement DS, and actionable best practices.

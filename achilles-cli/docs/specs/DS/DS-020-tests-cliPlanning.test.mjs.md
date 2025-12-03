@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003020
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Covers planner CLI behaviors, especially planning outputs and failure cases.

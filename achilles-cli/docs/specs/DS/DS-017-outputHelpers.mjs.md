@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003017
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Render help and status output summarizing available commands, skill usage, and LLM log/stat paths with duration buckets.

@@ -1,7 +1,7 @@
 # AchillesCLI User Requirements Specification (URS)
 
 ## URS-001 – Terminal LLM Spec Assistant
-Version: v1.0 (1700000000001)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -11,7 +11,7 @@ Provide a terminal-first companion that converses with an LLM to author and main
 - Linked FS: FS-001, FS-002, FS-003, FS-004
 
 ## URS-002 – Session Resumption
-Version: v1.0 (1700000000002)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -21,7 +21,7 @@ Allow users to reopen a workspace and resume a previous session if spec files al
 - Linked FS: FS-005, FS-008
 
 ## URS-003 – Spec Relationship Guardrails
-Version: v1.0 (1700000000003)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -31,7 +31,7 @@ Maintain relationships across URS ↔ FS/NFS ↔ DS ↔ tests and warn when addi
 - Linked FS: FS-003, FS-006, FS-007
 
 ## URS-004 – Auto-Updating Specifications
-Version: v1.0 (1700000000004)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -41,7 +41,7 @@ Automatically update linked specs when changes occur (e.g., DS references, trace
 - Linked FS: FS-003, FS-006
 
 ## URS-005 – DS Coverage Global and Per File
-Version: v1.0 (1700000000005)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -51,7 +51,7 @@ Support both global DS documents for shared technical aspects and DS-per-file do
 - Linked FS: FS-004, FS-010
 
 ## URS-006 – Contradiction Detection
-Version: v1.0 (1700000000006)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -61,7 +61,7 @@ Detect contradictions or out-of-scope additions in specs and prompt the user for
 - Linked FS: FS-006, FS-007
 
 ## URS-007 – Language Preference
-Version: v1.0 (1700000000007)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -71,7 +71,7 @@ Let the operator choose the specification language (/lang) and ensure all genera
 - Linked FS: FS-009
 
 ## URS-008 – Skillful Automation
-Version: v1.0 (1700000000008)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -81,7 +81,7 @@ Use a dynamic skill catalog to plan and execute actions (list, run, resume, canc
 - Linked FS: FS-001, FS-002, FS-005
 
 ## URS-009 – Safety Net for Code Recovery
-Version: v1.0 (1700000000009)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -91,7 +91,7 @@ Preserve enough specification fidelity to regenerate application code from scrat
 - Linked FS: FS-004, FS-010
 
 ## URS-010 – Operator Controls
-Version: v1.0 (1700000000010)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description

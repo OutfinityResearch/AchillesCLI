@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003040
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Inspect specs and surface risks before execution, per `oskill.md`: read `.specs` snapshot, ask LLM reviewer to highlight gaps with severity-tagged findings, missing tests, and structured JSON for downstream orchestrators.

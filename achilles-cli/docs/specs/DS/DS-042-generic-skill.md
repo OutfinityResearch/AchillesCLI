@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003042
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Adaptive orchestrator when no specialised skill fits, per `oskill.md`: produce a short LLM plan and execute tools (list-files, read-file, rewrite-file, replace-text) with rationale for each step inside workspace root.

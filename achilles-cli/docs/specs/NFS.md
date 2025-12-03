@@ -1,7 +1,7 @@
 # AchillesCLI Non-Functional Specification (NFS)
 
 ## NFS-001 – Deterministic Spec Updates
-Version: v1.0 (1700000002001)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -12,7 +12,7 @@ Specification generation and updates must be reproducible given the same inputs,
 - Linked DS: DS-002, DS-008
 
 ## NFS-002 – Performance for REPL Use
-Version: v1.0 (1700000002002)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -23,7 +23,7 @@ REPL operations (plan + execute simple skills) should remain responsive (<1s typ
 - Linked DS: DS-001, DS-006
 
 ## NFS-003 – Reliability & Recovery
-Version: v1.0 (1700000002003)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -34,7 +34,7 @@ Persist histories and logs (.llm_logs, .llm_stats, .history_*); ensure plan canc
 - Linked DS: DS-002, DS-005, DS-010
 
 ## NFS-004 – Security & Isolation
-Version: v1.0 (1700000002004)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -45,7 +45,7 @@ Operate within the workspace directory; ignore/gitignore defaults avoid leaking 
 - Linked DS: DS-002, DS-008
 
 ## NFS-005 – Observability & Debuggability
-Version: v1.0 (1700000002005)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description
@@ -56,7 +56,7 @@ Expose debug mode to print LLM invocations and execution status; surface plan/sk
 - Linked DS: DS-001, DS-012
 
 ## NFS-006 – Language Compliance
-Version: v1.0 (1700000002006)
+Version: v1.0 (2025-12-03T14:33:39Z)
 Status: active
 
 ### Description

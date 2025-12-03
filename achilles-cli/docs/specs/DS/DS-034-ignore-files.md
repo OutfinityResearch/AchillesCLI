@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003034
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Manage `.specs/.ignore` manifest so spec operations stay focused on relevant sources, per `oskill.md`: parse lists, add defaults, normalise entries, avoid duplicates, and return the updated list.

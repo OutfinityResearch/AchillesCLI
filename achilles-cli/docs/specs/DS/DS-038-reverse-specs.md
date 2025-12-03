@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003038
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Synchronise specs with workspace by scanning code, per `oskill.md`: honor `.specs/.ignore`, detect new files, create/update auto-generated URS/FS/DS, describe files at DS level, limit scanning to text sources, and summarize changes.

@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003008
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Perform automatic bootstrap steps when specs are missing, honoring auto/ask/manual modes and avoiding repeated runs per session.

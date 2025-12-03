@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003027
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Describe the layered runtime of AchillesCLI: CLI shell, planning/execution pipeline, skill runtime, specs workspace, and memory/logging surfaces.

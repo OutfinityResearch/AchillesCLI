@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003035
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Publish HTML documentation from current specs, per `oskill.md`: convert URS/FS/NFS/DS to static HTML, keep styling light/diff-friendly, overwrite existing outputs, and report counts.

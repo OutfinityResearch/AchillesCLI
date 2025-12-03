@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003044
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 Summarise latest specs and publish HTML artefacts without modifications, per `oskill.md`: generate `.specs/mock/spec-summary.html` and full `html_docs`, group info by doc type, include impacted files and up to 3 tests per DS.

@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 1700000003001
+- timestamp: 2025-12-03T14:29:09Z
 
 ## Scope & Intent
 CLI entrypoint that wires LLM agent, recursive skill runner, memory, bootstrap, and interactive loop. Exposes commands (/list, /run, /lang, /model, /debug, /specs, /cancel, /resume, /exit) and enforces language contract + plan confirmation.
