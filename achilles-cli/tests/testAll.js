@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
@@ -39,12 +40,12 @@ const COLOR_RESET = '\x1b[0m';
 const COLOR_GREEN = '\x1b[32m';
 const COLOR_RED = '\x1b[31m';
 
-const runTestFile = (filePath) => new Promise((resolve) => {
+const runTestFile = (filePath, cwd) => new Promise((resolve) => {
     const label = path.relative(WORKSPACE_ROOT, filePath);
     console.log(`\nRunning: ${label}`);
     const start = performance.now();
     const child = spawn('node', ['--test', '--test-reporter=tap', filePath], {
-        cwd: WORKSPACE_ROOT,
+        cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
     });
 
@@ -90,6 +91,23 @@ const main = async () => {
         process.exit(1);
     }
 
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'achilles-tests-'));
+    const tempTestsDir = path.join(tempRoot, 'tests', '.tmp');
+    fs.mkdirSync(tempTestsDir, { recursive: true });
+
+    const cleanup = () => {
+        try {
+            fs.rmSync(tempRoot, { recursive: true, force: true });
+        } catch {
+            // ignore cleanup errors
+        }
+    };
+    process.on('SIGINT', () => {
+        cleanup();
+        process.exit(1);
+    });
+    process.on('exit', cleanup);
+
     const testFiles = collectTests(TEST_ROOT);
     if (!testFiles.length) {
         console.log('[testAll] No tests found.');
@@ -100,7 +118,7 @@ const main = async () => {
     const results = [];
     for (const file of testFiles) {
         // eslint-disable-next-line no-await-in-loop
-        results.push(await runTestFile(file));
+        results.push(await runTestFile(file, tempRoot));
     }
 
     const passed = results.filter((r) => r.status === 'passed');
