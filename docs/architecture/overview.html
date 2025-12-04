@@ -54,6 +54,38 @@
       AchillesCLI wraps <code>LLMAgent</code> (fast/deep modes, cancellation, debug logging) and executes local skills discovered under
       <code>.AchillesSkills</code> (workspace or CLI bundle). The planner prefers orchestrator skills for high-level tasks and warns when none exist.
     </p>
+    <p><strong>Installed skills (type: oskill<sup>1</sup>)</strong></p>
+    <ul>
+      <li><code>update-specs</code> — plans and applies URS/FS/NFS/DS/test/file-impact actions from change requests.</li>
+      <li><code>build-code</code> — regenerates files from DS File Impact blocks and scaffolds FS/NFS test suites.</li>
+      <li><code>reverse-specs</code> — scans code and drafts specs/DS/file-impact to sync undocumented files.</li>
+      <li><code>ignore-files</code> — maintains the <code>.specs/.ignore</code> list of skipped paths.</li>
+      <li><code>generate-docs</code> — rebuilds static HTML docs from the current specs set.</li>
+      <li><code>fix-tests-and-code</code> — iterates run-tests + build-code to repair failing suites and code.</li>
+      <li><code>run-tests</code> — executes <code>runAlltests.js</code> (optionally scoped to a suite) and returns results.</li>
+      <li><code>spec-review</code> — LLM review of specs with structured findings and recommendations.</li>
+      <li><code>refactor-design</code> — captures refactor intents into DS updates and triggers build-code.</li>
+      <li><code>generic-skill</code> — fallback tool runner (list/read/rewrite/replace/create/delete files) when no specific skill fits.</li>
+      <li><code>spec-mentor</code> — educational guidance on URS/FS/NFS/DS/tests with suggested next steps.</li>
+      <li><code>mock-build</code> — non-mutating spec summary and HTML preview for quick overviews.</li>
+      <li><code>spec-help</code> — concise refresher on the GAMP spec stack and best practices.</li>
+      <li><code>specPlanner</code> (utility) — shared planner/executor for spec skills (parses plans, applies GampRSP actions).</li>
+    </ul>
+    <p><small><sup>1</sup>oskill: orchestrator-type skill that plans and coordinates other skills; it does not answer the prompt directly.</small></p>
+
+    <h3>Execution in practice (iterative spec cycle)</h3>
+    <p>
+      You can compose the existing skills to build and refine specs end-to-end, including backtracking:
+    </p>
+    <ol>
+      <li><strong>Draft specs</strong>: run <code>update-specs</code> with your change request to create/adjust URS/FS/NFS/DS and file impacts.</li>
+      <li><strong>Preview</strong>: use <code>mock-build</code> to generate a non-mutating HTML summary and inspect the changes.</li>
+      <li><strong>Regenerate code/tests</strong>: if the DS looks good, run <code>build-code</code> to materialize files and scaffold FS/NFS test suites.</li>
+      <li><strong>Backtrack/refine</strong>: if the preview or generated files aren’t what you want, run <code>reverse-specs</code> to re-sync specs from code or rerun <code>update-specs</code> with revised instructions (e.g., new constraints or different file impacts).</li>
+      <li><strong>Repair loops</strong>: if tests/code drift, use <code>fix-tests-and-code</code> to iterate run-tests + build-code until stabilized.</li>
+      <li><strong>Review and mentor</strong>: call <code>spec-review</code> for findings and <code>spec-mentor</code> for educational guidance before finalizing.</li>
+      <li><strong>Publish</strong>: regenerate docs with <code>generate-docs</code> to update HTML outputs, or <code>run-tests</code> to validate suites.</li>
+    </ol>
 
     <div class="footer-nav">
       <span>AchillesCLI · Architecture</span>
