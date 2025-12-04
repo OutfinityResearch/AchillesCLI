@@ -4,7 +4,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
-import { RecursiveSkilledAgent } from 'achillesAgentLib/RecursiveSkilledAgents/RecursiveSkilledAgent.mjs';
+import { RecursiveSkilledAgent } from 'achillesAgentLib/RecursiveSkilledAgents';
 import GampRSP from './GampRSP.mjs';
 import { configureLLMLogger } from 'achillesAgentLib/utils/LLMLogger.mjs';
 import MemoryManager from './helpers/MemoryManager.mjs';

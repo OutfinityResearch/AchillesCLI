@@ -3,8 +3,8 @@ import path from 'node:path';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 
-import genericSkill from '../../../cli/achilles-cli/.AchillesSkills/gamp/generic-skill/generic-skill.js';
-import { LLMAgent } from '../../../LLMAgents/LLMAgent.mjs';
+import genericSkill from '../../.AchillesSkills/gamp/generic-skill/generic-skill.js';
+import { LLMAgent } from 'achillesAgentLib/LLMAgents';
 
 const TEMP_ROOT = path.join(process.cwd(), 'tests', '.tmp', 'generic-skill');
 

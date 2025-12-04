@@ -3,13 +3,13 @@ import path from 'node:path';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 
-import GampRSP from '../../../cli/achilles-cli/GampRSP.mjs';
-import buildCode from '../../../cli/achilles-cli/.AchillesSkills/gamp/build-code/build-code.js';
-import mockBuild from '../../../cli/achilles-cli/.AchillesSkills/gamp/mock-build/mock-build.js';
-import reverseSpecs from '../../../cli/achilles-cli/.AchillesSkills/gamp/reverse-specs/reverse-specs.js';
-import runTests from '../../../cli/achilles-cli/.AchillesSkills/gamp/run-tests/run-tests.js';
-import fixTestsAndCode from '../../../cli/achilles-cli/.AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js';
-import { LLMAgent } from '../../../LLMAgents/LLMAgent.mjs';
+import GampRSP from '../../GampRSP.mjs';
+import buildCode from '../../.AchillesSkills/gamp/build-code/build-code.js';
+import mockBuild from '../../.AchillesSkills/gamp/mock-build/mock-build.js';
+import reverseSpecs from '../../.AchillesSkills/gamp/reverse-specs/reverse-specs.js';
+import runTests from '../../.AchillesSkills/gamp/run-tests/run-tests.js';
+import fixTestsAndCode from '../../.AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js';
+import { LLMAgent } from 'achillesAgentLib/LLMAgents';
 
 const TEMP_ROOT = path.join(process.cwd(), 'tests', '.tmp', 'workspace-workflows');
 

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { MemoryContainer } from 'achillesAgentLib/MemoryContainer/MemoryContainer.mjs';
+import { MemoryContainer } from 'achillesAgentLib';
 
 const HISTORY_FILE_KEYS = {
     global: 'global_memory',

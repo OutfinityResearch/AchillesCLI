@@ -1,0 +1,8 @@
+{
+    "name": "AchillesCLI",
+    "dependencies": {
+        "flexsearch": "github:PloinkyRepos/flexsearch#main",
+        "achillesAgentLib": "github:OutfinityResearch/achillesAgentLib#main"
+    },
+    "type": "module"
+}
