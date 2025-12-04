@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 CLI entrypoint that wires LLM agent, recursive skill runner, memory, bootstrap, and interactive loop. Exposes commands (/list, /run, /lang, /model, /debug, /specs, /cancel, /resume, /exit) and enforces language contract + plan confirmation.
@@ -21,8 +21,8 @@ CLI entrypoint that wires LLM agent, recursive skill runner, memory, bootstrap, 
 Timestamp: 1700000003001
 
 #### Exports
-- `AchillesCLI`
-- `runFromCommandLine`
+- `AchillesCLI` — main CLI shell that wires LLM agent + logger, recursive skill runner, bootstrap flow, language contract helpers, plan/execute/resume wrappers, spec viewing, memory capture, history + readline handling (including cancellation hotkeys), and interactive loop startup using the configured workspace/specs roots.
+- `runFromCommandLine` — parses CLI arguments/environment toggles (skill roots, bootstrap mode, plan confirmation/progress, interactive switch), constructs an `AchillesCLI` instance with those options, and starts the interactive session with fatal error reporting to stderr/exit code.
 
 #### Dependencies
 - node fs/path/process/url

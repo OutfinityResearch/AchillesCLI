@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Discover and register skills from `.AchillesSkills` roots, expose catalog queries, and manage orchestrator filtering.
@@ -22,7 +22,28 @@ Discover and register skills from `.AchillesSkills` roots, expose catalog querie
 Timestamp: 1700000003007
 
 #### Exports
-- resolveSkillRoot, registerLocalSkills, getSkillCatalog, listSkills, findSkill, getOrchestrators
+- `resolveSkillRoot(dir)` — resolves an absolute path to `.AchillesSkills` under `dir`, validating existence and directory-ness (returns null when absent).
+- `registerLocalSkills(cli)` — clears existing catalog/aliases/subsystems, ensures subsystem keys persist, scans all configured roots, and registers skills with the recursive agent while logging per-root failures.
+- `getSkillCatalog(cli)` — returns the full in-memory skill registry as recorded by the recursive agent.
+- `listSkills(cli, columns, timeoutMs)` — renders catalog entries into pipe-separated rows (name/type/summary/implementation by default) with a timeout guard to avoid hanging on huge catalogs.
+- `findSkill(cli, name)` — case-insensitive lookup across name/shortName/title aliases; returns the matching record or null.
+- `getOrchestrators(cli)` — filters the catalog to orchestrator-type skills for planning.
+  Diagram (registerLocalSkills, ASCII):
+  ```
+  [skillSearchRoots]
+         |
+         v
+  resolveSkillRoot (each)
+         |
+         v
+  clear catalogs + restore subsystems
+         |
+         v
+  registerSkillsFromRoot(root...)
+         |
+         v
+     catalog ready
+  ```
 
 #### Dependencies
 - node fs/path

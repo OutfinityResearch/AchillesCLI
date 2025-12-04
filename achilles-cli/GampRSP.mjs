@@ -494,6 +494,32 @@ class GampRSP {
         const what = meta.what || 'Resulting artifact captured by this DS.';
         const sideEffects = meta.sideEffects || 'None noted.';
         const concurrency = meta.concurrency || 'Not specified.';
+        const normalizedExports = Array.isArray(exports)
+            ? exports.map((item) => {
+                if (item && typeof item === 'object' && !Array.isArray(item)) {
+                    const name = item.name || item.export || '';
+                    const desc = item.description || item.detail || '';
+                    const diagram = typeof item.diagram === 'string' ? item.diagram.trim() : '';
+                    return { name: String(name || '').trim(), description: String(desc || '').trim(), diagram };
+                }
+                return { name: String(item || '').trim(), description: '', diagram: '' };
+            }).filter((entry) => entry.name)
+            : [];
+        const exportsSection = [
+            '',
+            '#### Exports',
+            normalizedExports.length
+                ? normalizedExports.map((entry) => {
+                    const lines = [`- ${entry.name}${entry.description ? `: ${entry.description}` : ''}`];
+                    if (entry.diagram) {
+                        const diagramLines = entry.diagram.split(/\r?\n/);
+                        lines.push('  Diagram (ASCII):', '  ```', ...diagramLines, '  ```');
+                    }
+                    return lines.join('\n');
+                }).join('\n')
+                : '- none',
+        ].join('\n');
+
         const payload = [
             `### File: ${filePath}`,
             `Timestamp: ${Date.now()}`,
@@ -509,9 +535,7 @@ class GampRSP {
             '',
             '#### Description',
             description || 'Pending description.',
-            '',
-            '#### Exports',
-            exports.length ? exports.map((item) => `- ${item}`).join('\n') : '- none',
+            exportsSection,
             '',
             '#### Dependencies',
             dependencies.length ? dependencies.map((item) => `- ${item}`).join('\n') : '- none',

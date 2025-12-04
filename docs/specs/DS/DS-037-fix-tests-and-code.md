@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Iteratively fix tests and code, per `oskill.md`: run `run-tests`, collect failures, append diagnostics to DS, rerun `build-code`, and stop when passing or no actionable failures; limit attempts and surface remediation summary.
@@ -21,7 +21,32 @@ Iteratively fix tests and code, per `oskill.md`: run `run-tests`, collect failur
 Timestamp: 1700000003037
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context })` — ensures a dedicated remediation DS exists (cached in `.specs/.cache`), runs `runAlltests.js` up to three times, captures stdout/stderr/exit code per attempt, appends failure notes under the remediation DS `## Tests` section, triggers `build-code` after each failed attempt to regenerate artifacts, and returns the attempt log or success message.
+  Diagram (ASCII):
+  ```
+  configure workspace
+        |
+        v
+  ensure remediation DS id
+        |
+        v
+  attempts 1..3:
+        |
+   run runAlltests.js
+        |
+   exitCode 0?
+     |      |
+    yes     no
+     |       |
+ return      append attempt output to DS Tests
+ success          |
+                  v
+             run build-code
+                  |
+            next attempt (until 3)
+                  |
+            exhausted -> return attempts
+  ```
 
 #### Dependencies
 - GampRSP

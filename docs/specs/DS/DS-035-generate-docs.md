@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Publish HTML documentation from current specs, per `oskill.md`: convert URS/FS/NFS/DS to static HTML, keep styling light/diff-friendly, overwrite existing outputs, and report counts.
@@ -19,7 +19,7 @@ Publish HTML documentation from current specs, per `oskill.md`: convert URS/FS/N
 Timestamp: 1700000003035
 
 #### Exports
-- default skill action({ context })
+- default skill `action({ context })` — configures GampRSP for the workspace, calls `generateHtmlDocs()` to rebuild URS/FS/NFS/DS HTML outputs under `.specs/html_docs`, and returns the index file path for consumption by other skills/CLI.
 
 #### Dependencies
 - GampRSP

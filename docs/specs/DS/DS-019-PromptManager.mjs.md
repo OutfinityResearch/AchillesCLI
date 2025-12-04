@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Standalone prompt/history manager with readline, multiline input, envelope filtering, and history persistence; an alternative to inputHelpers for prompt collection.
@@ -21,7 +21,7 @@ Standalone prompt/history manager with readline, multiline input, envelope filte
 Timestamp: 1700000003019
 
 #### Exports
-- `PromptManager`
+- `PromptManager` (class) — encapsulates prompt capture outside the main CLI loop: loads and saves `.prompts_history` (capped to 200 entries), filters stdout to drop envelope noise, provisions readline with history, exposes `ask(message)` and `readMultiline(initial, continuation)` for single/multi-line input with command detection, `record(entry)` to append history, and `close()` to release readline/streams.
 
 #### Dependencies
 - node fs/path/readline/stream

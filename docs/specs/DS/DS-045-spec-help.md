@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Explain the GAMP spec stack and how to interact with it, per `oskill.md`: concise refresher on URS → FS/NFS → DS → Tests, traceability, per-requirement DS, and actionable best practices.
@@ -19,7 +19,7 @@ Explain the GAMP spec stack and how to interact with it, per `oskill.md`: concis
 Timestamp: 1700000003045
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context })` — configures workspace, optionally asks the LLM to produce structured help (introduction, keyConcepts, lifecycleSteps, bestPractices, closingThoughts), falls back to a static helper when LLM unavailable/fails, and returns the help payload plus status message.
 
 #### Dependencies
 - None beyond context

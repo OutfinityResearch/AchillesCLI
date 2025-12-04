@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Provide detailed GAMP/spec guidance text injected into planner prompts to steer URS/FS/NFS/DS authoring and testing conventions.
@@ -19,7 +19,7 @@ Provide detailed GAMP/spec guidance text injected into planner prompts to steer 
 Timestamp: 1700000003018
 
 #### Exports
-- SPEC_GUIDANCE_TEXT
+- `SPEC_GUIDANCE_TEXT` — canonical, multi-section guidance injected into planner prompts covering URS/FS/NFS/DS roles, mandatory File Impact details (exports/dependencies/side-effects/concurrency), testing layout/runAlltests conventions, language and traceability expectations, bootstrap/testing guardrails, and doc lifecycle rules.
 
 #### Dependencies
 - none

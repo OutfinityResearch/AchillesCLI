@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Wire LLM agent debug logging and propagate debug mode between CLI and agent.
@@ -20,7 +20,7 @@ Wire LLM agent debug logging and propagate debug mode between CLI and agent.
 Timestamp: 1700000003012
 
 #### Exports
-- setupLLMDebugging
+- `setupLLMDebugging(cli)` — detects whether the LLM agent supports debug hooks, wires a structured logger for request/response/error events (including prompts/history length), propagates the CLI debug flag via `setDebugEnabled`, and wraps `llmAgent.complete` to surface debug lines when supported.
 
 #### Dependencies
 - none beyond cli.llmAgent interface

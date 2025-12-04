@@ -103,6 +103,7 @@ const buildFilePrompt = ({
         'Respond ONLY with a JSON array of GampRSP actions (same format as update-specs).',
         'If the file already matches an existing DS, update that DS and call describeFile.',
         'Prefer reusing existing URS/FS/NFS identifiers when possible.',
+        '- For describeFile actions, include exports as objects { "name": "exportName", "description": "short purpose of this export" } using the detected exports list and snippet for context.',
         '',
         '## File Under Analysis',
         `Path: ${relativePath}`,
@@ -123,18 +124,24 @@ const buildFilePrompt = ({
     return sections.join('\n');
 };
 
-const fallbackDescribe = (dsId, relativePath, snippet, exportsList) => GampRSP.describeFile(
-    dsId,
-    relativePath,
-    snippet || 'Source file detected.',
-    exportsList,
-    [],
-    {
-        why: `File ${relativePath} exists in the workspace and must be documented.`,
-        how: 'Implementation is currently mirrored from the existing source file.',
-        what: 'This entry tracks the deliverable so automation can regenerate it later.',
-    },
-);
+const fallbackDescribe = (dsId, relativePath, snippet, exportsList) => {
+    const exportObjects = (exportsList || []).map((name) => ({
+        name,
+        description: '',
+    }));
+    return GampRSP.describeFile(
+        dsId,
+        relativePath,
+        snippet || 'Source file detected.',
+        exportObjects,
+        [],
+        {
+            why: `File ${relativePath} exists in the workspace and must be documented.`,
+            how: 'Implementation is currently mirrored from the existing source file.',
+            what: 'This entry tracks the deliverable so automation can regenerate it later.',
+        },
+    );
+};
 
 export async function action({ prompt, context }) {
     const workspaceRoot = context.workspaceRoot || process.cwd();

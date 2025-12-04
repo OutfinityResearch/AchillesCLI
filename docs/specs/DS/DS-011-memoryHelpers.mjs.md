@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Lightweight helpers for loading/persisting memory histories and building memory context payloads for skill execution.
@@ -21,7 +21,9 @@ Lightweight helpers for loading/persisting memory histories and building memory 
 Timestamp: 1700000003011
 
 #### Exports
-- loadMemoryHistory, persistMemory, buildMemoryContext
+- `loadMemoryHistory(cli, key)` — reads `.history_<key>` JSON from the specs root, returning the history array or an empty list on absence/parse errors.
+- `persistMemory(container, key)` — safely persists a `MemoryContainer` by calling `saveContext(key)` while suppressing persistence failures.
+- `buildMemoryContext(cli)` — snapshots global/user/session memory contexts into a single object fed to skills/LLM calls.
 
 #### Dependencies
 - node fs/path

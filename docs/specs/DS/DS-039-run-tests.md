@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Execute project test harness (`runAlltests.js`) and summarize failures, per `oskill.md`: support suite selection, stream stdout/stderr, report exit codes and failing suites, default to all suites when unspecified.
@@ -20,7 +20,7 @@ Execute project test harness (`runAlltests.js`) and summarize failures, per `osk
 Timestamp: 1700000003039
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context })` — configures workspace, extracts optional suite id from the prompt (FS/NFS/TEST), runs `runAlltests.js` via `node` with optional `--suite`, and returns suite label, pass/fail status, stdout/stderr, and exit code.
 
 #### Dependencies
 - node child_process (spawn/exec) [implied]

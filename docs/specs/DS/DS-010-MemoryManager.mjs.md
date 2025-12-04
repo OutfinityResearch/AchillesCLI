@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Wrap achillesAgentLib MemoryContainer to maintain global, user, and session memories; route interactions via LLM to decide persistence.
@@ -21,7 +21,28 @@ Wrap achillesAgentLib MemoryContainer to maintain global, user, and session memo
 Timestamp: 1700000003010
 
 #### Exports
-- default MemoryManager class
+- `MemoryManager` (class) — constructs global/user/session `MemoryContainer` instances seeded from history files, exposes `getContext()` for agent calls, and `capture({ userPrompt, plan, executions, cancelled })` to summarize runs, route storage via an LLM router, and persist to history files (global/user) or session-only memory when routing is unavailable.
+  Diagram (capture, ASCII):
+  ```
+  [prompt + plan/executions]
+             |
+             v
+      build summary lines
+             |
+             v
+      classify via LLM router
+         /            \
+    no router        routing ok
+         |                |
+         v                v
+  append to session   _maybeStore global
+      memory                 |
+                              v
+                       _maybeStore user
+                              |
+                              v
+                       _maybeStore session
+  ```
 
 #### Dependencies
 - node fs/path

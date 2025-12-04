@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Manage `.specs` workspace lifecycle: create URS/FS/NFS skeletons, DS directory, ignore list, mock/docs folders, traceability updates, and HTML generation.
@@ -10,7 +10,7 @@ Manage `.specs` workspace lifecycle: create URS/FS/NFS skeletons, DS directory, 
 ## Architecture
 - Ensures directory structure and default documents exist.
 - Generates IDs and chapters for URS/FS/NFS; retires/updates entries.
-- Creates DS files, test entries, file-impact blocks, and links requirements to DS.
+- Creates DS files, test entries, file-impact blocks, and links requirements to DS; renders "Exports" as detailed bullet entries and includes ASCII/text diagrams when provided.
 - Produces HTML docs (URS/FS/NFS/DS index) for offline browsing.
 
 ## Traceability
@@ -22,7 +22,7 @@ Manage `.specs` workspace lifecycle: create URS/FS/NFS skeletons, DS directory, 
 Timestamp: 1700000003002
 
 #### Exports
-- default singleton `GampRSP`
+- `GampRSP` (default singleton) — bootstraps `.specs` (skeleton docs, DS/mock/docs folders, ignore file), allocates IDs, reads/writes URS/FS/NFS/DS chapters, links requirements, manages tests and pending plans, renders file-impact sections with detailed export bullets (optional ASCII/text diagrams per export) plus dependencies/side effects/concurrency, and regenerates HTML docs for browsing.
 
 #### Dependencies
 - node fs/path

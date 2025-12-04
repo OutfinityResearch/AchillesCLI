@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Inspect specs and surface risks before execution, per `oskill.md`: read `.specs` snapshot, ask LLM reviewer to highlight gaps with severity-tagged findings, missing tests, and structured JSON for downstream orchestrators.
@@ -20,7 +20,7 @@ Inspect specs and surface risks before execution, per `oskill.md`: read `.specs`
 Timestamp: 1700000003040
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context })` — configures workspace, loads/truncates specs snapshot, builds a reviewer prompt with severity-tagged issue schema, calls `llmAgent.executePrompt`, normalises findings/test gaps into consistent shapes, and returns the structured review.
 
 #### Dependencies
 - GampRSP

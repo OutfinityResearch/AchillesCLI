@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Perform automatic bootstrap steps when specs are missing, honoring auto/ask/manual modes and avoiding repeated runs per session.
@@ -21,7 +21,39 @@ Perform automatic bootstrap steps when specs are missing, honoring auto/ask/manu
 Timestamp: 1700000003008
 
 #### Exports
-- normalizeBootstrapMode, ensureBootstrap
+- `normalizeBootstrapMode(mode, fallback)` — validates the bootstrap mode (`auto|ask|manual`), falling back to a sanitized default when unset/invalid.
+- `ensureBootstrap(cli, taskDescription)` — idempotent bootstrap orchestrator: respects mode (auto/ask/manual), resolves configured auto-skills (e.g., `ignore-files`), optionally prompts the user, runs skills with language contract + previews, logs failures, and flips completion flags to avoid duplicate runs.
+  Diagram (ASCII):
+  ```
+  bootstrap needed?
+        |
+        v
+  already running? --yes--> wait for promise
+        |
+       no
+        |
+  _bootstrapRequired? --no--> mark done
+        |
+       yes
+        |
+  resolve mode (auto/ask/manual)
+        |
+   manual -> mark done
+   auto/ask -> iterate auto skills
+                     |
+                find skill?
+                 /       \
+             missing    found
+               |          |
+           log skip   ask mode?
+                          / \
+                    decline  approve
+                       |        |
+                     skip     runSkill + preview
+                                    |
+                               next skill
+  after skills -> mark done -> return
+  ```
 
 #### Dependencies
 - helpers/executionHelpers.mjs

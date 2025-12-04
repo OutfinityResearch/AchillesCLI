@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Manage readline lifecycle, history persistence, command completion, keypress handling, raw mode pausing, and multi-line prompt parsing.
@@ -22,8 +22,40 @@ Manage readline lifecycle, history persistence, command completion, keypress han
 Timestamp: 1700000003013
 
 #### Exports
-- initHistory, recordHistory, ensureReadline, askUser, readMultiline
-- setupGlobalKeypressHandler, restoreInputMode, withRawModePaused, handleGlobalKeypress
+- `initHistory(cli)` / `recordHistory(cli, entry)` — bootstrap `.prompts_history` under the specs root, preload entries into memory/readline, append deduped history, and persist with a rolling cap.
+- `ensureReadline(cli)` — constructs a readline instance (single-use per session) with command/skill completions, history snapshot, filtered output stream (strips webchat envelopes), and close cleanup.
+- `setupGlobalKeypressHandler(cli, handler)` / `restoreInputMode(cli)` / `handleGlobalKeypress(cli, _, key)` / `withRawModePaused(cli, fn)` — install global key listeners (Ctrl+C/Escape), toggle raw mode safely, route cancel/exit intents, and provide a helper to temporarily pause raw mode while prompting.
+- `askUser(cli, message)` — single-line prompt using shared readline, preserving history and raw-mode safety.
+- `readMultiline(cli, initialPrompt, continuationPrompt)` — gathers multi-line input with continuation prompts, detects leading slash commands to short-circuit, and records history when appropriate.
+  Diagram (ASCII):
+  ```
+  [initial prompt]
+        |
+        v
+  promptReader -> line
+        |
+   starts with "/"?
+    |          |
+   yes        no
+    |          |
+ return {command}  empty line?
+                 |           |
+                yes         no
+                 |           |
+     expecting continuation?  append line
+        |            |             |
+       yes          no             v
+        |            |      line ends with "\"?
+     push ""        return {}       |       |
+       |                            yes    no
+       v                             |      |
+   next prompt                  set continuation
+                                    |
+                                    v
+                               next prompt
+                                ...
+                          finish -> return {text}
+  ```
 
 #### Dependencies
 - node fs/path/readline/stream

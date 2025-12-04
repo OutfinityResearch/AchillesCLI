@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Adaptive orchestrator when no specialised skill fits, per `oskill.md`: produce a short LLM plan and execute tools (list-files, read-file, rewrite-file, replace-text) with rationale for each step inside workspace root.
@@ -20,7 +20,29 @@ Adaptive orchestrator when no specialised skill fits, per `oskill.md`: produce a
 Timestamp: 1700000003042
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context, llmAgent })` — optionally asks the LLM for a JSON tool plan (list/read/rewrite/replace/create/append/delete), normalises steps, safely resolves all paths within workspaceRoot, executes each tool (with rewrite delegating to LLM using existing file content), logs progress via optional logger, and returns both the plan and per-step results.
+  Diagram (ASCII):
+  ```
+  prompt + context
+        |
+        v
+  readPlanFromLLM or DEFAULT_PLAN
+        |
+        v
+  normalisePlan + safe paths
+        |
+        v
+  for each step:
+        |
+    executeStep (tool executor)
+        |
+    record ok/failed + result/error
+        |
+    next step
+        |
+        v
+  return {plan, steps}
+  ```
 
 #### Dependencies
 - llmAgent from context

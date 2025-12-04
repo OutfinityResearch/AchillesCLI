@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Convert free-text tasks into ordered skill steps via LLM planner, embedding language contract and orchestrator catalog.
@@ -21,8 +21,30 @@ Convert free-text tasks into ordered skill steps via LLM planner, embedding lang
 Timestamp: 1700000003003
 
 #### Exports
-- `PLAN_INTENT`
-- `intentionToSkillPlan()`
+- `PLAN_INTENT` — constant context tag (`cli-orchestrator-planning`) applied to LLM calls so downstream logging/analytics can segment planner traffic.
+- `intentionToSkillPlan({ llmAgent, taskDescription, orchestrators, languageContract, modelMode })` — builds the orchestrator prompt, invokes `llmAgent.executePrompt` with JSON shape, parses `{ skill, prompt }` steps via `parsePlan`, and returns `{ plan, error }` with graceful fallbacks when the LLM is missing or replies empty.
+  Diagram (ASCII):
+  ```
+  [task + orchestrators]
+           |
+           v
+    buildPlanPrompt
+           |
+           v
+  llmAgent.executePrompt (json)
+           |
+           v
+        parsePlan
+           |
+   plan entries?
+      |      |
+     no     yes
+      |      |
+      v      v
+  return   return
+ {plan:[], {plan, error:null}
+  error}
+  ```
 
 #### Dependencies
 - helpers/planHelpers.mjs

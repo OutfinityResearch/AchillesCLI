@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Regenerate code artifacts from DS file-impact sections, per `oskill.md`: parse `### File:` blocks, ensure files/directories exist, inject DS banners, update timestamps only when specs changed, and avoid overwriting manual code if banner is present.
@@ -21,7 +21,34 @@ Regenerate code artifacts from DS file-impact sections, per `oskill.md`: parse `
 Timestamp: 1700000003036
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ context })` — configures GampRSP, scans all DS file-impact blocks, extracts per-file metadata (exports/dependencies/why/how/what/side-effects/concurrency), generates or updates files with DS banners (skips if banner already present), optionally invokes the LLM to draft content, falls back to structured stubs, scaffolds FS/NFS test suites plus `runAlltests.js`, and returns a manifest of created/updated/skipped files alongside test scaffold paths.
+  Diagram (ASCII):
+  ```
+  workspaceRoot
+       |
+       v
+  read DS file impacts
+       |
+       v
+  for each impact:
+       |
+   banner exists?
+    |        |
+   yes      no
+    |        |
+  skip   LLM generate or stub
+             |
+             v
+      write file with DS banner
+             |
+            next impact
+       |
+       v
+  ensure testUtil, FS/NFS suites, runAlltests.js
+       |
+       v
+  return manifest + scaffold paths
+  ```
 
 #### Dependencies
 - GampRSP

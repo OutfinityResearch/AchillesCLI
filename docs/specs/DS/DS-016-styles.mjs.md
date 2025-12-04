@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Provide ANSI color constants for consistent CLI output (info, warn, error, debug, reset).
@@ -19,7 +19,7 @@ Provide ANSI color constants for consistent CLI output (info, warn, error, debug
 Timestamp: 1700000003016
 
 #### Exports
-- COLOR_RESET, COLOR_INFO, COLOR_WARN, COLOR_ERROR, COLOR_DEBUG
+- `COLOR_RESET`, `COLOR_INFO`, `COLOR_WARN`, `COLOR_ERROR`, `COLOR_DEBUG`, `COLOR_DEBUG_REQUEST`, `COLOR_DEBUG_RESPONSE` — ANSI escape codes that style CLI output for info/warn/error/debug plus request/response debug traces.
 
 #### Dependencies
 - none

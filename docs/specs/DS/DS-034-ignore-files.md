@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Manage `.specs/.ignore` manifest so spec operations stay focused on relevant sources, per `oskill.md`: parse lists, add defaults, normalise entries, avoid duplicates, and return the updated list.
@@ -21,7 +21,23 @@ Manage `.specs/.ignore` manifest so spec operations stay focused on relevant sou
 Timestamp: 1700000003034
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context })` — resolves workspace root, parses the user prompt into ignore patterns, normalises them to workspace-relative paths, merges defaults with existing entries via `addIgnoreEntries`, writes `.specs/.ignore`, and returns the final ignore list for visibility.
+  Diagram (ASCII):
+  ```
+  [prompt + context]
+          |
+          v
+    parse entries + defaults
+          |
+          v
+  normalize to workspace-relative
+          |
+          v
+  addIgnoreEntries -> .specs/.ignore
+          |
+          v
+  return updated list
+  ```
 
 #### Dependencies
 - GampRSP

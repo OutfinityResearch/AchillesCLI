@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Run skills with language contracts, build arguments, print plans/executions, preview spec actions, and format results for memory/logging.
@@ -22,10 +22,28 @@ Run skills with language contracts, build arguments, print plans/executions, pre
 Timestamp: 1700000003006
 
 #### Exports
-- buildArgsForSkill, runSkill
-- printPlan, printExecutions, formatExecutionResult
-- summarizeSpecActions, printSpecActionPreview, printSpecificationDetails
-- executeSingleSkill
+- `buildArgsForSkill(cli, record, prompt)` — merges the planner prompt with skill metadata (defaultArgument/requiredArguments) into a concrete args object passed to the recursive agent; enforces language contract when the skill requests it.
+- `runSkill(cli, record, prompt)` — orchestrates a single skill execution: builds args, wraps the prompt with the CLI language contract, injects workspace/spec/memory context, calls `recursiveAgent.executeWithReviewMode`, prints previews, and returns the raw execution payload.
+- `printPlan(cli, plan)` / `printExecutions(cli, executions)` — render the planned steps and their outcomes to stdout with progress numbering and status colouring.
+- `formatExecutionResult(cli, execution)` — normalises a skill result (actions, reviews, docs, counts, errors) into human-readable lines for memory capture/logging.
+- `summarizeSpecActions(actions)` / `printSpecActionPreview(cli, record, payload)` / `printSpecificationDetails(cli, actions)` — collapse spec actions into concise summaries and emit previews (per action and full sections) so operators see what will change.
+- `executeSingleSkill(cli, skillName, prompt)` — convenience runner for `/run`: resolves the skill, delegates to `runSkill`, prints execution summaries, and captures memory in one go.
+  Diagram (runSkill, ASCII):
+  ```
+  [skill record + prompt]
+              |
+              v
+    buildArgsForSkill (+ language contract)
+              |
+              v
+  recursiveAgent.executeWithReviewMode
+              |
+              v
+     printSpecActionPreview
+              |
+              v
+     return execution payload
+  ```
 
 #### Dependencies
 - helpers/styles.mjs

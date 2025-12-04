@@ -98,6 +98,19 @@ const parseDsIds = (prompt) => {
     return matches;
 };
 
+const parseExportsFromFile = (workspaceRoot, filePath) => {
+    try {
+        const absolute = path.isAbsolute(filePath) ? filePath : path.join(workspaceRoot, filePath);
+        const content = fs.readFileSync(absolute, 'utf8');
+        const matches = content.match(/export\s+(?:default\s+)?([a-zA-Z0-9_]+)/g) || [];
+        return matches
+            .map((entry) => entry.replace(/export\s+(?:default\s+)?/, '').trim())
+            .filter(Boolean);
+    } catch {
+        return [];
+    }
+};
+
 const readCurrentTitle = (dsId) => {
     const dsPath = path.join(GampRSP.getDSDir(), `${dsId}.md`);
     if (!fs.existsSync(dsPath)) {
@@ -126,7 +139,11 @@ const createDesignSpec = (prompt) => {
 const annotateFiles = (dsId, prompt, workspaceRoot) => {
     const mentions = extractFileMentions(prompt, workspaceRoot);
     mentions.forEach((description, filePath) => {
-        GampRSP.describeFile(dsId, filePath, description, [], []);
+        const exportsList = parseExportsFromFile(workspaceRoot, filePath).map((name) => ({
+            name,
+            description: '',
+        }));
+        GampRSP.describeFile(dsId, filePath, description, exportsList, []);
     });
     return mentions.size;
 };

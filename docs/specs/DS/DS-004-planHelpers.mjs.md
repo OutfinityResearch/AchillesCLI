@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Construct planner prompt text with task context, orchestrator metadata, specification guidance, and language contract.
@@ -20,7 +20,7 @@ Construct planner prompt text with task context, orchestrator metadata, specific
 Timestamp: 1700000003004
 
 #### Exports
-- `buildPlanPrompt`
+- `buildPlanPrompt` — assembles the planner prompt with task text, GAMP spec guidance, optional language contract, orchestration rules, and a JSON response schema; injects orchestrator metadata (name/summary/instructions) so the LLM can map intents to skills deterministically.
 
 #### Dependencies
 - helpers/specGuidance.mjs

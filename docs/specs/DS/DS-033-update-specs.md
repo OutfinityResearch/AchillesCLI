@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 LLM-driven specification authoring/updating: parse change requests, emit concrete spec actions (URS/FS/NFS/DS/test/describeFile), and keep traceability intact without running builders/tests. Mirrors `oskill.md` expectations (concise titles, verbatim descriptions, reuse IDs, max ~3 tests).
@@ -10,6 +10,7 @@ LLM-driven specification authoring/updating: parse change requests, emit concret
 ## Architecture
 - Builds planner prompt with strict GAMP guidance and allowed actions; includes specs snapshot and change request.
 - Requires llmAgent; obtains JSON plan (`update-specs-plan`) and applies via specPlanner (executePlan) to create/update/retire URS/FS/NFS, DS, describeFile, createTest.
+- Planner prompt enforces detailed "Exports" coverage (inputs/outputs, side effects, concurrency, optional ASCII/text diagram when flow is complex) so DS chapters remain actionable.
 - Avoids reverse-specs/build-code/run-tests; regenerates HTML docs after applying actions; returns actions and docs index.
 
 ## Traceability
@@ -21,7 +22,7 @@ LLM-driven specification authoring/updating: parse change requests, emit concret
 Timestamp: 1700000003033
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context })` — configures workspace + LLM, builds the planner prompt with GAMP guidance and explicit rules for rich "Exports" descriptions (inputs/outputs, side effects, concurrency, optional ASCII/text diagrams), requests a JSON plan from the model, executes specPlanner actions (create/update/describe), regenerates HTML docs, and returns the applied actions plus docs index.
 
 #### Dependencies
 - GampRSP

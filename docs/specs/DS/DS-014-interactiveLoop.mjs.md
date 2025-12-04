@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T11:33:47Z
 
 ## Scope & Intent
 Drive the CLI REPL: parse commands, route to handlers, trigger planning/execution, and manage exit conditions.
@@ -21,7 +21,36 @@ Drive the CLI REPL: parse commands, route to handlers, trigger planning/executio
 Timestamp: 1700000003014
 
 #### Exports
-- runInteractiveLoop
+- `runInteractiveLoop(cli)` — REPL controller: prints banner/debug status, loops on `readMultiline`, routes slash-commands via `handleCommand`, detects resume intents, prepares plans, prints plans, optionally asks for execution confirmation, runs plans with progress, prints executions, and captures memory; always restores input mode on exit.
+  Diagram (ASCII):
+  ```
+  banner -> readMultiline
+              |
+        command entered?
+         |           |
+        yes         no
+         |           |
+   handleCommand   resume intent?
+         |           |        |
+   should exit?     yes      no
+     |       \       |        |
+    yes      no   resume    preparePlan
+     |        |     |           |
+  restore   loop   loop     plan empty?
+ input + exit         |        |
+                      |      yes -> loop
+                      |      no
+                      |       |
+                      |    printPlan
+                      |       |
+                 need confirm?
+                 |          |
+               decline    run executePlan + printExecutions
+                              |
+                        captureMemoryEntry
+                              |
+                             loop
+  ```
 
 #### Dependencies
 - helpers/executionHelpers.mjs

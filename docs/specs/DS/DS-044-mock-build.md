@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T10:01:19Z
 
 ## Scope & Intent
 Summarise latest specs and publish HTML artefacts without modifications, per `oskill.md`: generate `.specs/mock/spec-summary.html` and full `html_docs`, group info by doc type, include impacted files and up to 3 tests per DS.
@@ -20,7 +20,7 @@ Summarise latest specs and publish HTML artefacts without modifications, per `os
 Timestamp: 1700000003044
 
 #### Exports
-- default skill action({ prompt, context })
+- default skill `action({ prompt, context })` — configures workspace, reads URS/FS/NFS/DS, builds a structured summary (traceability, file impacts, tests), renders `mock/spec-summary.html` plus full `html_docs`, and returns counts plus recent DS info without mutating specs.
 
 #### Dependencies
 - GampRSP/spec helpers
