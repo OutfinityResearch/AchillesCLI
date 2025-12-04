@@ -17,7 +17,6 @@ Inspect specs and surface risks before execution, per `oskill.md`: read `.specs`
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/spec-review/spec-review.js
-Timestamp: 1700000003040
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, loads/truncates specs snapshot, builds a reviewer prompt with severity-tagged issue schema, calls `llmAgent.executePrompt`, normalises findings/test gaps into consistent shapes, and returns the structured review.

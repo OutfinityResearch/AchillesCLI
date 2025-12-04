@@ -18,7 +18,6 @@ CLI entrypoint that wires LLM agent, recursive skill runner, memory, bootstrap, 
 
 ## File Impact
 ### File: achilles-cli/achilles-cli.mjs
-Timestamp: 1700000003001
 
 #### Exports
 - `AchillesCLI` — main CLI shell that wires LLM agent + logger, recursive skill runner, bootstrap flow, language contract helpers, plan/execute/resume wrappers, spec viewing, memory capture, history + readline handling (including cancellation hotkeys), and interactive loop startup using the configured workspace/specs roots.

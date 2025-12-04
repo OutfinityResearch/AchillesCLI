@@ -16,7 +16,6 @@ Validate workspace bootstrap/workflow behaviors, including ignore list generatio
 
 ## File Impact
 ### File: achilles-cli/tests/gamp/workspace-workflows.test.mjs
-Timestamp: 1700000003022
 
 #### Description
 Covers bootstrap flows and ensures default ignore entries and skill usage align with expectations.

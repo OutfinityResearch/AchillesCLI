@@ -18,7 +18,6 @@ Manage `.specs/.ignore` manifest so spec operations stay focused on relevant sou
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/ignore-files/ignore-files.js
-Timestamp: 1700000003034
 
 #### Exports
 - default skill `action({ prompt, context })` — resolves workspace root, parses the user prompt into ignore patterns, normalises them to workspace-relative paths, merges defaults with existing entries via `addIgnoreEntries`, writes `.specs/.ignore`, and returns the final ignore list for visibility.

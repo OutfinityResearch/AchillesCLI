@@ -16,7 +16,6 @@ Explain the GAMP spec stack and how to interact with it, per `oskill.md`: concis
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/spec-help/spec-help.js
-Timestamp: 1700000003045
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, optionally asks the LLM to produce structured help (introduction, keyConcepts, lifecycleSteps, bestPractices, closingThoughts), falls back to a static helper when LLM unavailable/fails, and returns the help payload plus status message.

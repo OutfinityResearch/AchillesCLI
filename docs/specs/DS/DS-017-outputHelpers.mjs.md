@@ -17,7 +17,6 @@ Render help and status output summarizing available commands, skill usage, and L
 
 ## File Impact
 ### File: achilles-cli/helpers/outputHelpers.mjs
-Timestamp: 1700000003017
 
 #### Exports
 - `printHelp(cli)` — renders command cheat-sheet (list/debug/model/lang/run/continue/status/specs/exit), input tips (multiline, cancel keys, history recall, resume cues), and paths for prompt history.

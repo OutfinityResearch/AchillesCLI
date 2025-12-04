@@ -18,7 +18,6 @@ Utility for spec skills to talk to GampRSP: summarize specs, parse planner outpu
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/utils/specPlanner.mjs
-Timestamp: 1700000003032
 
 #### Exports
 - `ensureLLM(context)` — asserts `context.llmAgent.executePrompt` exists, otherwise throws to stop planning/execution early.

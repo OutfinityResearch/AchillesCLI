@@ -16,7 +16,6 @@ Publish HTML documentation from current specs, per `oskill.md`: convert URS/FS/N
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/generate-docs/generate-docs.js
-Timestamp: 1700000003035
 
 #### Exports
 - default skill `action({ context })` — configures GampRSP for the workspace, calls `generateHtmlDocs()` to rebuild URS/FS/NFS/DS HTML outputs under `.specs/html_docs`, and returns the index file path for consumption by other skills/CLI.

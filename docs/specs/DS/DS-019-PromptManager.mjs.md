@@ -18,7 +18,6 @@ Standalone prompt/history manager with readline, multiline input, envelope filte
 
 ## File Impact
 ### File: achilles-cli/helpers/PromptManager.mjs
-Timestamp: 1700000003019
 
 #### Exports
 - `PromptManager` (class) — encapsulates prompt capture outside the main CLI loop: loads and saves `.prompts_history` (capped to 200 entries), filters stdout to drop envelope noise, provisions readline with history, exposes `ask(message)` and `readMultiline(initial, continuation)` for single/multi-line input with command detection, `record(entry)` to append history, and `close()` to release readline/streams.

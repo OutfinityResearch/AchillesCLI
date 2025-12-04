@@ -18,7 +18,6 @@ Utility helpers for truthy parsing, array coercion, skill implementation detecti
 
 ## File Impact
 ### File: achilles-cli/helpers/cliUtils.mjs
-Timestamp: 1700000003015
 
 #### Exports
 - `isTruthy(value)` — interprets boolean-like values (`true/yes/1`) from strings or booleans; defaults to false otherwise.

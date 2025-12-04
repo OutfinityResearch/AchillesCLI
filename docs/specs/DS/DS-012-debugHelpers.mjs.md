@@ -17,7 +17,6 @@ Wire LLM agent debug logging and propagate debug mode between CLI and agent.
 
 ## File Impact
 ### File: achilles-cli/helpers/debugHelpers.mjs
-Timestamp: 1700000003012
 
 #### Exports
 - `setupLLMDebugging(cli)` — detects whether the LLM agent supports debug hooks, wires a structured logger for request/response/error events (including prompts/history length), propagates the CLI debug flag via `setDebugEnabled`, and wraps `llmAgent.complete` to surface debug lines when supported.

@@ -18,7 +18,6 @@ End-to-end CLI tests covering bootstrap, language contract, spec focus, action p
 
 ## File Impact
 ### File: achilles-cli/tests/gamp/achilles-cli.test.mjs
-Timestamp: 1700000003021
 
 #### Description
 Comprehensive scenario suite validating CLI interactions, bootstrap caching, spec action previews, language contract propagation, and status reporting.

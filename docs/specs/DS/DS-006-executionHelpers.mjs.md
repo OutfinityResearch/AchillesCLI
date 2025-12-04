@@ -19,7 +19,6 @@ Run skills with language contracts, build arguments, print plans/executions, pre
 
 ## File Impact
 ### File: achilles-cli/helpers/executionHelpers.mjs
-Timestamp: 1700000003006
 
 #### Exports
 - `buildArgsForSkill(cli, record, prompt)` — merges the planner prompt with skill metadata (defaultArgument/requiredArguments) into a concrete args object passed to the recursive agent; enforces language contract when the skill requests it.

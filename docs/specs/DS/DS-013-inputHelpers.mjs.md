@@ -19,7 +19,6 @@ Manage readline lifecycle, history persistence, command completion, keypress han
 
 ## File Impact
 ### File: achilles-cli/helpers/inputHelpers.mjs
-Timestamp: 1700000003013
 
 #### Exports
 - `initHistory(cli)` / `recordHistory(cli, entry)` — bootstrap `.prompts_history` under the specs root, preload entries into memory/readline, append deduped history, and persist with a rolling cap.

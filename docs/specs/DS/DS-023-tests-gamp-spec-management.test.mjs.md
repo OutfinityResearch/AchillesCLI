@@ -17,7 +17,6 @@ Exercise specification management workflows (updates, summaries, HTML generation
 
 ## File Impact
 ### File: achilles-cli/tests/gamp/spec-management.test.mjs
-Timestamp: 1700000003023
 
 #### Description
 Ensures spec actions create/summary documents correctly and HTML docs are generated and discoverable.

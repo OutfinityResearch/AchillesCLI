@@ -17,7 +17,6 @@ Synchronise specs with workspace by scanning code, per `oskill.md`: honor `.spec
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/reverse-specs/reverse-specs.js
-Timestamp: 1700000003038
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, reads ignore list, scans up to 80 source files (selected extensions) excluding `.specs` and ignored paths, seeds auto-generated URS/FS/DS anchors if missing, builds per-file LLM plans with detected exports/snippets/spec snapshot, executes returned actions (or falls back to `describeFile` when LLM fails), and returns per-file outcomes with counts.

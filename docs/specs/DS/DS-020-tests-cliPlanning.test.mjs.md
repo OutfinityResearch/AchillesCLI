@@ -17,7 +17,6 @@ Covers planner CLI behaviors, especially planning outputs and failure cases.
 
 ## File Impact
 ### File: achilles-cli/tests/cliPlanning.test.mjs
-Timestamp: 1700000003020
 
 #### Exports
 - Test cases (default execution via node --test)

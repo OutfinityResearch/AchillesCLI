@@ -17,7 +17,6 @@ Execute project test harness (`runAlltests.js`) and summarize failures, per `osk
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/run-tests/run-tests.js
-Timestamp: 1700000003039
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, extracts optional suite id from the prompt (FS/NFS/TEST), runs `runAlltests.js` via `node` with optional `--suite`, and returns suite label, pass/fail status, stdout/stderr, and exit code.

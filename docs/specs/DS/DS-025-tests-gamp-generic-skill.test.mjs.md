@@ -16,7 +16,6 @@ Validate generic skill execution flows, ensuring results are formatted and summa
 
 ## File Impact
 ### File: achilles-cli/tests/gamp/generic-skill.test.mjs
-Timestamp: 1700000003025
 
 #### Description
 Ensures execution helper formatting and skill invocation behave as expected for generic skills.

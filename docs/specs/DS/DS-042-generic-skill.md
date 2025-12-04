@@ -17,7 +17,6 @@ Adaptive orchestrator when no specialised skill fits, per `oskill.md`: produce a
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/generic-skill/generic-skill.js
-Timestamp: 1700000003042
 
 #### Exports
 - default skill `action({ prompt, context, llmAgent })` — optionally asks the LLM for a JSON tool plan (list/read/rewrite/replace/create/append/delete), normalises steps, safely resolves all paths within workspaceRoot, executes each tool (with rewrite delegating to LLM using existing file content), logs progress via optional logger, and returns both the plan and per-step results.

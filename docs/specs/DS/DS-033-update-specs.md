@@ -19,7 +19,6 @@ LLM-driven specification authoring/updating: parse change requests, emit concret
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/update-specs/update-specs.js
-Timestamp: 1700000003033
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace + LLM, builds the planner prompt with GAMP guidance and explicit rules for rich "Exports" descriptions (inputs/outputs, side effects, concurrency, optional ASCII/text diagrams), requests a JSON plan from the model, executes specPlanner actions (create/update/describe), regenerates HTML docs, and returns the applied actions plus docs index.

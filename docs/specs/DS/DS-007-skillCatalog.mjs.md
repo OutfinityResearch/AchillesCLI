@@ -19,7 +19,6 @@ Discover and register skills from `.AchillesSkills` roots, expose catalog querie
 
 ## File Impact
 ### File: achilles-cli/helpers/skillCatalog.mjs
-Timestamp: 1700000003007
 
 #### Exports
 - `resolveSkillRoot(dir)` — resolves an absolute path to `.AchillesSkills` under `dir`, validating existence and directory-ness (returns null when absent).

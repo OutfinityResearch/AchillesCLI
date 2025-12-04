@@ -18,7 +18,6 @@ Regenerate code artifacts from DS file-impact sections, per `oskill.md`: parse `
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/build-code/build-code.js
-Timestamp: 1700000003036
 
 #### Exports
 - default skill `action({ context })` — configures GampRSP, scans all DS file-impact blocks, extracts per-file metadata (exports/dependencies/why/how/what/side-effects/concurrency), generates or updates files with DS banners (skips if banner already present), optionally invokes the LLM to draft content, falls back to structured stubs, scaffolds FS/NFS test suites plus `runAlltests.js`, and returns a manifest of created/updated/skipped files alongside test scaffold paths.

@@ -18,7 +18,6 @@ Resolve and summarize specification sections, list recent DS entries, and fetch 
 
 ## File Impact
 ### File: achilles-cli/helpers/specDocumentHelpers.mjs
-Timestamp: 1700000003009
 
 #### Exports
 - `resolveSpecTargets(cli, query)` — tokenises free-text filters into booleans for URS/FS/NFS/DS, gathers explicit IDs, and flags when the caller wants everything.

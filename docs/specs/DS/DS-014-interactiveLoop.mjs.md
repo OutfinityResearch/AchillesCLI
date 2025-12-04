@@ -18,7 +18,6 @@ Drive the CLI REPL: parse commands, route to handlers, trigger planning/executio
 
 ## File Impact
 ### File: achilles-cli/helpers/interactiveLoop.mjs
-Timestamp: 1700000003014
 
 #### Exports
 - `runInteractiveLoop(cli)` — REPL controller: prints banner/debug status, loops on `readMultiline`, routes slash-commands via `handleCommand`, detects resume intents, prepares plans, prints plans, optionally asks for execution confirmation, runs plans with progress, prints executions, and captures memory; always restores input mode on exit.

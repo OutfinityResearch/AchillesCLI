@@ -17,7 +17,6 @@ Construct planner prompt text with task context, orchestrator metadata, specific
 
 ## File Impact
 ### File: achilles-cli/helpers/planHelpers.mjs
-Timestamp: 1700000003004
 
 #### Exports
 - `buildPlanPrompt` — assembles the planner prompt with task text, GAMP spec guidance, optional language contract, orchestration rules, and a JSON response schema; injects orchestrator metadata (name/summary/instructions) so the LLM can map intents to skills deterministically.

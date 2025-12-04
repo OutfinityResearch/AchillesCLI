@@ -18,7 +18,6 @@ Wrap achillesAgentLib MemoryContainer to maintain global, user, and session memo
 
 ## File Impact
 ### File: achilles-cli/helpers/MemoryManager.mjs
-Timestamp: 1700000003010
 
 #### Exports
 - `MemoryManager` (class) — constructs global/user/session `MemoryContainer` instances seeded from history files, exposes `getContext()` for agent calls, and `capture({ userPrompt, plan, executions, cancelled })` to summarize runs, route storage via an LLM router, and persist to history files (global/user) or session-only memory when routing is unavailable.

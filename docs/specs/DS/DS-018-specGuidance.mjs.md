@@ -16,7 +16,6 @@ Provide detailed GAMP/spec guidance text injected into planner prompts to steer 
 
 ## File Impact
 ### File: achilles-cli/helpers/specGuidance.mjs
-Timestamp: 1700000003018
 
 #### Exports
 - `SPEC_GUIDANCE_TEXT` — canonical, multi-section guidance injected into planner prompts covering URS/FS/NFS/DS roles, mandatory File Impact details (exports/dependencies/side-effects/concurrency), testing layout/runAlltests conventions, language and traceability expectations, bootstrap/testing guardrails, and doc lifecycle rules.

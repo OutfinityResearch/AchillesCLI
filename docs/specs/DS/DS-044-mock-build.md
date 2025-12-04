@@ -17,7 +17,6 @@ Summarise latest specs and publish HTML artefacts without modifications, per `os
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/mock-build/mock-build.js
-Timestamp: 1700000003044
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, reads URS/FS/NFS/DS, builds a structured summary (traceability, file impacts, tests), renders `mock/spec-summary.html` plus full `html_docs`, and returns counts plus recent DS info without mutating specs.

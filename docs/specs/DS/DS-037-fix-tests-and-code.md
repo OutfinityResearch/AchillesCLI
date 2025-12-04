@@ -18,7 +18,6 @@ Iteratively fix tests and code, per `oskill.md`: run `run-tests`, collect failur
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js
-Timestamp: 1700000003037
 
 #### Exports
 - default skill `action({ prompt, context })` — ensures a dedicated remediation DS exists (cached in `.specs/.cache`), runs `runAlltests.js` up to three times, captures stdout/stderr/exit code per attempt, appends failure notes under the remediation DS `## Tests` section, triggers `build-code` after each failed attempt to regenerate artifacts, and returns the attempt log or success message.

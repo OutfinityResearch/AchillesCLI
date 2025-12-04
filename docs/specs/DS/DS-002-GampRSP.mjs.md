@@ -19,7 +19,6 @@ Manage `.specs` workspace lifecycle: create URS/FS/NFS skeletons, DS directory, 
 
 ## File Impact
 ### File: achilles-cli/GampRSP.mjs
-Timestamp: 1700000003002
 
 #### Exports
 - `GampRSP` (default singleton) — bootstraps `.specs` (skeleton docs, DS/mock/docs folders, ignore file), allocates IDs, reads/writes URS/FS/NFS/DS chapters, links requirements, manages tests and pending plans, renders file-impact sections with detailed export bullets (optional ASCII/text diagrams per export) plus dependencies/side effects/concurrency, and regenerates HTML docs for browsing.

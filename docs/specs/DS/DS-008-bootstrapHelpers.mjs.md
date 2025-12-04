@@ -18,7 +18,6 @@ Perform automatic bootstrap steps when specs are missing, honoring auto/ask/manu
 
 ## File Impact
 ### File: achilles-cli/helpers/bootstrapHelpers.mjs
-Timestamp: 1700000003008
 
 #### Exports
 - `normalizeBootstrapMode(mode, fallback)` — validates the bootstrap mode (`auto|ask|manual`), falling back to a sanitized default when unset/invalid.

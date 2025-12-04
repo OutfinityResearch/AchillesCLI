@@ -16,7 +16,6 @@ Cover refactor/design oriented workflows ensuring planner and skill outputs alig
 
 ## File Impact
 ### File: achilles-cli/tests/gamp/refactor-design.test.mjs
-Timestamp: 1700000003024
 
 #### Description
 Validates design/refactor-related spec updates and outputs.

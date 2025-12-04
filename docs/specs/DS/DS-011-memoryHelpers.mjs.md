@@ -18,7 +18,6 @@ Lightweight helpers for loading/persisting memory histories and building memory 
 
 ## File Impact
 ### File: achilles-cli/helpers/memoryHelpers.mjs
-Timestamp: 1700000003011
 
 #### Exports
 - `loadMemoryHistory(cli, key)` — reads `.history_<key>` JSON from the specs root, returning the history array or an empty list on absence/parse errors.

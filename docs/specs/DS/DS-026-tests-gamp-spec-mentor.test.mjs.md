@@ -16,7 +16,6 @@ Test spec mentor flows and educational outputs when requesting spec guidance or 
 
 ## File Impact
 ### File: achilles-cli/tests/gamp/spec-mentor.test.mjs
-Timestamp: 1700000003026
 
 #### Description
 Validates that mentor-style outputs include spec counts, highlights, and docs paths.

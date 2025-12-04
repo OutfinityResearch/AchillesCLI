@@ -17,7 +17,6 @@ Capture refactor requests as DS updates and optionally move code stubs into new 
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/refactor-design/refactor-design.js
-Timestamp: 1700000003041
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, parses DS references and file mentions from the prompt, creates a new URS/FS/DS trio when none is referenced, updates DS description/architecture with refactor scope/timestamp, annotates mentioned files via `describeFile` (autodetecting exports from current sources), and invokes `build-code` to regenerate artifacts; returns created DS info, touched files per DS, and build results.

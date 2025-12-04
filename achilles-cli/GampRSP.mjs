@@ -522,7 +522,6 @@ class GampRSP {
 
         const payload = [
             `### File: ${filePath}`,
-            `Timestamp: ${Date.now()}`,
             '',
             '#### Why',
             why,

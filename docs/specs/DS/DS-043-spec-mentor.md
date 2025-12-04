@@ -17,7 +17,6 @@ Guide operators through URS/FS/NFS/DS/tests before changes, per `oskill.md`: loa
 
 ## File Impact
 ### File: achilles-cli/.AchillesSkills/gamp/spec-mentor/spec-mentor.js
-Timestamp: 1700000003043
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, truncates specs snapshot, builds a mentor prompt with expected JSON schema (overview, URS highlights, FS/NFS ideas, DS candidates, test impacts, approval question), invokes the LLM, normalises/guards empty responses, and returns guidance plus a flag indicating operator approval is required before acting.

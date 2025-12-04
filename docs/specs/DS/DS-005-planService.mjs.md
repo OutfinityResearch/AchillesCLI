@@ -19,7 +19,6 @@ Manage planning flow: prepare plan, execute steps, handle cancellations, resume 
 
 ## File Impact
 ### File: achilles-cli/helpers/planService.mjs
-Timestamp: 1700000003005
 
 #### Exports
 - `parseResumeInput` / `detectResumeInput` — parse raw text for resume keywords (continue/resume variants) and, if not matched, optionally call the LLM to classify the intent, returning `{ resume, extra }` hints for pending plans.
