@@ -2,7 +2,7 @@
 
 ## Version
 - current: v1.0
-- timestamp: 2025-12-03T14:29:09Z
+- timestamp: 2025-12-04T12:48:54Z
 
 ## Scope & Intent
 Document current automated test conventions for AchillesCLI and expectations for future suites.
@@ -12,6 +12,7 @@ Document current automated test conventions for AchillesCLI and expectations for
 - **Coverage focus**: bootstrap behavior, language contract propagation, spec action previews, status output, planner failures, resume/cancel flows.
 - **Fixtures**: temp dirs under `tests/.tmp/*`, package stubs, and mock skill/planner responses to isolate CLI logic from real skills.
 - **Future**: extend with real skill packs and integration against achillesAgentLib; keep deterministic mocks for unit-level coverage.
+- **Orchestration**: add `achilles-cli/tests/testAll.js` to execute all discovered `.test.mjs` files from the CLI workspace root using TAP output (filtered to hide summary counters), stream test logs, and report per-file status/duration with a summary of pass/fail counts.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005, URS-009, URS-010
@@ -19,6 +20,7 @@ Document current automated test conventions for AchillesCLI and expectations for
 
 ## File Impact
 - Artifact: Testing conventions (no single source file)
+- Test runner helper: `achilles-cli/tests/testAll.js` (discovers and runs all `.test.mjs` relative to `achilles-cli`, streams stdout/stderr while filtering TAP summary lines, reports per-file timing/status)
 - Related files: tests/cliPlanning.test.mjs, tests/gamp/*
 
 ## Tests
