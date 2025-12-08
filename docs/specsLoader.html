@@ -67,12 +67,22 @@
                     const html = this.markdownToHtml(markdown);
                     this.content.innerHTML = html;
                     this.currentSpecSpan.textContent = this.specPath;
+                    this.scrollToHash();
                     const titleMatch = markdown.match(/^#\s+(.+)$/m);
                     if (titleMatch) {
                         document.title = `${titleMatch[1]} - AchillesCLI`;
                     }
                 } catch (error) {
                     this.showError(error.message);
+                }
+            }
+
+            scrollToHash() {
+                const hash = decodeURIComponent(window.location.hash.slice(1));
+                if (!hash) return;
+                const target = document.getElementById(hash);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }
 
@@ -88,23 +98,102 @@
             }
 
             markdownToHtml(markdown) {
-                let html = markdown
-                    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-                    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                const escapeHtml = (text) => text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+
+                const applyInline = (text) => escapeHtml(text)
                     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-                    .replace(/`([^`]+)`/g, '<code>$1</code>')
-                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-                    .replace(/^- (.+)$/gm, '<li>$1</li>')
-                    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-                    .replace(/\n\n/g, '</p><p>')
-                    .replace(/\n/g, '<br>');
+                    .replace(/`([^`]+)`/g, (_, code) => `<code>${escapeHtml(code)}</code>`)
+                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 
-                if (!html.startsWith('<h1>') && !html.startsWith('<h2>') && !html.startsWith('<h3>')) {
-                    html = '<p>' + html + '</p>';
-                }
+                const lines = markdown.split('\n');
+                const htmlParts = [];
+                let paragraph = [];
+                let listItems = [];
+                let inCode = false;
+                let codeBuffer = [];
+
+                const flushParagraph = () => {
+                    if (!paragraph.length) return;
+                    const content = paragraph.map(applyInline).join('<br>');
+                    htmlParts.push(`<p>${content}</p>`);
+                    paragraph = [];
+                };
+
+                const flushList = () => {
+                    if (!listItems.length) return;
+                    htmlParts.push(`<ul>${listItems.map(item => `<li>${item}</li>`).join('')}</ul>`);
+                    listItems = [];
+                };
+
+                const flushCode = () => {
+                    if (!codeBuffer.length) return;
+                    htmlParts.push(`<pre><code>${escapeHtml(codeBuffer.join('\n'))}</code></pre>`);
+                    codeBuffer = [];
+                };
+
+                lines.forEach((rawLine) => {
+                    const line = rawLine.trimEnd();
+                    const trimmed = line.trim();
+
+                    if (trimmed.startsWith('```')) {
+                        if (inCode) {
+                            flushCode();
+                            inCode = false;
+                        } else {
+                            flushParagraph();
+                            flushList();
+                            inCode = true;
+                            codeBuffer = [];
+                        }
+                        return;
+                    }
+
+                    if (inCode) {
+                        codeBuffer.push(rawLine);
+                        return;
+                    }
+
+                    if (!trimmed) {
+                        flushParagraph();
+                        flushList();
+                        return;
+                    }
+
+                    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+                    if (headingMatch) {
+                        flushParagraph();
+                        flushList();
+                        const level = headingMatch[1].length;
+                        const text = applyInline(headingMatch[2]);
+                        const idMatch = headingMatch[2].match(/\b([A-Z]{2,3}-\d{3})\b/);
+                        const idAttr = idMatch ? ` id="${idMatch[1]}"` : '';
+                        htmlParts.push(`<h${level}${idAttr}>${text}</h${level}>`);
+                        return;
+                    }
+
+                    const listMatch = trimmed.match(/^-\s+(.+)/);
+                    if (listMatch) {
+                        flushParagraph();
+                        listItems.push(applyInline(listMatch[1]));
+                        return;
+                    }
+
+                    // Default: paragraph line
+                    flushList();
+                    paragraph.push(line);
+                });
+
+                flushCode();
+                flushList();
+                flushParagraph();
+
+                let html = htmlParts.join('');
                 html = html.replace(/\*\*ID:\*\* ([A-Z0-9\-\/_.]+)/g,
                     '<strong>ID:</strong> <span class="spec-id">$1</span>');
                 return html;
