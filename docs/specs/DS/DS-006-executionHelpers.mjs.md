@@ -8,10 +8,8 @@
 Run skills with language contracts, build arguments, print plans/executions, preview spec actions, and format results for memory/logging.
 
 ## Architecture
-- Wraps prompts with language contract; builds skill args (defaultArgument/requiredArguments).
-- Executes via `recursiveAgent.executeWithReviewMode` with workspace/specs/memory context.
-- Formats execution payloads (actions, reviews, docs, counts) and prints previews/detail lines.
-- Provides single-skill runner for /run commands.
+
+The module architecture wraps prompts with language contract; builds skill args (defaultArgument/requiredArguments). It executes via `recursiveAgent.executeWithReviewMode` with workspace/specs/memory context. It formats execution payloads (actions, reviews, docs, counts) and prints previews/detail lines. It provides single-skill runner for /run commands.
 
 ## Traceability
 - URS: URS-001, URS-003, URS-007, URS-008, URS-010

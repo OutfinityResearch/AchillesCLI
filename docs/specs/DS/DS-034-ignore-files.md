@@ -8,9 +8,8 @@
 Manage `.specs/.ignore` manifest so spec operations stay focused on relevant sources, per `oskill.md`: parse lists, add defaults, normalise entries, avoid duplicates, and return the updated list.
 
 ## Architecture
-- Parses prompt into patterns; normalizes paths relative to workspace root.
-- Merges defaults with provided entries; writes `.specs/.ignore` via GampRSP addIgnoreEntries.
-- Reports added entries.
+
+The module architecture parses prompt into patterns; normalizes paths relative to workspace root. It merges defaults with provided entries; writes `.specs/.ignore` via GampRSP addIgnoreEntries. It reports added entries.
 
 ## Traceability
 - URS: URS-003, URS-004

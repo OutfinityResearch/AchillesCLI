@@ -8,9 +8,8 @@
 Regenerate code artifacts from DS file-impact sections, per `oskill.md`: parse `### File:` blocks, ensure files/directories exist, inject DS banners, update timestamps only when specs changed, and avoid overwriting manual code if banner is present.
 
 ## Architecture
-- Parses DS markdown to extract File Impact blocks and planned exports/dependencies.
-- For each impacted file, creates directories, writes header with DS references and TODO placeholders, and preserves existing content comments.
-- Supports comment style per extension; avoids overwriting code blindly.
+
+The module architecture parses DS markdown to extract File Impact blocks and planned exports/dependencies. It for each impacted file, creates directories, writes header with DS references and TODO placeholders, and preserves existing content comments. It supports comment style per extension; avoids overwriting code blindly.
 
 ## Traceability
 - URS: URS-005, URS-009

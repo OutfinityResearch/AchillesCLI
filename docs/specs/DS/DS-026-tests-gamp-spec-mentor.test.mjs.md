@@ -8,7 +8,8 @@
 Test spec mentor flows and educational outputs when requesting spec guidance or summaries.
 
 ## Architecture
-- Simulates planner and mentor responses; verifies summaries and counts for URS/FS/NFS/DS and HTML docs locations.
+
+The module architecture simulates planner and mentor responses; verifies summaries and counts for URS/FS/NFS/DS and HTML docs locations.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005

@@ -101,8 +101,8 @@ test('AchillesCLI bootstraps automatically and explains steps', { concurrency: f
     assert.ok(fs.existsSync(ignorePath), 'Ignore file should exist after bootstrap.');
     const ignoreContent = fs.readFileSync(ignorePath, 'utf8');
     assert.ok(ignoreContent.includes('node_modules'), 'Default ignore entries must be present.');
-    const autoReverseMentions = output.buffer.filter((line) => line.includes('reverse-specs'));
-    assert.equal(autoReverseMentions.length, 0, 'Reverse specs should not trigger automatically.');
+    const autoSyncMentions = output.buffer.filter((line) => line.includes('sync-specs'));
+    assert.equal(autoSyncMentions.length, 0, 'Sync specs should not trigger automatically.');
 });
 
 test('AchillesCLI focuses on specs before code generation', { concurrency: false, timeout: 25_000 }, async () => {
@@ -113,7 +113,7 @@ test('AchillesCLI focuses on specs before code generation', { concurrency: false
         { skill: 'mock-build', prompt: 'Preview the specification set.' },
     ];
     const handlers = {
-        'reverse-specs-plan': '[]',
+        'sync-specs-plan': '[]',
         'update-specs-plan': () => JSON.stringify([
             { action: 'createURS', title: 'URS ingestion', description: 'Need ingestion pipeline.' },
             { action: 'createFS', title: 'FS ingestion', description: 'System ingests payloads.', ursId: 'URS-002' },

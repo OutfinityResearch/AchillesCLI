@@ -8,9 +8,8 @@
 Utility for spec skills to talk to GampRSP: summarize specs, parse planner output, and apply spec actions (URS/FS/NFS/DS/test/file-impact).
 
 ## Architecture
-- Ensures LLM presence in context (`ensureLLM`).
-- Loads and truncates specs snapshot (`summariseSpecs`).
-- Parses planner output into actions (`parsePlan`), then applies actions to GampRSP (`executePlan` via create/update/retire URS/FS/NFS, create/update DS, describeFile, create/delete tests).
+
+The module architecture ensures LLM presence in context (`ensureLLM`). It loads and truncates specs snapshot (`summariseSpecs`). It parses planner output into actions (`parsePlan`), then applies actions to GampRSP (`executePlan` via create/update/retire URS/FS/NFS, create/update DS, describeFile, create/delete tests).
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005

@@ -8,9 +8,8 @@
 Utility helpers for truthy parsing, array coercion, skill implementation detection, and plan parsing from various shapes.
 
 ## Architecture
-- Provides `isTruthy`, `ensureArray` for env/arg parsing.
-- Detects skill implementation type by inspecting skill directory contents.
-- Parses planner output (array/object/string) into normalized plan steps.
+
+The module architecture provides `isTruthy`, `ensureArray` for env/arg parsing. It detects skill implementation type by inspecting skill directory contents. It parses planner output (array/object/string) into normalized plan steps.
 
 ## Traceability
 - URS: URS-001, URS-008

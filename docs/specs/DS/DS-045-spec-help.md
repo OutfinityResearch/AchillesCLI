@@ -8,7 +8,8 @@
 Explain the GAMP spec stack and how to interact with it, per `oskill.md`: concise refresher on URS → FS/NFS → DS → Tests, traceability, per-requirement DS, and actionable best practices.
 
 ## Architecture
-- Returns help text describing specs, commands, and navigation tips; reads workspace paths as needed.
+
+The module architecture returns help text describing specs, commands, and navigation tips; reads workspace paths as needed.
 
 ## Traceability
 - URS: URS-010

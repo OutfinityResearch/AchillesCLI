@@ -105,11 +105,23 @@
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#39;');
 
-                const applyInline = (text) => escapeHtml(text)
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                    .replace(/`([^`]+)`/g, (_, code) => `<code>${escapeHtml(code)}</code>`)
-                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+                const applyInline = (text) => {
+                    const codeStore = [];
+                    const withPlaceholders = text.replace(/`([^`]+)`/g, (_, code) => {
+                        codeStore.push(code);
+                        return `@@CODE_PLACEHOLDER_${codeStore.length - 1}@@`;
+                    });
+
+                    let escaped = escapeHtml(withPlaceholders)
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+                    escaped = escaped.replace(/@@CODE_PLACEHOLDER_(\d+)@@/g, (_, idx) =>
+                        `<code>${escapeHtml(codeStore[idx])}</code>`);
+
+                    return escaped;
+                };
 
                 const lines = markdown.split('\n');
                 const htmlParts = [];

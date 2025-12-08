@@ -8,8 +8,8 @@
 Summarise latest specs and publish HTML artefacts without modifications, per `oskill.md`: generate `.specs/mock/spec-summary.html` and full `html_docs`, group info by doc type, include impacted files and up to 3 tests per DS.
 
 ## Architecture
-- Reads specs, builds summaries (counts, recent DS), and can render HTML docs index.
-- Returns spec summary payload for display in CLI.
+
+The module architecture reads specs, builds summaries (counts, recent DS), and can render HTML docs index. It returns spec summary payload for display in CLI.
 
 ## Traceability
 - URS: URS-003, URS-005

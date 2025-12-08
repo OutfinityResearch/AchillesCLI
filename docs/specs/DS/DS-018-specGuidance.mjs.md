@@ -8,7 +8,8 @@
 Provide detailed GAMP/spec guidance text injected into planner prompts to steer URS/FS/NFS/DS authoring and testing conventions.
 
 ## Architecture
-- Exports `SPEC_GUIDANCE_TEXT` describing URS/FS/NFS/DS expectations, file-level impact, and testing conventions.
+
+The module architecture exports `SPEC_GUIDANCE_TEXT` describing URS/FS/NFS/DS expectations, file-level impact, and testing conventions.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-009

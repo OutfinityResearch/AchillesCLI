@@ -73,12 +73,13 @@ const parseExports = (filePath) => {
 
 const ensureAutoSpecAnchors = () => {
     const cache = GampRSP.readCache();
-    if (cache.autoReverse && cache.autoReverse.dsId) {
-        return cache.autoReverse;
+    const cached = cache.autoSync || cache.autoReverse;
+    if (cached && cached.dsId) {
+        return cached;
     }
     const ursId = GampRSP.createURS('Auto generated coverage', 'Automatically captured requirement for reverse engineered files.');
     const fsId = GampRSP.createFS('Auto functional coverage', 'Mirror workspace artefacts into the specification set.', ursId);
-    const dsId = GampRSP.createDS('Auto DS (reverse specs)', 'Container for reverse engineered files.', 'Lightweight description derived from workspace scan.', ursId, fsId);
+    const dsId = GampRSP.createDS('Auto DS (sync specs)', 'Container for reverse engineered files.', 'Lightweight description derived from workspace scan.', ursId, fsId);
     const next = {
         ursId,
         fsId,
@@ -86,7 +87,7 @@ const ensureAutoSpecAnchors = () => {
     };
     GampRSP.writeCache({
         ...cache,
-        autoReverse: next,
+        autoSync: next,
     });
     return next;
 };
@@ -98,11 +99,12 @@ const buildFilePrompt = ({
     specs,
 }) => {
     const sections = [
-        '# Reverse Specs Planner',
-        'Align the specification docs with the provided source file.',
+        '# Sync Specs Planner',
+        'Align the specification docs with the provided source file (code → specs direction).',
         'Respond ONLY with a JSON array of GampRSP actions (same format as update-specs).',
         'If the file already matches an existing DS, update that DS and call describeFile.',
         'Prefer reusing existing URS/FS/NFS identifiers when possible.',
+        'Write descriptions as narrative sentences with clear subject and predicate; avoid bullet lists unless enumerating short items. When export interactions or control flow are complex, include a concise ASCII/text diagram in the description field to illustrate the relationships.',
         '- For describeFile actions, include exports as objects { "name": "exportName", "description": "short purpose of this export" } using the detected exports list and snippet for context.',
         '',
         '## File Under Analysis',
@@ -160,20 +162,20 @@ export async function action({ prompt, context }) {
         let plan = [];
 
         try {
-            const raw = await llm.executePrompt(buildFilePrompt({
-                relativePath: relative,
-                snippet,
-                exportsList,
-                specs: specsSnapshot,
-            }), {
-                responseShape: 'json',
-                context: { intent: 'reverse-specs-plan', filePath: relative, userPrompt: prompt || '' },
-            });
+        const raw = await llm.executePrompt(buildFilePrompt({
+            relativePath: relative,
+            snippet,
+            exportsList,
+            specs: specsSnapshot,
+        }), {
+            responseShape: 'json',
+            context: { intent: 'sync-specs-plan', filePath: relative, userPrompt: prompt || '' },
+        });
             plan = parsePlan(raw);
         } catch (error) {
             plan = [];
             if (process.env.ACHILES_DEBUG === 'true') {
-                console.warn(`[reverse-specs] plan failure for ${relative}: ${error.message}`);
+                console.warn(`[sync-specs] plan failure for ${relative}: ${error.message}`);
             }
         }
 

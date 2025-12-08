@@ -8,11 +8,25 @@
 Document current automated test conventions for AchillesCLI and expectations for future suites.
 
 ## Architecture
-- **Runner**: node:test-based suites under `tests/` (including `tests/gamp/*`); temporary workspaces created per suite; simulated LLMAgent/skills.
-- **Coverage focus**: bootstrap behavior, language contract propagation, spec action previews, status output, planner failures, resume/cancel flows.
-- **Fixtures**: temp dirs under `tests/.tmp/*`, package stubs, and mock skill/planner responses to isolate CLI logic from real skills.
-- **Future**: extend with real skill packs and integration against achillesAgentLib; keep deterministic mocks for unit-level coverage.
-- **Orchestration**: add `achilles-cli/tests/testAll.js` to execute all discovered `.test.mjs` files from a temporary workspace (created under the system temp dir), stream test logs (TAP filtered), and report per-file status/duration with a summary of pass/fail counts; cleans up the temp workspace and handles Ctrl+C to exit + cleanup.
+
+The architecture **Runner**: node:test-based suites under `tests/` (including `tests/gamp/*`); temporary workspaces created per suite; simulated LLMAgent/skills. It **Coverage focus**: bootstrap behavior, language contract propagation, spec action previews, status output, planner failures, resume/cancel flows. It **Fixtures**: temp dirs under `tests/.tmp/*`, package stubs, and mock skill/planner responses to isolate CLI logic from real skills. It **Future**: extend with real skill packs and integration against achillesAgentLib; keep deterministic mocks for unit-level coverage. It **Orchestration**: add `achilles-cli/tests/testAll.js` to execute all discovered `.test.mjs` files from a temporary workspace (created under the system temp dir), stream test logs (TAP filtered), and report per-file status/duration with a summary of pass/fail counts; cleans up the temp workspace and handles Ctrl+C to exit + cleanup.
+
+```
+testAll.js orchestrator
+          |
+          v
+discover *.test.mjs under tests/
+          |
+          v
+spawn node:test suites in temp workspace
+          |
+          v
+stream TAP summary + per-file timing
+          |
+          v
+cleanup temp dirs on exit / Ctrl+C
+```
+
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005, URS-009, URS-010

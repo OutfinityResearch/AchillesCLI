@@ -8,8 +8,8 @@
 Inspect specs and surface risks before execution, per `oskill.md`: read `.specs` snapshot, ask LLM reviewer to highlight gaps with severity-tagged findings, missing tests, and structured JSON for downstream orchestrators.
 
 ## Architecture
-- Reads specs via GampRSP, produces summaries (counts, highlights) and can generate docs index.
-- Supports mentor-style guidance with overview/ideas and recent files list.
+
+The module architecture reads specs via GampRSP, produces summaries (counts, highlights) and can generate docs index. It supports mentor-style guidance with overview/ideas and recent files list.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005

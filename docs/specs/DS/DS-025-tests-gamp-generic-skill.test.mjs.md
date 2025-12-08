@@ -8,7 +8,8 @@
 Validate generic skill execution flows, ensuring results are formatted and summarized correctly.
 
 ## Architecture
-- Mocks skill execution and checks formatting of outputs and summaries.
+
+The module architecture mocks skill execution and checks formatting of outputs and summaries.
 
 ## Traceability
 - URS: URS-001, URS-008

@@ -8,9 +8,8 @@
 Iteratively fix tests and code, per `oskill.md`: run `run-tests`, collect failures, append diagnostics to DS, rerun `build-code`, and stop when passing or no actionable failures; limit attempts and surface remediation summary.
 
 ## Architecture
-- Reads DS to identify impacted files and test folders.
-- Applies templated headers and hints for exports/dependencies; rewrites files with DS references.
-- Aims to align code/tests to spec expectations; does not run tests itself.
+
+The module architecture reads DS to identify impacted files and test folders. It applies templated headers and hints for exports/dependencies; rewrites files with DS references. It aims to align code/tests to spec expectations; does not run tests itself.
 
 ## Traceability
 - URS: URS-005, URS-009

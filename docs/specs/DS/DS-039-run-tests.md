@@ -8,8 +8,8 @@
 Execute project test harness (`runAlltests.js`) and summarize failures, per `oskill.md`: support suite selection, stream stdout/stderr, report exit codes and failing suites, default to all suites when unspecified.
 
 ## Architecture
-- Invokes npm/yarn test commands (or provided command) from workspace root.
-- Collects stdout/stderr and exit code; surfaces failures.
+
+The module architecture invokes npm/yarn test commands (or provided command) from workspace root. It collects stdout/stderr and exit code; surfaces failures.
 
 ## Traceability
 - URS: URS-009

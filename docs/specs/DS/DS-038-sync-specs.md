@@ -1,4 +1,4 @@
-# DS-038 – Skill: reverse-specs (.AchillesSkills/gamp/reverse-specs/reverse-specs.js)
+# DS-038 – Skill: sync-specs (.AchillesSkills/gamp/sync-specs/sync-specs.js)
 
 ## Version
 - current: v1.0
@@ -8,15 +8,15 @@
 Synchronise specs with workspace by scanning code, per `oskill.md`: honor `.specs/.ignore`, detect new files, create/update auto-generated URS/FS/DS, describe files at DS level, limit scanning to text sources, and summarize changes.
 
 ## Architecture
-- Scans workspace files (excluding ignore patterns) for code structure.
-- Produces draft URS/FS/DS text based on discovered files and file paths; writes outputs under specs root.
+
+The module architecture scans workspace files (excluding ignore patterns) to extract snippets and exports, seeds auto-generated URS/FS/DS anchors when missing, and feeds each file into the LLM with context so the returned plan can create/update specs. It executes per-file plans (or falls back to describeFile) to keep documentation aligned with code, then reports outcomes per source file.
 
 ## Traceability
 - URS: URS-009
 - Requirements: FS-004, FS-010
 
 ## File Impact
-### File: achilles-cli/.AchillesSkills/gamp/reverse-specs/reverse-specs.js
+### File: achilles-cli/.AchillesSkills/gamp/sync-specs/sync-specs.js
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, reads ignore list, scans up to 80 source files (selected extensions) excluding `.specs` and ignored paths, seeds auto-generated URS/FS/DS anchors if missing, builds per-file LLM plans with detected exports/snippets/spec snapshot, executes returned actions (or falls back to `describeFile` when LLM fails), and returns per-file outcomes with counts.

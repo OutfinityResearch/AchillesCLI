@@ -8,7 +8,8 @@
 Cover refactor/design oriented workflows ensuring planner and skill outputs align with design expectations.
 
 ## Architecture
-- Simulates planner and skill responses to validate refactor design scenarios and DS impacts.
+
+The module architecture simulates planner and skill responses to validate refactor design scenarios and DS impacts.
 
 ## Traceability
 - URS: URS-003, URS-005

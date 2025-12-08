@@ -8,8 +8,8 @@
 Covers planner CLI behaviors, especially planning outputs and failure cases.
 
 ## Architecture
-- Uses node:test to validate planner interactions via simulated LLMAgent and temporary workspaces.
-- Asserts rejection when planner returns empty plans.
+
+The module architecture uses node:test to validate planner interactions via simulated LLMAgent and temporary workspaces. It asserts rejection when planner returns empty plans.
 
 ## Traceability
 - URS: URS-001, URS-008

@@ -8,10 +8,23 @@
 Define bootstrap modes/steps and safety behaviors (cancellation, resume, contradiction/scope warnings) across the CLI.
 
 ## Architecture
-- **Bootstrap**: Modes auto/ask/manual; default step `ignore-files`; cached completion to avoid reruns; logs skips/failures; auto-runs when `.specs` missing.
-- **Cancellation**: Ctrl+C/Escape or `/cancel` flags requestCancel; execution loop checks flags per step and preserves pendingPlan state.
-- **Resume**: `/continue|/resume [extra]` reloads pending plan, optionally replans with additional instructions, and continues from saved index.
-- **Warnings**: Execution prints spec action previews; skills expected to detect scope/contradictions; CLI echoes failed steps and errors; plan confirmation optional.
+
+The architecture **Bootstrap**: Modes auto/ask/manual; default step `ignore-files`; cached completion to avoid reruns; logs skips/failures; auto-runs when `.specs` missing. It **Cancellation**: Ctrl+C/Escape or `/cancel` flags requestCancel; execution loop checks flags per step and preserves pendingPlan state. It **Resume**: `/continue|/resume [extra]` reloads pending plan, optionally replans with additional instructions, and continues from saved index. It **Warnings**: Execution prints spec action previews; skills expected to detect scope/contradictions; CLI echoes failed steps and errors; plan confirmation optional.
+
+```
+bootstrap (auto / ask / manual)
+          |
+          v
+ignore-files -> cached completion
+          |
+          v
+planService / execution loop
+          |           |
+          |      cancel / resume flags
+          v           v
+pending plan state  warnings / previews
+```
+
 
 ## Traceability
 - URS: URS-002, URS-003, URS-004, URS-006, URS-008

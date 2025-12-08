@@ -8,8 +8,8 @@
 Render help and status output summarizing available commands, skill usage, and LLM log/stat paths with duration buckets.
 
 ## Architecture
-- `printHelp` describes CLI commands and usage.
-- `printStatus` reports log/stat file locations and response time buckets via LLM logger utils.
+
+The module architecture `printHelp` describes CLI commands and usage. It `printStatus` reports log/stat file locations and response time buckets via LLM logger utils.
 
 ## Traceability
 - URS: URS-010

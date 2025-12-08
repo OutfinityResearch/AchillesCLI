@@ -8,8 +8,8 @@
 Capture refactor requests as DS updates and optionally move code stubs into new files, per `oskill.md`: parse target modules, update/create DS with new descriptions and file impacts, and invoke build-code to mirror refreshed design.
 
 ## Architecture
-- Parses prompt for refactor intent; may update DS content and file-impact notes accordingly.
-- Uses GampRSP to write changes and keep traceability.
+
+The module architecture parses prompt for refactor intent; may update DS content and file-impact notes accordingly. It uses GampRSP to write changes and keep traceability.
 
 ## Traceability
 - URS: URS-005, URS-009

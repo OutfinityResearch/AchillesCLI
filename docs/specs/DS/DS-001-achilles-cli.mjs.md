@@ -8,9 +8,8 @@
 CLI entrypoint that wires LLM agent, recursive skill runner, memory, bootstrap, and interactive loop. Exposes commands (/list, /run, /lang, /model, /debug, /specs, /cancel, /resume, /exit) and enforces language contract + plan confirmation.
 
 ## Architecture
-- Builds AchillesCLI with workspace/specs roots, colors, history, and debug mode.
-- Configures GampRSP + LLM logger, initializes memory containers, registers skills from search roots.
-- Provides helpers for planning, execution, single-skill runs, spec viewing, and interactive loop startup.
+
+The module architecture builds AchillesCLI with workspace/specs roots, colors, history, and debug mode. It configures GampRSP + LLM logger, initializes memory containers, registers skills from search roots. It provides helpers for planning, execution, single-skill runs, spec viewing, and interactive loop startup.
 
 ## Traceability
 - URS: URS-001, URS-002, URS-007, URS-008, URS-010

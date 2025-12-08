@@ -2,7 +2,7 @@
 
 ## Project Context (Achilles CLI)
 - Purpose: Achilles CLI is a regulated-software-oriented assistant that manages specifications (URS/FS/NFS/DS), plans tasks via LLM, executes skills, and keeps code/specs in sync. It exposes commands for listing skills, running workflows, viewing specs, setting language/model, debugging, and resuming plans.
-- Structure: core runtime in `achilles-cli/` (CLI shell, helpers, GampRSP spec workspace manager); skills in `.AchillesSkills/gamp/` (update-specs, build-code, reverse-specs, etc.); specs live in `.specs/` with URS.md, FS.md, NFS.md, DS files; docs under `docs/specs/` with design specs, matrix, loaders, and HTML styling.
+- Structure: core runtime in `achilles-cli/` (CLI shell, helpers, GampRSP spec workspace manager); skills in `.AchillesSkills/gamp/` (update-specs, build-code, sync-specs, etc.); specs live in `.specs/` with URS.md, FS.md, NFS.md, DS files; docs under `docs/specs/` with design specs, matrix, loaders, and HTML styling.
 - Flow: user interacts via CLI (`achilles-cli.mjs`), which bootstraps `.specs`, registers skills, plans tasks with the LLM (intentionToSkill + plan helpers), executes steps (execution helpers), previews/updates specs (GampRSP + update-specs skill), and can rebuild code/tests from DS file impacts. Memory (global/user/session) is managed via MemoryManager; debugging and language contracts are enforced through helpers. `matrix.html` summarizes requirements and DS/test coverage.
 
 1) Keep specs and code aligned: for any change, update both the DS entry (`docs/specs/DS/...`) and the corresponding implementation so they stay in sync.
@@ -13,3 +13,4 @@
 6) Categories reference: DS groups—Global (DS-027..031), Core Code (DS-001..019), Skills (.AchillesSkills DS-032..045), Tests (DS-020..026); remember URS/FS/NFS live separately.
 7) Editing approach: prefer `apply_patch`, avoid destructive commands unless requested, and keep text ASCII unless the file already uses Unicode.
 8) Testing stance: run targeted suites when validation is needed (e.g., spec-management, achilles-cli e2e); tests were not run in this session unless explicitly requested.
+9) Narrative docs: prefer subject-and-predicate sentences over bullet lists when generating documentation/specifications; reserve bullets for enum-like data only.

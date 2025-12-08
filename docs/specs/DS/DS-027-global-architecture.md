@@ -8,12 +8,28 @@
 Describe the layered runtime of AchillesCLI: CLI shell, planning/execution pipeline, skill runtime, specs workspace, and memory/logging surfaces.
 
 ## Architecture
-- **CLI Shell**: `achilles-cli.mjs` instantiates LLM agent, RecursiveSkilledAgent, MemoryManager, and hooks input/output helpers and interactive loop.
-- **Planning**: planner prompt builder (`planHelpers`) → intent-to-plan LLM bridge (`intentionToSkill`) → plan lifecycle (`planService`) with confirmation, cancellation, resume.
-- **Execution**: skill runner (`executionHelpers`) wraps prompts with language contract, injects context (workspace/specs/memory), and prints previews/results.
-- **Skill Runtime**: `skillCatalog` discovers skills under `.AchillesSkills` roots, rebuilds catalog/aliases/subsystems, exposes orchestrators.
-- **Specs Workspace**: `GampRSP` ensures `.specs`, manages URS/FS/NFS/DS, ignore list, cache, HTML docs.
-- **Memory & Logs**: `MemoryManager` + `.history_*`; LLM logs/stats under `.specs/.llm_logs` and `.llm_stats`; debug mode toggles verbose LLM logging.
+
+The architecture **CLI Shell**: `achilles-cli.mjs` instantiates LLM agent, RecursiveSkilledAgent, MemoryManager, and hooks input/output helpers and interactive loop. It **Planning**: planner prompt builder (`planHelpers`) → intent-to-plan LLM bridge (`intentionToSkill`) → plan lifecycle (`planService`) with confirmation, cancellation, resume. It **Execution**: skill runner (`executionHelpers`) wraps prompts with language contract, injects context (workspace/specs/memory), and prints previews/results. It **Skill Runtime**: `skillCatalog` discovers skills under `.AchillesSkills` roots, rebuilds catalog/aliases/subsystems, exposes orchestrators. It **Specs Workspace**: `GampRSP` ensures `.specs`, manages URS/FS/NFS/DS, ignore list, cache, HTML docs. It **Memory & Logs**: `MemoryManager` + `.history_*`; LLM logs/stats under `.specs/.llm_logs` and `.llm_stats`; debug mode toggles verbose LLM logging.
+
+```
+CLI Shell
+   |
+   v
+Planning layer
+   |
+   v
+Execution layer
+   |
+   v
+Skill Runtime
+   |
+   v
+Specs Workspace
+   |
+   v
+Memory & Logs
+```
+
 
 ## Traceability
 - URS: URS-001, URS-002, URS-003, URS-004, URS-008, URS-010

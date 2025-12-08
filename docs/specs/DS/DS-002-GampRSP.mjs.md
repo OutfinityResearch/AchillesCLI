@@ -8,10 +8,8 @@
 Manage `.specs` workspace lifecycle: create URS/FS/NFS skeletons, DS directory, ignore list, mock/docs folders, traceability updates, and HTML generation.
 
 ## Architecture
-- Ensures directory structure and default documents exist.
-- Generates IDs and chapters for URS/FS/NFS; retires/updates entries.
-- Creates DS files, test entries, file-impact blocks, and links requirements to DS; renders "Exports" as detailed bullet entries and includes ASCII/text diagrams when provided.
-- Produces HTML docs (URS/FS/NFS/DS index) for offline browsing.
+
+The module architecture ensures directory structure and default documents exist. It generates IDs and chapters for URS/FS/NFS; retires/updates entries. It creates DS files, test entries, file-impact blocks, and links requirements to DS; renders "Exports" as detailed bullet entries and includes ASCII/text diagrams when provided. It produces HTML docs (URS/FS/NFS/DS index) for offline browsing.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005, URS-009

@@ -8,11 +8,24 @@
 Define workspace layout, lifecycle, and traceability rules for URS/FS/NFS/DS artifacts and publishing.
 
 ## Architecture
-- **Workspace layout**: `.specs/` root with `URS.md`, `FS.md`, `NFS.md`, `DS/`, `.ignore`, `.gamp-cache.json`, `.llm_logs`, `.llm_stats`, `html_docs/`.
-- **Creation & updates**: `GampRSP` creates defaults, updates chapters, retires requirements, and resolves DS paths by ID/slug.
-- **Traceability**: `linkRequirementToDS` updates FS/NFS entries with linked DS; `describeFile` and `createTest` capture file-level impact and tests within DS.
-- **Publishing**: `generateHtmlDocs()` renders URS/FS/NFS/DS pages and index; CLI `/specs` renders sections via `specDocumentHelpers`.
-- **Ignore defaults**: `.ignore` includes node_modules, .git, dist, coverage; append-only additions allowed via helper.
+
+The architecture **Workspace layout**: `.specs/` root with `URS.md`, `FS.md`, `NFS.md`, `DS/`, `.ignore`, `.gamp-cache.json`, `.llm_logs`, `.llm_stats`, `html_docs/`. It **Creation & updates**: `GampRSP` creates defaults, updates chapters, retires requirements, and resolves DS paths by ID/slug. It **Traceability**: `linkRequirementToDS` updates FS/NFS entries with linked DS; `describeFile` and `createTest` capture file-level impact and tests within DS. It **Publishing**: `generateHtmlDocs()` renders URS/FS/NFS/DS pages and index; CLI `/specs` renders sections via `specDocumentHelpers`. It **Ignore defaults**: `.ignore` includes node_modules, .git, dist, coverage; append-only additions allowed via helper.
+
+```
+URS / FS / NFS chapters
+          |
+          v
+DS entries (file impact + tests)
+          |
+   linkRequirementToDS / describeFile
+          |
+          v
+html_docs + /specs viewer
+          |
+          v
+.specs workspace (cache, ignore)
+```
+
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005, URS-009

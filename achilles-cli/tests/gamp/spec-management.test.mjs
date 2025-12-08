@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import GampRSP from '../../GampRSP.mjs';
 import updateSpecs from '../../.AchillesSkills/gamp/update-specs/update-specs.js';
-import reverseSpecs from '../../.AchillesSkills/gamp/reverse-specs/reverse-specs.js';
+import syncSpecs from '../../.AchillesSkills/gamp/sync-specs/sync-specs.js';
 import buildCode from '../../.AchillesSkills/gamp/build-code/build-code.js';
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
 
@@ -88,14 +88,14 @@ test('update-specs executes LLM-driven actions', async () => {
     assert.ok(dsDoc.includes('DS telemetry'));
 });
 
-test('reverse-specs delegates per-file updates to LLM plans', async () => {
-    const workspaceRoot = makeWorkspace('reverse-specs');
+test('sync-specs delegates per-file updates to LLM plans', async () => {
+    const workspaceRoot = makeWorkspace('sync-specs');
     fs.mkdirSync(path.join(workspaceRoot, 'src'), { recursive: true });
     fs.writeFileSync(path.join(workspaceRoot, 'src', 'app.mjs'), 'export const demo = () => true;\n');
     GampRSP.configure(workspaceRoot);
 
     const llm = createLLM({
-        'reverse-specs-plan': () => JSON.stringify([
+        'sync-specs-plan': () => JSON.stringify([
             { action: 'createURS', title: 'URS src coverage', description: 'Cover files.' },
             { action: 'createFS', title: 'FS src coverage', description: 'Track src app.', ursId: 'URS-001' },
             { action: 'createDS', title: 'DS src coverage', description: 'Design for src.', architecture: 'Simple module', ursId: 'URS-001', reqId: 'FS-001' },
@@ -113,7 +113,7 @@ test('reverse-specs delegates per-file updates to LLM plans', async () => {
         ]),
     });
 
-    const outcome = await reverseSpecs({
+    const outcome = await syncSpecs({
         prompt: 'Sync specs with code.',
         context: { workspaceRoot, llmAgent: llm },
     });

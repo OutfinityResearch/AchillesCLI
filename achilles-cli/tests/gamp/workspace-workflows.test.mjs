@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import GampRSP from '../../GampRSP.mjs';
 import buildCode from '../../.AchillesSkills/gamp/build-code/build-code.js';
 import mockBuild from '../../.AchillesSkills/gamp/mock-build/mock-build.js';
-import reverseSpecs from '../../.AchillesSkills/gamp/reverse-specs/reverse-specs.js';
+import syncSpecs from '../../.AchillesSkills/gamp/sync-specs/sync-specs.js';
 import runTests from '../../.AchillesSkills/gamp/run-tests/run-tests.js';
 import fixTestsAndCode from '../../.AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js';
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
@@ -105,15 +105,15 @@ test('mock-build summarises specs and publishes HTML artefacts', { concurrency: 
     assert.ok(Array.isArray(result.specs.fs) && result.specs.fs.length >= 1, 'FS entries should appear in the summary payload.');
 });
 
-test('reverse-specs uses LLM plans per file to evolve specs', { concurrency: false, timeout: 20_000 }, async () => {
-    const workspaceRoot = makeWorkspace('reverse-plan');
+test('sync-specs uses LLM plans per file to evolve specs', { concurrency: false, timeout: 20_000 }, async () => {
+    const workspaceRoot = makeWorkspace('sync-plan');
     const srcDir = path.join(workspaceRoot, 'src');
     fs.mkdirSync(srcDir, { recursive: true });
     fs.writeFileSync(path.join(srcDir, 'app.mjs'), 'export const app = () => true;\n');
     fs.writeFileSync(path.join(srcDir, 'utils.mjs'), 'export const util = () => false;\n');
     GampRSP.configure(workspaceRoot);
     const handlers = {
-        'reverse-specs-plan': ({ filePath }) => {
+        'sync-specs-plan': ({ filePath }) => {
             if (filePath.endsWith('app.mjs')) {
                 return JSON.stringify([
                     { action: 'createURS', title: 'URS core app', description: 'Document app entry.' },
@@ -129,7 +129,7 @@ test('reverse-specs uses LLM plans per file to evolve specs', { concurrency: fal
     };
     const llm = createLLM(handlers);
 
-    const outcome = await reverseSpecs({ prompt: 'Reverse engineer workspace.', context: { workspaceRoot, llmAgent: llm } });
+    const outcome = await syncSpecs({ prompt: 'Sync specs from workspace.', context: { workspaceRoot, llmAgent: llm } });
     assert.ok(outcome.results.length >= 2, 'Should process at least the source files.');
     const dsDoc = fs.readFileSync(GampRSP.getDSFilePath('DS-001'), 'utf8');
     assert.match(dsDoc, /src\/app\.mjs/, 'DS document should include app file.');

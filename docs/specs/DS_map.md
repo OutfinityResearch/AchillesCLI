@@ -42,7 +42,7 @@ Each source file has a matching DS under `docs/specs/DS/DS-XXX-*.md`. Global DS 
 | DS-035 | achilles-cli/.AchillesSkills/gamp/generate-docs/generate-docs.js | HTML docs generation |
 | DS-036 | achilles-cli/.AchillesSkills/gamp/build-code/build-code.js | Build code stubs from DS file impact |
 | DS-037 | achilles-cli/.AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js | Repair code/tests from DS context |
-| DS-038 | achilles-cli/.AchillesSkills/gamp/reverse-specs/reverse-specs.js | Reverse-engineer specs from code |
+| DS-038 | achilles-cli/.AchillesSkills/gamp/sync-specs/sync-specs.js | Sync specs from code to documentation |
 | DS-039 | achilles-cli/.AchillesSkills/gamp/run-tests/run-tests.js | Run project test suites |
 | DS-040 | achilles-cli/.AchillesSkills/gamp/spec-review/spec-review.js | Spec review/summary skill |
 | DS-041 | achilles-cli/.AchillesSkills/gamp/refactor-design/refactor-design.js | Design/refactor spec alignment |

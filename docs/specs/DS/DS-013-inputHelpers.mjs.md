@@ -8,10 +8,8 @@
 Manage readline lifecycle, history persistence, command completion, keypress handling, raw mode pausing, and multi-line prompt parsing.
 
 ## Architecture
-- Initializes history file under specs root and updates on prompts.
-- Creates readline with completion for CLI commands and skills.
-- Provides `readMultiline` with line continuation and command detection.
-- Manages global keypresses for cancel/exit and safely pauses handlers while prompting.
+
+The module architecture initializes history file under specs root and updates on prompts. It creates readline with completion for CLI commands and skills. It provides `readMultiline` with line continuation and command detection. It manages global keypresses for cancel/exit and safely pauses handlers while prompting.
 
 ## Traceability
 - URS: URS-001, URS-002, URS-008, URS-010

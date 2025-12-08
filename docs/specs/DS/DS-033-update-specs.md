@@ -8,10 +8,8 @@
 LLM-driven specification authoring/updating: parse change requests, emit concrete spec actions (URS/FS/NFS/DS/test/describeFile), and keep traceability intact without running builders/tests. Mirrors `oskill.md` expectations (concise titles, verbatim descriptions, reuse IDs, max ~3 tests).
 
 ## Architecture
-- Builds planner prompt with strict GAMP guidance and allowed actions; includes specs snapshot and change request.
-- Requires llmAgent; obtains JSON plan (`update-specs-plan`) and applies via specPlanner (executePlan) to create/update/retire URS/FS/NFS, DS, describeFile, createTest.
-- Planner prompt enforces detailed "Exports" coverage (inputs/outputs, side effects, concurrency, optional ASCII/text diagram when flow is complex) so DS chapters remain actionable.
-- Avoids reverse-specs/build-code/run-tests; regenerates HTML docs after applying actions; returns actions and docs index.
+
+The module architecture builds planner prompt with strict GAMP guidance and allowed actions; includes specs snapshot and change request. It requires llmAgent; obtains JSON plan (`update-specs-plan`) and applies via specPlanner (executePlan) to create/update/retire URS/FS/NFS, DS, describeFile, createTest. It planner prompt enforces detailed "Exports" coverage (inputs/outputs, side effects, concurrency, optional ASCII/text diagram when flow is complex) so DS chapters remain actionable. It avoids sync-specs/build-code/run-tests; regenerates HTML docs after applying actions; returns actions and docs index.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005, URS-009

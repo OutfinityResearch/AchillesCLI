@@ -8,7 +8,8 @@
 Publish HTML documentation from current specs, per `oskill.md`: convert URS/FS/NFS/DS to static HTML, keep styling light/diff-friendly, overwrite existing outputs, and report counts.
 
 ## Architecture
-- Configures GampRSP with workspace root, calls generateHtmlDocs(), returns docs index path.
+
+The module architecture configures GampRSP with workspace root, calls generateHtmlDocs(), returns docs index path.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005

@@ -8,9 +8,8 @@
 End-to-end CLI tests covering bootstrap, language contract, spec focus, action previews, /lang behavior, /specs command, status output, and resume handling.
 
 ## Architecture
-- Creates temp workspaces and simulates LLMAgent + recursiveAgent to control planning/execution.
-- Asserts bootstrap only runs once, specs preview generation, language enforcement, and resume/cancel flows.
-- Checks status output for log/stat paths and duration buckets.
+
+The module architecture creates temp workspaces and simulates LLMAgent + recursiveAgent to control planning/execution. It asserts bootstrap only runs once, specs preview generation, language enforcement, and resume/cancel flows. It checks status output for log/stat paths and duration buckets.
 
 ## Traceability
 - URS: URS-001, URS-002, URS-003, URS-005, URS-007, URS-010

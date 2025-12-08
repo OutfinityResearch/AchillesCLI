@@ -8,8 +8,8 @@
 Exercise specification management workflows (updates, summaries, HTML generation) via mocked skills and planners.
 
 ## Architecture
-- Uses simulated plan steps to update specs and generate summaries.
-- Verifies FS summary exists, HTML summary paths are produced, and ignore list behavior.
+
+The module architecture uses simulated plan steps to update specs and generate summaries. It verifies FS summary exists, HTML summary paths are produced, and ignore list behavior.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005

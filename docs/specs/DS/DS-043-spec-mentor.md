@@ -8,8 +8,8 @@
 Guide operators through URS/FS/NFS/DS/tests before changes, per `oskill.md`: load specs (truncated), propose bullet ideas for updates, emphasise traceability and embedded verification, and request user confirmation before acting.
 
 ## Architecture
-- Reads specs, produces counts and highlights for URS/FS/NFS/DS, and may generate HTML docs index.
-- Returns overview text, ideas, and docs paths for operator education.
+
+The module architecture reads specs, produces counts and highlights for URS/FS/NFS/DS, and may generate HTML docs index. It returns overview text, ideas, and docs paths for operator education.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005

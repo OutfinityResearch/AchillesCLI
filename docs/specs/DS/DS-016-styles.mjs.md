@@ -8,7 +8,8 @@
 Provide ANSI color constants for consistent CLI output (info, warn, error, debug, reset).
 
 ## Architecture
-- Exports color escape codes used across helpers for user-facing messages.
+
+The module architecture exports color escape codes used across helpers for user-facing messages.
 
 ## Traceability
 - URS: URS-010

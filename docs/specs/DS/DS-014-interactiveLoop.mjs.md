@@ -8,9 +8,8 @@
 Drive the CLI REPL: parse commands, route to handlers, trigger planning/execution, and manage exit conditions.
 
 ## Architecture
-- `runInteractiveLoop` prints banner, reads multiline input, detects commands vs free text.
-- Handles commands (/list, /continue|/resume, /help, /status, /debug, /model, /lang, /specs, /run, /cancel, /exit).
-- Performs planning, prints plan, optionally asks for confirmation, executes plan, records memory.
+
+The module architecture `runInteractiveLoop` prints banner, reads multiline input, detects commands vs free text. It handles commands (/list, /continue|/resume, /help, /status, /debug, /model, /lang, /specs, /run, /cancel, /exit). It performs planning, prints plan, optionally asks for confirmation, executes plan, records memory.
 
 ## Traceability
 - URS: URS-001, URS-002, URS-008, URS-010

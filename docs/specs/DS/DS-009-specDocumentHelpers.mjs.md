@@ -8,9 +8,8 @@
 Resolve and summarize specification sections, list recent DS entries, and fetch section text by ID for previews and /specs output.
 
 ## Architecture
-- Parses spec documents into sections, extracts descriptions/trace lines, and filters by IDs.
-- Supports DS summaries and recent DS discovery via filesystem mtime.
-- Provides `describeSpecs` for CLI display using filters.
+
+The module architecture parses spec documents into sections, extracts descriptions/trace lines, and filters by IDs. It supports DS summaries and recent DS discovery via filesystem mtime. It provides `describeSpecs` for CLI display using filters.
 
 ## Traceability
 - URS: URS-003, URS-004, URS-005

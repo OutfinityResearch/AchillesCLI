@@ -1,4 +1,4 @@
-# reverse-specs
+# sync-specs
 
 Synchronise URS/FS/NFS/DS documents with the current workspace by analysing code files that are not ignored.
 

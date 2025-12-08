@@ -8,10 +8,8 @@
 Discover and register skills from `.AchillesSkills` roots, expose catalog queries, and manage orchestrator filtering.
 
 ## Architecture
-- Resolves skill roots under provided directories and CLI bundle.
-- Clears and rebuilds catalog/aliases/subsystems on registration.
-- Lists skills with detected implementation types (js/sop/descriptor).
-- Finds skills by name/alias/title and filters orchestrators.
+
+The module architecture resolves skill roots under provided directories and CLI bundle. It clears and rebuilds catalog/aliases/subsystems on registration. It lists skills with detected implementation types (js/sop/descriptor). It finds skills by name/alias/title and filters orchestrators.
 
 ## Traceability
 - URS: URS-001, URS-008

@@ -8,9 +8,8 @@
 Lightweight helpers for loading/persisting memory histories and building memory context payloads for skill execution.
 
 ## Architecture
-- Loads history JSON files if present.
-- Persists memory containers safely with error suppression.
-- Builds context object combining global/user/session memories.
+
+The module architecture loads history JSON files if present. It persists memory containers safely with error suppression. It builds context object combining global/user/session memories.
 
 ## Traceability
 - URS: URS-002, URS-007
@@ -20,7 +19,7 @@ Lightweight helpers for loading/persisting memory histories and building memory 
 ### File: achilles-cli/helpers/memoryHelpers.mjs
 
 #### Exports
-- `loadMemoryHistory(cli, key)` — reads `.history_<key>` JSON from the specs root, returning the history array or an empty list on absence/parse errors.
+- `loadMemoryHistory(cli, key)` — reads ``.history_<key>`` JSON from the specs root, returning the history array or an empty list on absence/parse errors.
 - `persistMemory(container, key)` — safely persists a `MemoryContainer` by calling `saveContext(key)` while suppressing persistence failures.
 - `buildMemoryContext(cli)` — snapshots global/user/session memory contexts into a single object fed to skills/LLM calls.
 

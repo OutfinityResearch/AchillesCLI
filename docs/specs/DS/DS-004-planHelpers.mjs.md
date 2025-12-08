@@ -8,8 +8,8 @@
 Construct planner prompt text with task context, orchestrator metadata, specification guidance, and language contract.
 
 ## Architecture
-- Defines `buildPlanPrompt` assembling sections (task, guidance, available orchestrators, response format).
-- Injects `SPEC_GUIDANCE_TEXT` to steer GAMP outputs.
+
+The module architecture defines `buildPlanPrompt` assembling sections (task, guidance, available orchestrators, response format). It injects `SPEC_GUIDANCE_TEXT` to steer GAMP outputs.
 
 ## Traceability
 - URS: URS-001, URS-003

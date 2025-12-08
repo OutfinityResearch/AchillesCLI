@@ -8,8 +8,8 @@
 Wire LLM agent debug logging and propagate debug mode between CLI and agent.
 
 ## Architecture
-- `setupLLMDebugging` detects if agent supports debug and toggles based on CLI flag.
-- Writes status messages for visibility.
+
+The module architecture `setupLLMDebugging` detects if agent supports debug and toggles based on CLI flag. It writes status messages for visibility.
 
 ## Traceability
 - URS: URS-001, URS-010

@@ -8,9 +8,8 @@
 Perform automatic bootstrap steps when specs are missing, honoring auto/ask/manual modes and avoiding repeated runs per session.
 
 ## Architecture
-- Defines allowed bootstrap modes and default steps (ignore-files skill).
-- Caches bootstrap completion and prevents duplicate execution.
-- Prompts user in ask mode; logs progress and failures.
+
+The module architecture defines allowed bootstrap modes and default steps (ignore-files skill). It caches bootstrap completion and prevents duplicate execution. It prompts user in ask mode; logs progress and failures.
 
 ## Traceability
 - URS: URS-004, URS-009

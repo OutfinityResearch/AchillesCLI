@@ -8,9 +8,8 @@
 Convert free-text tasks into ordered skill steps via LLM planner, embedding language contract and orchestrator catalog.
 
 ## Architecture
-- Builds planner prompt with available orchestrators and guidance text.
-- Invokes `llmAgent.executePrompt` with JSON response shape and handles errors.
-- Parses plan output into `{skill, prompt}` steps via cliUtils.parsePlan.
+
+The module architecture builds planner prompt with available orchestrators and guidance text. It invokes `llmAgent.executePrompt` with JSON response shape and handles errors. It parses plan output into `{skill, prompt}` steps via cliUtils.parsePlan.
 
 ## Traceability
 - URS: URS-001, URS-008

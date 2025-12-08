@@ -8,9 +8,8 @@
 Wrap achillesAgentLib MemoryContainer to maintain global, user, and session memories; route interactions via LLM to decide persistence.
 
 ## Architecture
-- Initializes containers with history files (`.history_global`, `.history_user`).
-- Provides `capture` to summarize executions and classify storage via LLM prompt.
-- Persists contexts when routing decisions allow; default stores summaries in session when routing fails.
+
+The module architecture initializes containers with history files (`.history_global`, `.history_user`). It provides `capture` to summarize executions and classify storage via LLM prompt. It persists contexts when routing decisions allow; default stores summaries in session when routing fails.
 
 ## Traceability
 - URS: URS-002, URS-007, URS-008

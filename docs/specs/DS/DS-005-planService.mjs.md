@@ -8,10 +8,8 @@
 Manage planning flow: prepare plan, execute steps, handle cancellations, resume intents, and summarize executions.
 
 ## Architecture
-- `preparePlan` ensures bootstrap then calls planner.
-- `executePlan` iterates skill steps with progress reporting, cancellation checks, pending plan bookkeeping, and spec action previews.
-- `detectResumeInput` uses heuristics + LLM to decide resume intent.
-- `resumePendingPlan` optionally replans with extra instructions and continues from saved index.
+
+The module architecture `preparePlan` ensures bootstrap then calls planner. It `executePlan` iterates skill steps with progress reporting, cancellation checks, pending plan bookkeeping, and spec action previews. It `detectResumeInput` uses heuristics + LLM to decide resume intent. It `resumePendingPlan` optionally replans with extra instructions and continues from saved index.
 
 ## Traceability
 - URS: URS-002, URS-003, URS-004, URS-008

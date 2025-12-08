@@ -8,7 +8,8 @@
 Validate workspace bootstrap/workflow behaviors, including ignore list generation and interaction with skills.
 
 ## Architecture
-- Spins temporary workspaces, simulates LLM interactions, and asserts bootstrap outcomes and skill executions.
+
+The module architecture spins temporary workspaces, simulates LLM interactions, and asserts bootstrap outcomes and skill executions.
 
 ## Traceability
 - URS: URS-004, URS-008
