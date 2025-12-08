@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import GampRSP from '../../GampRSP.mjs';
 import buildCode from '../../.AchillesSkills/gamp/build-code/build-code.js';
-import mockBuild from '../../.AchillesSkills/gamp/mock-build/mock-build.js';
+import docsAndSummary from '../../.AchillesSkills/gamp/docs-and-summary/docs-and-summary.js';
 import syncSpecs from '../../.AchillesSkills/gamp/sync-specs/sync-specs.js';
 import runTests from '../../.AchillesSkills/gamp/run-tests/run-tests.js';
 import fixTestsAndCode from '../../.AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js';
@@ -83,8 +83,8 @@ test('build-code synthesizes files using DS metadata + LLM output', { concurrenc
     assert.match(content, /createEmitter/, 'LLM generated function should be present.');
 });
 
-test('mock-build summarises specs and publishes HTML artefacts', { concurrency: false, timeout: 15_000 }, async () => {
-    const workspaceRoot = makeWorkspace('mock-html');
+test('docs-and-summary summarises specs and publishes HTML artefacts', { concurrency: false, timeout: 15_000 }, async () => {
+    const workspaceRoot = makeWorkspace('docs-summary-html');
     const pkgPath = path.join(workspaceRoot, 'package.json');
     fs.writeFileSync(pkgPath, JSON.stringify({
         name: 'web-project',
@@ -98,7 +98,7 @@ test('mock-build summarises specs and publishes HTML artefacts', { concurrency: 
     const ursId = GampRSP.createURS('URS dashboard', 'Need KPI dashboard.');
     GampRSP.createFS('FS dashboard view', 'Render KPI tiles.', ursId);
 
-    const result = await mockBuild({ context: { workspaceRoot } });
+    const result = await docsAndSummary({ context: { workspaceRoot } });
     assert.equal(result.type, 'spec-summary', 'Spec summary output should be reported.');
     assert.ok(fs.existsSync(result.output), 'Specification summary HTML must exist.');
     assert.ok(fs.existsSync(result.docsIndex), 'Generated documentation index should exist.');

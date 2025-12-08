@@ -1,4 +1,4 @@
-# DS-044 – Skill: mock-build (.AchillesSkills/gamp/mock-build/mock-build.js)
+# DS-044 – Skill: docs-and-summary (.AchillesSkills/gamp/docs-and-summary/docs-and-summary.js)
 
 ## Version
 - current: v1.0
@@ -16,7 +16,7 @@ The module architecture reads specs, builds summaries (counts, recent DS), and c
 - Requirements: FS-003, FS-004
 
 ## File Impact
-### File: achilles-cli/.AchillesSkills/gamp/mock-build/mock-build.js
+### File: achilles-cli/.AchillesSkills/gamp/docs-and-summary/docs-and-summary.js
 
 #### Exports
 - default skill `action({ prompt, context })` — configures workspace, reads URS/FS/NFS/DS, builds a structured summary (traceability, file impacts, tests), renders `mock/spec-summary.html` plus full `html_docs`, and returns counts plus recent DS info without mutating specs.

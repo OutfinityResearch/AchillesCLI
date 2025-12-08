@@ -48,5 +48,5 @@ Each source file has a matching DS under `docs/specs/DS/DS-XXX-*.md`. Global DS 
 | DS-041 | achilles-cli/.AchillesSkills/gamp/refactor-design/refactor-design.js | Design/refactor spec alignment |
 | DS-042 | achilles-cli/.AchillesSkills/gamp/generic-skill/generic-skill.js | Generic LLM skill fallback |
 | DS-043 | achilles-cli/.AchillesSkills/gamp/spec-mentor/spec-mentor.js | Spec mentor/education skill |
-| DS-044 | achilles-cli/.AchillesSkills/gamp/mock-build/mock-build.js | Spec preview (non-mutating) |
+| DS-044 | achilles-cli/.AchillesSkills/gamp/docs-and-summary/docs-and-summary.js | Spec preview (non-mutating) |
 | DS-045 | achilles-cli/.AchillesSkills/gamp/spec-help/spec-help.js | Spec help/overview skill |

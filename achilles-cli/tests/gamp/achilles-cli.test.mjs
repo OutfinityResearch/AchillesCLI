@@ -79,7 +79,7 @@ const unwrapExecution = (execution) => {
 test('AchillesCLI bootstraps automatically and explains steps', { concurrency: false, timeout: 20_000 }, async () => {
     const workspace = createWorkspace('auto-bootstrap');
     const output = createOutputBuffer();
-    const planSteps = [{ skill: 'mock-build', prompt: 'preview the specifications' }];
+    const planSteps = [{ skill: 'docs-and-summary', prompt: 'preview the specifications' }];
     const cli = new AchillesCLI({
         llmAgent: createPlannerLLM(planSteps),
         workspaceRoot: workspace,
@@ -110,7 +110,7 @@ test('AchillesCLI focuses on specs before code generation', { concurrency: false
     const output = createOutputBuffer();
     const planSteps = [
         { skill: 'update-specs', prompt: 'Document ingestion pipeline (FS-002).' },
-        { skill: 'mock-build', prompt: 'Preview the specification set.' },
+        { skill: 'docs-and-summary', prompt: 'Preview the specification set.' },
     ];
     const handlers = {
         'sync-specs-plan': '[]',
@@ -186,7 +186,7 @@ test('AchillesCLI enforces the default English language contract', { concurrency
         invokerStrategy: async ({ context, prompt }) => {
             if (context?.intent === PLAN_INTENT) {
                 planPrompts.push(prompt);
-                return JSON.stringify([{ skill: 'mock-build', prompt: 'Preview specifications.' }]);
+                return JSON.stringify([{ skill: 'docs-and-summary', prompt: 'Preview specifications.' }]);
             }
             return '[]';
         },
@@ -223,7 +223,7 @@ test('AchillesCLI honors updated /lang preference for future prompts', { concurr
         invokerStrategy: async ({ context, prompt }) => {
             if (context?.intent === PLAN_INTENT) {
                 planPrompts.push(prompt);
-                return JSON.stringify([{ skill: 'mock-build', prompt: 'Preview specifications.' }]);
+                return JSON.stringify([{ skill: 'docs-and-summary', prompt: 'Preview specifications.' }]);
             }
             return '[]';
         },
@@ -305,7 +305,7 @@ test('AchillesCLI reports the current language when /lang is invoked without arg
 test('AchillesCLI routes spec summary requests through the planner', { concurrency: false, timeout: 10_000 }, async () => {
     const workspace = createWorkspace('spec-summary-plan');
     const planSteps = [
-        { skill: 'mock-build', prompt: 'Summarise current specifications.' },
+        { skill: 'docs-and-summary', prompt: 'Summarise current specifications.' },
     ];
     const cli = new AchillesCLI({
         llmAgent: createPlannerLLM(planSteps),

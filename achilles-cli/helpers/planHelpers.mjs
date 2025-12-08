@@ -8,7 +8,7 @@ export const buildPlanPrompt = ({ task, orchestrators, languageContract = '' }) 
     sections.push('Guidelines:');
     sections.push('- Analyze the entire user request and break it into discrete intents; output one skill call per intent.');
     sections.push('- When the user asks to create, update, or audit specifications, include update-specs first, then any review/summary/generate-docs steps needed.');
-    sections.push('- When the user only wants to read existing specs, prefer mock-build, spec-review, or spec-help rather than execution skills.');
+    sections.push('- When the user only wants to read existing specs, prefer docs-and-summary, spec-review, or spec-help rather than execution skills.');
     sections.push('- Only include build-code, run-tests, or fix-tests skills when the user explicitly asks for code or test execution.');
     sections.push('- If the user mentions multiple commands, files, or requirements, include separate plan entries (even for the same skill) with tailored prompts.');
     sections.push('- Copy skill names exactly as listed, keep prompts concise, and provide enough context so the skill knows which part of the workspace to act upon.');

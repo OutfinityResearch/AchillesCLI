@@ -2,7 +2,7 @@
 
 ## Project Context (Achilles CLI)
 - Purpose: Achilles CLI is a regulated-software-oriented assistant that manages specifications (URS/FS/NFS/DS), plans tasks via LLM, executes skills, and keeps code/specs in sync. It exposes commands for listing skills, running workflows, viewing specs, setting language/model, debugging, and resuming plans.
-- Structure: core runtime in `achilles-cli/` (CLI shell, helpers, GampRSP spec workspace manager); skills in `.AchillesSkills/gamp/` (update-specs, build-code, sync-specs, etc.); specs live in `.specs/` with URS.md, FS.md, NFS.md, DS files; docs under `docs/specs/` with design specs, matrix, loaders, and HTML styling.
+- Structure: core runtime in `achilles-cli/` (CLI shell, helpers, GampRSP spec workspace manager); skills in `.AchillesSkills/gamp/` (update-specs, build-code, sync-specs, docs-and-summary, etc.); specs live in `.specs/` with URS.md, FS.md, NFS.md, DS files; docs under `docs/specs/` with design specs, matrix, loaders, and HTML styling.
 - Flow: user interacts via CLI (`achilles-cli.mjs`), which bootstraps `.specs`, registers skills, plans tasks with the LLM (intentionToSkill + plan helpers), executes steps (execution helpers), previews/updates specs (GampRSP + update-specs skill), and can rebuild code/tests from DS file impacts. Memory (global/user/session) is managed via MemoryManager; debugging and language contracts are enforced through helpers. `matrix.html` summarizes requirements and DS/test coverage.
 
 1) Keep specs and code aligned: for any change, update both the DS entry (`docs/specs/DS/...`) and the corresponding implementation so they stay in sync.
