@@ -9,7 +9,7 @@ Covers planner CLI behaviors, especially planning outputs and failure cases.
 
 ## Architecture
 
-The module architecture uses node:test to validate planner interactions via simulated LLMAgent and temporary workspaces. It asserts rejection when planner returns empty plans.
+The module architecture loads orchestrator fixtures under `tests/fixtures/planner`, injects a stubbed LLMAgent that emits deterministic plans containing `project-router-orchestrator` and `timeline-planner-orchestrator`, and runs AchillesCLI planning against those fixtures. It verifies that the `/list` output includes those orchestrator names, that plan execution returns status `ok` for each planned step with the expected prompts, and that an empty-plan response triggers the planner error path rather than executing. No files are created beyond the temporary workspace scaffolding.
 
 ## Traceability
 - URS: URS-001, URS-008

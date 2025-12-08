@@ -24,13 +24,23 @@ Each source file has a matching DS under `docs/specs/DS/DS-XXX-*.md`. Global DS 
 | DS-017 | achilles-cli/helpers/outputHelpers.mjs | Help/status output rendering |
 | DS-018 | achilles-cli/helpers/specGuidance.mjs | Spec guidance text injection |
 | DS-019 | achilles-cli/helpers/PromptManager.mjs | Prompt helpers (placeholder) |
-| DS-020 | achilles-cli/tests/cliPlanning.test.mjs | Planner CLI tests |
-| DS-021 | achilles-cli/tests/gamp/achilles-cli.test.mjs | End-to-end CLI + specs tests |
-| DS-022 | achilles-cli/tests/gamp/workspace-workflows.test.mjs | Workspace workflow tests |
-| DS-023 | achilles-cli/tests/gamp/spec-management.test.mjs | Spec management tests |
-| DS-024 | achilles-cli/tests/gamp/refactor-design.test.mjs | Refactor/design tests |
-| DS-025 | achilles-cli/tests/gamp/generic-skill.test.mjs | Generic skill behavior tests |
-| DS-026 | achilles-cli/tests/gamp/spec-mentor.test.mjs | Spec mentor tests |
+| DS-020 | achilles-cli/tests/workflows/cliPlanning.test.mjs | Planner CLI tests |
+| DS-021 | achilles-cli/tests/workflows/achilles-cli.test.mjs | End-to-end CLI + specs tests |
+| DS-022 | achilles-cli/tests/workflows/workspace-workflows.test.mjs | Workspace workflow tests |
+| DS-023 | achilles-cli/tests/workflows/spec-management.test.mjs | Spec management tests |
+| DS-024 | achilles-cli/tests/skills/refactor-design.test.mjs | Refactor/design tests |
+| DS-025 | achilles-cli/tests/skills/generic-skill.test.mjs | Generic skill behavior tests |
+| DS-026 | achilles-cli/tests/skills/spec-mentor.test.mjs | Spec mentor tests |
+| DS-027 | achilles-cli/tests/skills/build-code-cli.test.mjs | CLI build-code skill test |
+| DS-028 | achilles-cli/tests/skills/docs-and-summary.test.mjs | CLI docs-and-summary skill test |
+| DS-029 | achilles-cli/tests/skills/fix-tests-and-code-cli.test.mjs | CLI fix-tests-and-code skill test |
+| DS-030 | achilles-cli/tests/skills/generate-docs-cli.test.mjs | CLI generate-docs skill test |
+| DS-031 | achilles-cli/tests/skills/ignore-files-cli.test.mjs | CLI ignore-files skill test |
+| DS-032 | achilles-cli/tests/skills/run-tests-cli.test.mjs | CLI run-tests skill test |
+| DS-033 | achilles-cli/tests/skills/spec-help-cli.test.mjs | CLI spec-help skill test |
+| DS-034 | achilles-cli/tests/skills/spec-review-cli.test.mjs | CLI spec-review skill test |
+| DS-035 | achilles-cli/tests/skills/sync-specs-cli.test.mjs | CLI sync-specs skill test |
+| DS-036 | achilles-cli/tests/skills/update-specs-cli.test.mjs | CLI update-specs skill test |
 | DS-027 | Global Architecture | Layered runtime overview (CLI, planning, execution, skills, specs, memory) |
 | DS-028 | Global Specs & Traceability | Workspace layout, URS/FS/NFS/DS lifecycle, traceability, publishing |
 | DS-029 | Global Language & Guidance | Language contract enforcement, guidance injection, model modes |

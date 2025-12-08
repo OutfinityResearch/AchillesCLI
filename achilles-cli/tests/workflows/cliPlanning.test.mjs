@@ -4,12 +4,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
-import AchillesCLI from '../achilles-cli.mjs';
-import { PLAN_INTENT } from '../intentionToSkill.mjs';
+import AchillesCLI from '../../achilles-cli.mjs';
+import { PLAN_INTENT } from '../../intentionToSkill.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const FIXTURE_ROOT = path.join(__dirname, 'fixtures', 'planner');
+const FIXTURE_ROOT = path.join(__dirname, '..', 'fixtures', 'planner');
 
 const LIGHTSOP_SCRIPT = [
     '@prompt origin',

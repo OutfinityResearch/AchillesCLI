@@ -73,6 +73,22 @@ export const preparePlan = async (cli, taskText) => {
         return [];
     }
 
+    // Direct skill execution via "/run <skill> <prompt>"
+    const runMatch = trimmed.match(/^\/run\s+([^\s]+)(?:\s+([\s\S]*))?$/i);
+    if (runMatch) {
+        await ensureBootstrap(cli, trimmed);
+        const skillName = runMatch[1];
+        const skillPrompt = (runMatch[2] || '').trim();
+        const record = cli.findSkill(skillName);
+        if (!record) {
+            throw new Error(`Skill "${skillName}" not found. Use /list to see available skills.`);
+        }
+        return [{
+            skill: record.name || skillName,
+            prompt: skillPrompt,
+        }];
+    }
+
     await ensureBootstrap(cli, trimmed);
     const orchestrators = cli.getOrchestrators();
     const languageContract = cli.buildLanguageContract();

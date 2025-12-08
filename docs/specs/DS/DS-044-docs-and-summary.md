@@ -28,4 +28,4 @@ The module architecture reads specs, builds summaries (counts, recent DS), and c
 Non-mutating spec preview skill for quick overviews of current URS/FS/NFS/DS set.
 
 ## Tests
-- Indirectly used in CLI e2e tests (DS-021) when planner selects mock-build.
+- Indirectly used in CLI e2e tests (DS-021) when planner selects docs-and-summary.
