@@ -1,0 +1,8 @@
+{
+  "id": "case_10",
+  "prompt": "Try to automatically fix the failing tests, rebuild code if needed, and then regenerate docs to reflect changes.",
+  "expected": {
+    "skill": "fix-tests-and-code",
+    "plan": ["fix-tests-and-code", "build-code", "generate-docs"]
+  }
+}

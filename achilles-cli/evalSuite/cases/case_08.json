@@ -1,0 +1,8 @@
+{
+  "id": "case_08",
+  "prompt": "Explain the specification workflow and best practices, then sync specs with code, and finally summarize the updated spec set.",
+  "expected": {
+    "skill": "spec-help",
+    "plan": ["spec-help", "sync-specs", "docs-and-summary"]
+  }
+}

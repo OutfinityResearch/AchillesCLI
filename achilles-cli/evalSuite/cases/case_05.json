@@ -1,0 +1,8 @@
+{
+  "id": "case_05",
+  "prompt": "Run the functional test suites for the project and then generate a spec summary so I can see current coverage.",
+  "expected": {
+    "skill": "run-tests",
+    "plan": ["run-tests", "docs-and-summary"]
+  }
+}

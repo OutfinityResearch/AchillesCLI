@@ -1,0 +1,8 @@
+{
+  "id": "case_02",
+  "prompt": "Produce the latest HTML documentation and a quick summary of the specs without changing code. First generate docs, then produce a summary.",
+  "expected": {
+    "skill": "generate-docs",
+    "plan": ["generate-docs", "docs-and-summary"]
+  }
+}
