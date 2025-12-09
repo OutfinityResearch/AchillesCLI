@@ -1,8 +1,9 @@
 {
   "id": "case_09",
   "prompt": "Generate source code from current design specs for pending modules, then run tests, and finish with a spec summary.",
-  "expected": {
-    "skill": "build-code",
-    "plan": ["build-code", "run-tests", "generate-summary"]
-  }
+  "expectedSkills": [
+    "build-code",
+    "run-tests",
+    "generate-summary"
+  ]
 }

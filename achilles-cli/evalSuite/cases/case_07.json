@@ -1,8 +1,7 @@
 {
   "id": "case_07",
-  "prompt": "Review the specs for gaps, then produce a summary so I can see findings alongside the current docs.",
-  "expected": {
-    "skill": "spec-review",
-    "plan": ["spec-review", "generate-summary"]
-  }
+  "prompt": "Im having trouble understanding how to maintain these specs, i want to add a new feature bu i dont know how to integrate it in the current system, can you help me?",
+  "expectedSkills": [
+    "spec-mentor"
+  ]
 }

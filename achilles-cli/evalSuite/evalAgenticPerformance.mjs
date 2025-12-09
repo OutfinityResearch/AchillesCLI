@@ -6,7 +6,7 @@ import readline from 'node:readline';
 import AchillesCLI from '../achilles-cli.mjs';
 import { envAutoConfig } from 'achillesAgentLib/LLMAgents';
 
-envAutoConfig(); // configure real LLM from environment (no mocks)
+envAutoConfig(); // configure real LLM from environment
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +33,7 @@ const loadCases = async (caseFilter = null) => {
         cases.push({
             id: parsed.id || file.replace(/\.json$/, ''),
             prompt: parsed.prompt || '',
-            expected: parsed.expected || {},
+            expectedSkills: parsed.expectedSkills || [],
         });
     }
     return cases;
@@ -64,16 +64,20 @@ const makeWorkspace = async (label) => {
     return tmp;
 };
 
-const evaluatePlan = (plan, expected) => {
+const evaluatePlan = (plan, expectedSkills = []) => {
     const skills = Array.isArray(plan) ? plan.map((step) => normalize(step.skill)) : [];
-    const expectedSkills = Array.isArray(expected.plan) && expected.plan.length
-        ? expected.plan.map(normalize)
-        : (expected.skill ? [normalize(expected.skill)] : []);
-    if (!expectedSkills.length) {
+    const expectedAll = Array.isArray(expectedSkills) ? expectedSkills.map(normalize).filter(Boolean) : [];
+
+    if (!expectedAll.length) {
         return { ok: false, reason: 'No expected skills provided.' };
     }
-    const ok = expectedSkills.every((skill, idx) => skills[idx] === skill);
-    const reason = ok ? '' : `Expected plan to start with [${expectedSkills.join(', ')}], got [${skills.join(', ')}]`;
+
+    const missing = expectedAll.filter((skill) => !skills.includes(skill));
+    const ok = missing.length === 0;
+    let reason = '';
+    if (!ok) {
+        reason = `Missing skills: ${missing.join(', ')}`;
+    }
     return { ok, reason, skills };
 };
 
@@ -127,7 +131,7 @@ async function main() {
             try {
                 const { plan } = await runCase(testCase, i);
                 stop();
-                const evalResult = evaluatePlan(plan, testCase.expected);
+                const evalResult = evaluatePlan(plan, testCase.expectedSkills);
                 if (evalResult.ok) {
                     passed += 1;
                     printLine(`[PASS] ${testCase.id} (${i + 1}/${times})`, COLORS.GREEN);

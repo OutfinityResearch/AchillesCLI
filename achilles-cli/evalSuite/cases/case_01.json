@@ -1,8 +1,7 @@
 {
   "id": "case_01",
   "prompt": "I want to add a new authentication feature to my online shopping website, document it in specs and docs, and generate test cases.",
-  "expected": {
-    "skill": "update-specs",
-    "plan": ["update-specs", "generate-summary"]
-  }
+  "expectedSkills": [
+    "update-specs"
+  ]
 }

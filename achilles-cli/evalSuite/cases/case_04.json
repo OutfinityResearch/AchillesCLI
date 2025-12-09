@@ -1,8 +1,8 @@
 {
   "id": "case_04",
-  "prompt": "Sync the specs with the codebase, then generate documentation for the updated specs.",
-  "expected": {
-    "skill": "sync-specs",
-    "plan": ["sync-specs", "generate-docs"]
-  }
+  "prompt": "Before moving on to the implementation make sure you haven't missed anything in the specs, conduct a review, then create the code.",
+  "expectedSkills": [
+    "spec-review",
+    "build-code"
+  ]
 }
