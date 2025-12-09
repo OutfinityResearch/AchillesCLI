@@ -3,6 +3,6 @@
   "prompt": "Generate source code from current design specs for pending modules, then run tests, and finish with a spec summary.",
   "expected": {
     "skill": "build-code",
-    "plan": ["build-code", "run-tests", "docs-and-summary"]
+    "plan": ["build-code", "run-tests", "generate-summary"]
   }
 }

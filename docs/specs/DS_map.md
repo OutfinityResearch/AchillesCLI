@@ -32,7 +32,7 @@ Each source file has a matching DS under `docs/specs/DS/DS-XXX-*.md`. Global DS 
 | DS-025 | achilles-cli/tests/skills/generic-skill.test.mjs | Generic skill behavior tests |
 | DS-026 | achilles-cli/tests/skills/spec-mentor.test.mjs | Spec mentor tests |
 | DS-027 | achilles-cli/tests/skills/build-code-cli.test.mjs | CLI build-code skill test |
-| DS-028 | achilles-cli/tests/skills/docs-and-summary.test.mjs | CLI docs-and-summary skill test |
+| DS-028 | achilles-cli/tests/skills/generate-summary.test.mjs | CLI generate-summary skill test |
 | DS-029 | achilles-cli/tests/skills/fix-tests-and-code-cli.test.mjs | CLI fix-tests-and-code skill test |
 | DS-030 | achilles-cli/tests/skills/generate-docs-cli.test.mjs | CLI generate-docs skill test |
 | DS-031 | achilles-cli/tests/skills/ignore-files-cli.test.mjs | CLI ignore-files skill test |
@@ -58,5 +58,5 @@ Each source file has a matching DS under `docs/specs/DS/DS-XXX-*.md`. Global DS 
 | DS-041 | achilles-cli/.AchillesSkills/gamp/refactor-design/refactor-design.js | Design/refactor spec alignment |
 | DS-042 | achilles-cli/.AchillesSkills/gamp/generic-skill/generic-skill.js | Generic LLM skill fallback |
 | DS-043 | achilles-cli/.AchillesSkills/gamp/spec-mentor/spec-mentor.js | Spec mentor/education skill |
-| DS-044 | achilles-cli/.AchillesSkills/gamp/docs-and-summary/docs-and-summary.js | Spec preview (non-mutating) |
+| DS-044 | achilles-cli/.AchillesSkills/gamp/generate-summary/generate-summary.js | Spec summary preview (non-mutating, no docs regen) |
 | DS-045 | achilles-cli/.AchillesSkills/gamp/spec-help/spec-help.js | Spec help/overview skill |

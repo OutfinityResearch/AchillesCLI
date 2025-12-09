@@ -67,7 +67,7 @@
       <li><code>refactor-design</code> — captures refactor intents into DS updates and triggers build-code.</li>
       <li><code>generic-skill</code> — fallback tool runner (list/read/rewrite/replace/create/delete files) when no specific skill fits.</li>
       <li><code>spec-mentor</code> — educational guidance on URS/FS/NFS/DS/tests with suggested next steps.</li>
-      <li><code>docs-and-summary</code> — non-mutating spec summary and HTML preview for quick overviews.</li>
+      <li><code>generate-summary</code> — non-mutating spec summary for quick overviews (no HTML docs regeneration).</li>
       <li><code>spec-help</code> — concise refresher on the GAMP spec stack and best practices.</li>
       <li><code>specPlanner</code> (utility) — shared planner/executor for spec skills (parses plans, applies GampRSP actions).</li>
     </ul>
@@ -79,7 +79,7 @@
     </p>
     <ol>
       <li><strong>Draft specs</strong>: run <code>update-specs</code> with your change request to create/adjust URS/FS/NFS/DS and file impacts.</li>
-      <li><strong>Preview</strong>: use <code>docs-and-summary</code> to generate a non-mutating HTML summary and inspect the changes.</li>
+      <li><strong>Preview</strong>: use <code>generate-summary</code> to generate a non-mutating summary and inspect the changes.</li>
       <li><strong>Regenerate code/tests</strong>: if the DS looks good, run <code>build-code</code> to materialize files and scaffold FS/NFS test suites.</li>
       <li><strong>Backtrack/refine</strong>: if the preview or generated files aren’t what you want, run <code>sync-specs</code> to re-sync specs from code or rerun <code>update-specs</code> with revised instructions (e.g., new constraints or different file impacts).</li>
       <li><strong>Repair loops</strong>: if tests/code drift, use <code>fix-tests-and-code</code> to iterate run-tests + build-code until stabilized.</li>

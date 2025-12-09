@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import GampRSP from '../../GampRSP.mjs';
 import buildCode from '../../.AchillesSkills/gamp/build-code/build-code.js';
-import docsAndSummary from '../../.AchillesSkills/gamp/docs-and-summary/docs-and-summary.js';
+import generateSummary from '../../.AchillesSkills/gamp/generate-summary/generate-summary.js';
 import syncSpecs from '../../.AchillesSkills/gamp/sync-specs/sync-specs.js';
 import runTests from '../../.AchillesSkills/gamp/run-tests/run-tests.js';
 import fixTestsAndCode from '../../.AchillesSkills/gamp/fix-tests-and-code/fix-tests-and-code.js';
@@ -83,7 +83,7 @@ test('build-code synthesizes files using DS metadata + LLM output', { concurrenc
     assert.match(content, /createEmitter/, 'LLM generated function should be present.');
 });
 
-test('docs-and-summary summarises specs and publishes HTML artefacts', { concurrency: false, timeout: 15_000 }, async () => {
+test('generate-summary summarises specs without publishing HTML docs', { concurrency: false, timeout: 15_000 }, async () => {
     const workspaceRoot = makeWorkspace('docs-summary-html');
     const pkgPath = path.join(workspaceRoot, 'package.json');
     fs.writeFileSync(pkgPath, JSON.stringify({
@@ -98,11 +98,11 @@ test('docs-and-summary summarises specs and publishes HTML artefacts', { concurr
     const ursId = GampRSP.createURS('URS dashboard', 'Need KPI dashboard.');
     GampRSP.createFS('FS dashboard view', 'Render KPI tiles.', ursId);
 
-    const result = await docsAndSummary({ context: { workspaceRoot } });
+    const result = await generateSummary({ context: { workspaceRoot } });
     assert.equal(result.type, 'spec-summary', 'Spec summary output should be reported.');
     assert.ok(fs.existsSync(result.output), 'Specification summary HTML must exist.');
-    assert.ok(fs.existsSync(result.docsIndex), 'Generated documentation index should exist.');
     assert.ok(Array.isArray(result.specs.fs) && result.specs.fs.length >= 1, 'FS entries should appear in the summary payload.');
+    assert.ok(!fs.existsSync(path.join(workspaceRoot, '.specs', 'html_docs', 'index.html')), 'HTML docs should not be generated.');
 });
 
 test('sync-specs uses LLM plans per file to evolve specs', { concurrency: false, timeout: 20_000 }, async () => {

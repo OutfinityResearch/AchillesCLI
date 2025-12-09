@@ -224,15 +224,12 @@ export async function action({ context = {} }) {
     const summary = buildSummary();
     const mockDir = GampRSP.getMockDir();
     const summaryPath = path.join(mockDir, 'spec-summary.html');
-    const docsDir = GampRSP.generateHtmlDocs();
     fs.mkdirSync(mockDir, { recursive: true });
     fs.writeFileSync(summaryPath, buildSummaryHtml(summary));
-    const docsIndex = path.join(docsDir, 'index.html');
     return {
         message: 'Specification summary generated.',
         type: 'spec-summary',
         output: summaryPath,
-        docsIndex,
         specs: summary,
     };
 }

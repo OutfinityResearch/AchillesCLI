@@ -2,7 +2,7 @@
   "id": "case_03",
   "prompt": "Summarize the current specs, then run the sync to align specs with code, and finish with another summary.",
   "expected": {
-    "skill": "docs-and-summary",
-    "plan": ["docs-and-summary", "sync-specs", "docs-and-summary"]
+    "skill": "generate-summary",
+    "plan": ["generate-summary", "sync-specs", "generate-summary"]
   }
 }
