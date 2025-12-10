@@ -1,4 +1,4 @@
-import { createAgentClient, getRouterUrl } from '/Agent/AgentMcpClient.mjs';
+import { createAgentClient, getRouterUrl } from '/Agent/client/AgentMcpClient.mjs';
 
 const TARGET_AGENT = 'soplangAgent';
 const TOOL_NAME = 'soplang-tool';
