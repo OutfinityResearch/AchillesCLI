@@ -16,6 +16,8 @@ test('generate-docs runs via CLI /run and writes html docs', { timeout: 15_000 }
 
     const result = await cli.processTaskInput('/run generate-docs "Generate docs"');
     const docsIndex = path.join(workspaceRoot, '.specs', 'html_docs', 'index.html');
+    const matrixHtml = path.join(workspaceRoot, '.specs', 'html_docs', 'matrix.html');
     assert.ok(fs.existsSync(docsIndex), 'html_docs index should be generated');
+    assert.ok(fs.existsSync(matrixHtml), 'matrix.html should be generated from matrix.md');
     assert.ok(result?.executions?.length === 1, 'Should execute one skill');
 });

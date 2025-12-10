@@ -43,6 +43,10 @@ test('GampRSP links DS entries and enriches file impact metadata', async () => {
 
     const fsDoc = fs.readFileSync(path.join(workspaceRoot, '.specs', 'FS.md'), 'utf8');
     assert.match(fsDoc, new RegExp(`- Linked DS:.*${dsId}`, 'i'), 'FS traceability must list the DS.');
+    const matrixPath = path.join(workspaceRoot, '.specs', 'matrix.md');
+    const matrixDoc = fs.readFileSync(matrixPath, 'utf8');
+    assert.match(matrixDoc, new RegExp(`\\|\\s*${fsId}\\s*\\|\\s*${ursId}\\s*\\|\\s*${dsId}`, 'i'), 'Matrix should link FS to URS and DS.');
+    assert.match(matrixDoc, new RegExp(`\\|\\s*${dsId}\\s*\\|\\s*${ursId}\\s*\\|\\s*${fsId}`, 'i'), 'Matrix should link DS back to URS/requirement.');
 
     GampRSP.describeFile(
         dsId,
@@ -86,6 +90,9 @@ test('update-specs executes LLM-driven actions', async () => {
     assert.ok(fsDoc.includes('FS telemetry'));
     const dsDoc = fs.readFileSync(GampRSP.getDSFilePath('DS-001'), 'utf8');
     assert.ok(dsDoc.includes('DS telemetry'));
+    const matrixDoc = fs.readFileSync(path.join(workspaceRoot, '.specs', 'matrix.md'), 'utf8');
+    assert.match(matrixDoc, /FS-001/i);
+    assert.match(matrixDoc, /DS-001/i);
 });
 
 test('sync-specs delegates per-file updates to LLM plans', async () => {

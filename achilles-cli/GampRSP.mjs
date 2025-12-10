@@ -51,6 +51,16 @@ const writeFileSafe = (filePath, content) => {
     fs.writeFileSync(filePath, content);
 };
 
+const renderTable = (headers = [], rows = []) => {
+    if (!rows.length) {
+        return '_No entries defined._';
+    }
+    const head = `| ${headers.join(' | ')} |`;
+    const sep = `| ${headers.map(() => '---').join(' | ')} |`;
+    const body = rows.map((row) => `| ${row.join(' | ')} |`).join('\n');
+    return [head, sep, body].join('\n');
+};
+
 const nextId = (existingIds, prefix) => {
     const numbers = existingIds
         .map((id) => {
@@ -119,6 +129,38 @@ const ensureTraceabilityBlock = ({
     ].join('\n');
 };
 
+const parseHeading = (heading = '') => {
+    const idMatch = heading.match(/(URS|FS|NFS|DS)-\d+/i);
+    const id = idMatch ? idMatch[0].toUpperCase() : '';
+    const title = heading.includes('–')
+        ? heading.split('–')[1].trim()
+        : heading.replace(/^(URS|FS|NFS|DS)-\d+\s*[-–]?\s*/i, '').trim();
+    return { id, title: title || heading.trim() };
+};
+
+const parseTraceLines = (body = '') => {
+    const lines = body.split(/\r?\n/).map((line) => line.trim());
+    const ursLine = lines.find((line) => /^-\s+(Source\s+)?URS:/i.test(line) || /^-\s+Linked\s+URS:/i.test(line));
+    const dsLine = lines.find((line) => /^-\s+(Linked\s+)?DS:/i.test(line));
+    const urs = ursLine ? normaliseId(ursLine.split(':').slice(1).join(':')) : '';
+    const dsTokens = dsLine
+        ? dsLine.split(':').slice(1).join(':')
+            .split(',')
+            .map((entry) => normaliseId(entry))
+            .filter((entry) => entry && entry !== 'PENDING')
+        : [];
+    return { urs, ds: dsTokens };
+};
+
+const parseDSTrace = (content = '') => {
+    const ursMatch = content.match(/-\s*URS:\s*([A-Z0-9-]+)/i);
+    const reqMatch = content.match(/-\s*(?:Requirement|Req):\s*([A-Z0-9-]+)/i);
+    return {
+        urs: ursMatch ? normaliseId(ursMatch[1]) : '',
+        req: reqMatch ? normaliseId(reqMatch[1]) : '',
+    };
+};
+
 const slugifyTitle = (value) => {
     if (!value || typeof value !== 'string') {
         return 'design';
@@ -172,6 +214,7 @@ class GampRSP {
             writeFileSafe(ignorePath, ['node_modules', '.git', 'dist', 'coverage'].join('\n'));
         }
         this.initialised = true;
+        this.refreshMatrix();
     }
 
     getDocPath(name) {
@@ -220,6 +263,10 @@ class GampRSP {
         return path.join(this.specsDir, 'html_docs');
     }
 
+    getMatrixPath() {
+        return path.join(this.specsDir, 'matrix.md');
+    }
+
     getIgnorePath() {
         return path.join(this.specsDir, '.ignore');
     }
@@ -252,6 +299,7 @@ class GampRSP {
         const chapter = buildChapter({ id, title, description });
         const content = this.readDocument(docName);
         this.writeDocument(docName, `${content.trim()}\n\n${chapter}\n`);
+        this.refreshMatrix();
         return id;
     }
 
@@ -261,6 +309,7 @@ class GampRSP {
         const content = this.readDocument(docName);
         const updated = replaceChapter(content, id, chapter);
         this.writeDocument(docName, updated);
+        this.refreshMatrix();
     }
 
     retireURS(id) {
@@ -274,6 +323,7 @@ class GampRSP {
         const updated = chapter.body.replace('Status: active', 'Status: retired');
         const newBody = `## ${id} – ${chapter.heading.split('–')[1].trim()}\n${updated.split('\n').slice(1).join('\n')}`;
         this.writeDocument(docName, replaceChapter(content, id, newBody));
+        this.refreshMatrix();
     }
 
     createFS(title, description, ursId, reqId = null, linkedDs = []) {
@@ -288,6 +338,7 @@ class GampRSP {
         const chapter = buildChapter({ id, title, description, extra });
         const content = this.readDocument(docName);
         this.writeDocument(docName, `${content.trim()}\n\n${chapter}\n`);
+        this.refreshMatrix();
         return id;
     }
 
@@ -300,6 +351,7 @@ class GampRSP {
         const chapter = buildChapter({ id, title, description, extra });
         const updated = replaceChapter(this.readDocument('FS.md'), id, chapter);
         this.writeDocument('FS.md', updated);
+        this.refreshMatrix();
     }
 
     obsoleteFS(id) {
@@ -319,6 +371,7 @@ class GampRSP {
         const chapter = buildChapter({ id, title, description, extra });
         const content = this.readDocument(docName);
         this.writeDocument(docName, `${content.trim()}\n\n${chapter}\n`);
+        this.refreshMatrix();
         return id;
     }
 
@@ -332,6 +385,7 @@ class GampRSP {
         const chapter = buildChapter({ id, title, description, extra });
         const updated = replaceChapter(this.readDocument('NFS.md'), id, chapter);
         this.writeDocument('NFS.md', updated);
+        this.refreshMatrix();
     }
 
     obsoleteNFS(id) {
@@ -348,6 +402,7 @@ class GampRSP {
         const updated = chapter.body.replace('Status: active', 'Status: retired');
         const newBody = `## ${id} – ${chapter.heading.split('–')[1].trim()}\n${updated.split('\n').slice(1).join('\n')}`;
         this.writeDocument(docName, replaceChapter(content, id, newBody));
+        this.refreshMatrix();
     }
 
     createDS(title, description, architecture, ursId, reqId) {
@@ -380,6 +435,7 @@ class GampRSP {
         const target = this.resolveDSFilePath(id, { title });
         writeFileSafe(target, payload);
         this.linkRequirementToDS(reqId, id);
+        this.refreshMatrix();
         return id;
     }
 
@@ -395,6 +451,7 @@ class GampRSP {
             `## Architecture\n${architecture || 'Architecture TBD.'}`,
         );
         writeFileSafe(filePath, updated);
+        this.refreshMatrix();
     }
 
     listDSIds() {
@@ -585,14 +642,19 @@ class GampRSP {
         const updatedBody = lines.join('\n');
         const updatedContent = content.replace(chapter.body, updatedBody);
         this.writeDocument(targetDoc, updatedContent);
+        this.refreshMatrix();
     }
 
     loadSpecs(filterText = '') {
         this.ensureWorkspace();
-        const docs = DEFAULT_DOCS.map(({ filename }) => ({
-            name: filename.replace('.md', ''),
-            content: readFileSafe(this.getDocPath(filename)),
-        }));
+        this.refreshMatrix();
+        const docs = [
+            { name: 'matrix', content: readFileSafe(this.getMatrixPath()) },
+            ...DEFAULT_DOCS.map(({ filename }) => ({
+                name: filename.replace('.md', ''),
+                content: readFileSafe(this.getDocPath(filename)),
+            })),
+        ];
         const dsEntries = fs.readdirSync(this.getDSDir()).map((entry) => ({
             name: entry.replace('.md', ''),
             content: readFileSafe(path.join(this.getDSDir(), entry)),
@@ -646,6 +708,7 @@ class GampRSP {
     }
 
     generateHtmlDocs() {
+        this.refreshMatrix();
         const docsDir = this.getDocsDir();
         ensureDir(docsDir);
         const html = (title, body) => `<!DOCTYPE html>
@@ -704,6 +767,14 @@ ${body}
             addPage(name, heading, 'ds', extractDescription(content));
         });
 
+        const matrixPath = this.getMatrixPath();
+        if (fs.existsSync(matrixPath)) {
+            const content = readFileSafe(matrixPath);
+            const title = extractTitle(content, 'Specification Matrix');
+            writeFileSafe(path.join(docsDir, 'matrix.html'), html(title, `<pre>${content}</pre>`));
+            addPage('matrix.html', title, 'matrix', extractDescription(content));
+        }
+
         const renderList = (heading, filter) => {
             const entries = pages.filter((page) => page.section === filter);
             if (!entries.length) {
@@ -718,10 +789,71 @@ ${body}
         const indexBody = [
             '<h1>Specification Index</h1>',
             renderList('Core Specifications', 'core'),
+            renderList('Traceability Matrix', 'matrix'),
             renderList('Design Specifications', 'ds'),
         ].filter(Boolean).join('\n\n');
         writeFileSafe(path.join(docsDir, 'index.html'), html('Specification Index', indexBody));
         return docsDir;
+    }
+
+    refreshMatrix() {
+        this.ensureWorkspace();
+        const ursChapters = extractChapters(this.readDocument('URS.md'))
+            .map((entry) => ({ ...parseHeading(entry.heading), body: entry.body }))
+            .filter((entry) => entry.id.startsWith('URS'));
+        const fsChapters = extractChapters(this.readDocument('FS.md'))
+            .map((entry) => ({ ...parseHeading(entry.heading), body: entry.body }))
+            .filter((entry) => entry.id.startsWith('FS'));
+        const nfsChapters = extractChapters(this.readDocument('NFS.md'))
+            .map((entry) => ({ ...parseHeading(entry.heading), body: entry.body }))
+            .filter((entry) => entry.id.startsWith('NFS'));
+        const dsEntries = fs.readdirSync(this.getDSDir())
+            .filter((entry) => entry.toLowerCase().endsWith('.md'))
+            .map((entry) => {
+                const content = readFileSafe(path.join(this.getDSDir(), entry));
+                const heading = (content.match(/^#\s+(.+)$/m) || [])[1] || entry.replace('.md', '');
+                const { id, title } = parseHeading(heading);
+                const trace = parseDSTrace(content);
+                return { id: id || extractDSIdFromFileName(entry) || heading, title: title || heading, ...trace };
+            })
+            .filter((entry) => entry.id);
+
+        const ursRows = ursChapters.map((entry) => [entry.id, entry.title]);
+        const fsRows = fsChapters.map((entry) => {
+            const trace = parseTraceLines(entry.body);
+            return [entry.id, trace.urs || 'TBD', trace.ds.join(', ') || 'pending', entry.title];
+        });
+        const nfsRows = nfsChapters.map((entry) => {
+            const trace = parseTraceLines(entry.body);
+            return [entry.id, trace.urs || 'TBD', trace.ds.join(', ') || 'pending', entry.title];
+        });
+        const dsRows = dsEntries.map((entry) => [
+            entry.id,
+            entry.urs || 'TBD',
+            entry.req || 'TBD',
+        ]);
+
+        const content = [
+            '# Specification Matrix',
+            `_Last updated: ${formatTimestamp()}`,
+            '',
+            'Traceability between URS/FS/NFS requirements and DS designs.',
+            '',
+            '## URS',
+            renderTable(['URS', 'Title'], ursRows),
+            '',
+            '## FS ↔ URS/DS',
+            renderTable(['FS', 'URS', 'Linked DS', 'Title'], fsRows),
+            '',
+            '## NFS ↔ URS/DS',
+            renderTable(['NFS', 'URS', 'Linked DS', 'Title'], nfsRows),
+            '',
+            '## DS ↔ Requirements',
+            renderTable(['DS', 'URS', 'Requirement'], dsRows),
+        ].join('\n');
+
+        writeFileSafe(this.getMatrixPath(), `${content.trim()}\n`);
+        return this.getMatrixPath();
     }
 }
 

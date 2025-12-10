@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import GampRSP from '../../../GampRSP.mjs';
 import {
     ensureLLM,
@@ -76,11 +74,9 @@ export async function action({ prompt, context }) {
     }
 
     const outcomes = executePlan(plan);
-    const docsDir = GampRSP.generateHtmlDocs();
     return {
         message: 'Specifications updated via planner.',
         actions: outcomes,
-        docsIndex: path.join(docsDir, 'index.html'),
     };
 }
 
