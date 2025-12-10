@@ -7,5 +7,10 @@
     ],
     "repos": {
         "SOPLangBuilder": "https://github.com/PloinkyRepos/SOPLangBuilder.git"
-    }
+    },
+    "env":[
+        {
+        "name": "PLOINKY_ROUTER_URL"
+        }
+    ]
 }

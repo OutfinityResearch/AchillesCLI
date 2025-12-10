@@ -3,7 +3,7 @@
 Invoke the `soplangAgent` MCP tool to run the SoplangBuilder Markdown build.
 
 ## Summary
-- Calls the `soplang-tool` MCP tool on `soplangAgent` using the router-authenticated `AgentMcpClient`.
+- Calls the `soplang-tool` MCP tool on `soplangAgent` using the local `AgentClient` MCP wrapper.
 - Uses the SoplangBuilder plugin with `buildFromMarkdown` (no extra params).
 - Returns the raw MCP response so downstream steps can log or inspect it.
 

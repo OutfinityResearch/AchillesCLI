@@ -1,16 +1,16 @@
-import { createAgentClient, getRouterUrl } from '/Agent/client/AgentMcpClient.mjs';
+import { createAgentClient } from '/Agent/client/AgentClient.js';
 
 const TARGET_AGENT = 'soplangAgent';
 const TOOL_NAME = 'soplang-tool';
 const TOOL_ARGUMENTS = {
     pluginName: 'SoplangBuilder',
     methodName: 'buildFromMarkdown',
-    params: null,
+    params: [],
 };
 
 export async function action({ prompt = '', context = {} }) {
-    const routerUrl = getRouterUrl();
-    const client = await createAgentClient(TARGET_AGENT);
+    let soplangAgentURL = process.env.PLOINKY_ROUTER_URL + "/mcps/soplangAgent/mcp";
+    const client = createAgentClient(soplangAgentURL);
 
     try {
         // Optional health check; ignore failures so the tool call still attempts.
@@ -26,7 +26,6 @@ export async function action({ prompt = '', context = {} }) {
         return {
             message: 'Triggered soplang build via MCP.',
             agent: TARGET_AGENT,
-            routerUrl,
             tool: TOOL_NAME,
             request: TOOL_ARGUMENTS,
             prompt,
