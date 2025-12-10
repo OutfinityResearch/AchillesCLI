@@ -1,6 +1,6 @@
 {
     "container": "node:22-alpine",
-    "cli": "/achilles-cli.mjs",
+    "cli": "/code/achilles-cli.mjs",
     "about": "AchillesCLI is a terminal-first companion that drives GAMP-style specification authoring with an LLM-assisted skill system. It manages URS/FS/NFS/DS documents, links them to tests, and lets you rebuild code safely when projects drift or break.",
     "enable": [
         "soplangAgent"
