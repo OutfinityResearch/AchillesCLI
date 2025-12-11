@@ -66,7 +66,7 @@ export const buildArgsForSkill = (record, promptText) => {
 
     return args;
 };
-
+const agentClientBaseUrl = process.env.PLOINKY_ROUTER_URL + "/mcps/soplangAgent/mcp";
 export const runSkill = async (cli, record, promptText) => {
     const skillLogger = cli.createSkillLogger(record);
     const promptWithLanguage = cli.withLanguageContract(promptText, { heading: '# Language Contract' });
@@ -83,6 +83,7 @@ export const runSkill = async (cli, record, promptText) => {
                 languageContract,
                 ...buildMemoryContext(cli),
             },
+        agentClientBaseUrl,
         logger: skillLogger,
     });
 };
