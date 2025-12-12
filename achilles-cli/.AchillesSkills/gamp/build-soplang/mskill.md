@@ -16,4 +16,5 @@ Trigger the `soplang-tool` MCP entrypoint to run SoplangBuilder’s `buildFromMa
 - Fail loudly if the transport or tool call errors; include the MCP response when successful.
 
 ## Light-SOP-Lang
-@build soplang-tool '{"pluginName":"SoplangBuilder","methodName":"buildFromSpecsMarkdown","params":[]}' "Run SoplangBuilder from Markdown"
+@root workspaceroot
+@build soplang-tool '{"pluginName":"SoplangBuilder","methodName":"buildFromSpecsMarkdown","params":[$root]}' "Run SoplangBuilder from Markdown"
