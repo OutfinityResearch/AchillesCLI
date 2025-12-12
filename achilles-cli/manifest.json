@@ -8,9 +8,30 @@
     "repos": {
         "SOPLangBuilder": "https://github.com/PloinkyRepos/SOPLangBuilder.git"
     },
-    "env":[
+    "env": [
         {
-        "name": "PLOINKY_ROUTER_URL"
+            "name": "PLOINKY_ROUTER_URL"
+        },
+        {
+            "name": "OPENAI_API_KEY"
+        },
+        {
+            "name": "ANTHROPIC_API_KEY"
+        },
+        {
+            "name": "GEMINI_API_KEY"
+        },
+        {
+            "name": "OPENROUTER_API_KEY"
+        },
+        {
+            "name": "XAI_API_KEY"
+        },
+        {
+            "name": "HUGGINGFACE_API_KEY"
+        },
+        {
+            "name": "MISTRAL_API_KEY"
         }
     ]
 }
