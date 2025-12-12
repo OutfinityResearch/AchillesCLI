@@ -1,10 +1,10 @@
 # AchillesCLI Specification Matrix
 
 ::: summary Test Results Summary
-- [[status:passed]] **Passed:** 0
+- [[status:passed]] **Passed:** 1
 - [[status:failed]] **Failed:** 0
 - [[status:partial]] **Partial:** 0
-- [[status:unknown]] **Unknown / Not Run:** 45
+- [[status:unknown]] **Unknown / Not Run:** 46
 - _Last run: not recorded (run tests to update)_
 :::
 
@@ -104,6 +104,7 @@
 | [DS-043](specsLoader.html?spec=DS/DS-043-spec-mentor.md) spec-mentor.js | URS: 003, 004, 005; FS: 003, 004, 010 | [[coverage:full]] | [[status:unknown]] |
 | [DS-044](specsLoader.html?spec=DS/DS-044-generate-summary.md) generate-summary.js | URS: 003, 005; FS: 003, 004 | [[coverage:full]] | [[status:unknown]] |
 | [DS-045](specsLoader.html?spec=DS/DS-045-spec-help.md) spec-help.js | URS: 010; FS: 008 | [[coverage:full]] | [[status:unknown]] |
+| [DS-046](specsLoader.html?spec=DS/DS-046-build-soplang.md) build-soplang (mskill.md) | URS: 008; FS: 001 | [[coverage:full]] | [[status:unknown]] |
 
 ## Design Specs – Tests
 | DS ID | Requirements Covered (URS / FS / NFS) | Coverage | Test Status |
@@ -125,3 +126,4 @@
 | [DS-034](specsLoader.html?spec=DS/DS-034-tests-skills-spec-review-cli.md) spec-review-cli.test.mjs | URS: 003, 004; FS: 003, 004 | [[coverage:partial]] | [[status:unknown]] |
 | [DS-035](specsLoader.html?spec=DS/DS-035-tests-skills-sync-specs-cli.md) sync-specs-cli.test.mjs | URS: 005, 009; FS: 004, 010 | [[coverage:partial]] | [[status:unknown]] |
 | [DS-036](specsLoader.html?spec=DS/DS-036-tests-skills-update-specs-cli.md) update-specs-cli.test.mjs | URS: 003, 004, 005; FS: 003, 004, 010 | [[coverage:partial]] | [[status:unknown]] |
+| [DS-047](specsLoader.html?spec=DS/DS-047-tests-GampGenerateSOPLang.md) GampGenerateSOPLang.test.mjs | URS: 008; FS: 001 | [[coverage:full]] | [[status:passed]] |

@@ -9,7 +9,7 @@ Construct planner prompt text with task context, orchestrator metadata, specific
 
 ## Architecture
 
-The module architecture defines `buildPlanPrompt` assembling sections (task, guidance, available orchestrators, response format). It injects `SPEC_GUIDANCE_TEXT` to steer GAMP outputs.
+The module architecture defines `buildPlanPrompt` assembling sections (task, guidance, available orchestrators, response format). It injects `SPEC_GUIDANCE_TEXT` to steer GAMP outputs and `SOPLANG_PROMPT` to provide SOPLang syntax reference for specification code generation.
 
 ## Traceability
 - URS: URS-001, URS-003
@@ -23,6 +23,7 @@ The module architecture defines `buildPlanPrompt` assembling sections (task, gui
 
 #### Dependencies
 - helpers/specGuidance.mjs
+- helpers/soplangPrompt.mjs (provides `SOPLANG_PROMPT` for SOPLang syntax reference in plan prompts)
 
 #### Description
 Single function that returns structured prompt text for the planner, aligning orchestrator metadata and response schema expectations.

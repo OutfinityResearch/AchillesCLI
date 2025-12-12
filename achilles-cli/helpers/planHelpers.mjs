@@ -1,4 +1,5 @@
 import { SPEC_GUIDANCE_TEXT } from './specGuidance.mjs';
+import { SOPLANG_PROMPT } from './soplangPrompt.mjs';
 
 export const buildPlanPrompt = ({ task, orchestrators, languageContract = '' }) => {
     const sections = [];
@@ -19,6 +20,11 @@ export const buildPlanPrompt = ({ task, orchestrators, languageContract = '' }) 
         sections.push('');
         sections.push('## Specification Expectations');
         sections.push(SPEC_GUIDANCE_TEXT);
+    }
+    if (SOPLANG_PROMPT) {
+        sections.push('');
+        sections.push('## SOPLang Reference');
+        sections.push(SOPLANG_PROMPT);
     }
     if (languageContract) {
         sections.push('');

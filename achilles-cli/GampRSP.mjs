@@ -119,11 +119,20 @@ const ensureTraceabilityBlock = ({
     ursId = 'TBD',
     dsIds = [],
     label = 'Traceability',
+    specId = '',
+    specType = 'FS',
 }) => {
     const linkedDs = Array.from(new Set(dsIds.map((entry) => normaliseId(entry)).filter(Boolean)));
     const dsValue = linkedDs.length ? linkedDs.join(', ') : 'pending';
+    const deps = [];
+    if (ursId && ursId !== 'TBD') deps.push(`$${normaliseId(ursId)}`);
+    linkedDs.forEach((ds) => deps.push(`$${ds}`));
+    const depsStr = deps.length ? deps.join(' ') : '$TBD';
+    const soplangCode = `@${specId || specType} := ${depsStr}\\n@TODO ${specType.toLowerCase()}_processing $${specId || specType}`;
+    const soplangComment = buildSoplangComment(soplangCode);
     return [
         `### ${label}`,
+        soplangComment,
         `- Source URS: ${normaliseId(ursId) || 'TBD'}`,
         `- Linked DS: ${dsValue}`,
     ].join('\n');
@@ -179,6 +188,11 @@ const extractDSIdFromFileName = (fileName) => {
     }
     const match = fileName.match(/(DS-\d+)/i);
     return match ? match[1].toUpperCase() : null;
+};
+
+const buildSoplangComment = (commands) => {
+    const obj = { 'achiles-ide-document': { commands } };
+    return `<!--${JSON.stringify(obj)}-->`;
 };
 
 class GampRSP {
@@ -334,6 +348,8 @@ class GampRSP {
             ursId,
             dsIds: linkedDs,
             label: 'Traceability',
+            specId: id,
+            specType: 'FS',
         });
         const chapter = buildChapter({ id, title, description, extra });
         const content = this.readDocument(docName);
@@ -347,6 +363,8 @@ class GampRSP {
             ursId,
             dsIds: linkedDs,
             label: 'Traceability',
+            specId: id,
+            specType: 'FS',
         });
         const chapter = buildChapter({ id, title, description, extra });
         const updated = replaceChapter(this.readDocument('FS.md'), id, chapter);
@@ -362,11 +380,19 @@ class GampRSP {
         const docName = 'NFS.md';
         const ids = this.collectIds(docName, 'NFS');
         const id = reqId || nextId(ids, 'NFS');
+        const linkedDsNorm = linkedDs.map((entry) => normaliseId(entry)).filter(Boolean);
+        const deps = [];
+        if (ursId && ursId !== 'TBD') deps.push(`$${normaliseId(ursId)}`);
+        linkedDsNorm.forEach((ds) => deps.push(`$${ds}`));
+        const depsStr = deps.length ? deps.join(' ') : '$TBD';
+        const soplangCode = `@${id} := ${depsStr}\\n@TODO nfs_processing $${id}`;
+        const soplangComment = buildSoplangComment(soplangCode);
         const extra = [
             '### Quality Envelope',
+            soplangComment,
             '- Attribute: pending',
             `- Linked URS: ${normaliseId(ursId) || 'TBD'}`,
-            `- Linked DS: ${linkedDs.length ? linkedDs.map((entry) => normaliseId(entry)).filter(Boolean).join(', ') : 'pending'}`,
+            `- Linked DS: ${linkedDsNorm.length ? linkedDsNorm.join(', ') : 'pending'}`,
         ].join('\n');
         const chapter = buildChapter({ id, title, description, extra });
         const content = this.readDocument(docName);
@@ -376,11 +402,19 @@ class GampRSP {
     }
 
     updateNFS(id, title, description, ursId, linkedDs = []) {
+        const linkedDsNorm = linkedDs.map((entry) => normaliseId(entry)).filter(Boolean);
+        const deps = [];
+        if (ursId && ursId !== 'TBD') deps.push(`$${normaliseId(ursId)}`);
+        linkedDsNorm.forEach((ds) => deps.push(`$${ds}`));
+        const depsStr = deps.length ? deps.join(' ') : '$TBD';
+        const soplangCode = `@${id} := ${depsStr}\\n@TODO nfs_processing $${id}`;
+        const soplangComment = buildSoplangComment(soplangCode);
         const extra = [
             '### Quality Envelope',
+            soplangComment,
             '- Attribute: pending',
             `- Linked URS: ${normaliseId(ursId) || 'TBD'}`,
-            `- Linked DS: ${linkedDs.length ? linkedDs.map((entry) => normaliseId(entry)).filter(Boolean).join(', ') : 'pending'}`,
+            `- Linked DS: ${linkedDsNorm.length ? linkedDsNorm.join(', ') : 'pending'}`,
         ].join('\n');
         const chapter = buildChapter({ id, title, description, extra });
         const updated = replaceChapter(this.readDocument('NFS.md'), id, chapter);
@@ -405,16 +439,41 @@ class GampRSP {
         this.refreshMatrix();
     }
 
-    createDS(title, description, architecture, ursId, reqId) {
-    const ids = this.listDSIds();
-    const id = nextId(ids, 'DS');
-    const timestamp = Date.now();
-    const payload = [
-        `# ${id} – ${title}`,
-        '',
-        '## Version',
-        '- current: v1.0',
-        `- timestamp: ${formatTimestamp(timestamp)}`,
+    createDS(title, description, architecture, ursIds, reqIds, options = {}) {
+        const ids = this.listDSIds();
+        const id = nextId(ids, 'DS');
+        const timestamp = Date.now();
+        const implPath = options.implementationPath || '';
+        const dsIds = options.dsIds || [];
+
+        // Normalize to arrays
+        const ursArr = Array.isArray(ursIds) ? ursIds : (ursIds ? [ursIds] : []);
+        const reqArr = Array.isArray(reqIds) ? reqIds : (reqIds ? [reqIds] : []);
+        const dsArr = Array.isArray(dsIds) ? dsIds : (dsIds ? [dsIds] : []);
+
+        // Build dependencies for SOPLang
+        const deps = [];
+        ursArr.forEach((u) => { if (u) deps.push(`$${normaliseId(u)}`); });
+        reqArr.forEach((r) => { if (r) deps.push(`$${normaliseId(r)}`); });
+        dsArr.forEach((d) => { if (d) deps.push(`$${normaliseId(d)}`); });
+        const depsStr = deps.length ? deps.join(' ') : '$TBD';
+
+        const soplangCode = implPath
+            ? `@prompt := $${id} ${depsStr}\\n@compiledFile createJSCode $prompt\\n@result store "${implPath}" $compiledFile`
+            : `@prompt := $${id} ${depsStr}\\n@compiledFile createJSCode $prompt\\n@result store "TBD" $compiledFile`;
+        const soplangComment = buildSoplangComment(soplangCode);
+
+        // Format display strings
+        const ursDisplay = ursArr.length ? ursArr.map(normaliseId).join(', ') : 'TBD';
+        const reqDisplay = reqArr.length ? reqArr.map(normaliseId).join(', ') : 'TBD';
+        const dsDisplay = dsArr.length ? dsArr.map(normaliseId).join(', ') : '';
+
+        const payload = [
+            `# ${id} – ${title}`,
+            '',
+            '## Version',
+            '- current: v1.0',
+            `- timestamp: ${formatTimestamp(timestamp)}`,
             '',
             '## Scope & Intent',
             description || 'Pending design elaboration.',
@@ -423,18 +482,21 @@ class GampRSP {
             architecture || 'Architecture TBD.',
             '',
             '## Traceability',
-            `- URS: ${ursId || 'TBD'}`,
-            `- Requirement: ${reqId || 'TBD'}`,
+            soplangComment,
+            `- URS: ${ursDisplay}`,
+            `- Requirements (FS/NFS): ${reqDisplay}`,
+            dsDisplay ? `- Related DS: ${dsDisplay}` : '',
+            implPath ? `- Implementation: ${implPath}` : '',
             '',
             '## File Impact',
             '_File-level impact entries appear here._',
             '',
             '## Tests',
             '_Add tests via createTest()._',
-        ].join('\n');
+        ].filter((line) => line !== '').join('\n');
         const target = this.resolveDSFilePath(id, { title });
         writeFileSafe(target, payload);
-        this.linkRequirementToDS(reqId, id);
+        reqArr.forEach((r) => this.linkRequirementToDS(r, id));
         this.refreshMatrix();
         return id;
     }
@@ -807,14 +869,20 @@ ${body}
         const nfsChapters = extractChapters(this.readDocument('NFS.md'))
             .map((entry) => ({ ...parseHeading(entry.heading), body: entry.body }))
             .filter((entry) => entry.id.startsWith('NFS'));
-        const dsEntries = fs.readdirSync(this.getDSDir())
+        const dsDir = this.getDSDir();
+        const dsEntries = fs.readdirSync(dsDir)
             .filter((entry) => entry.toLowerCase().endsWith('.md'))
             .map((entry) => {
-                const content = readFileSafe(path.join(this.getDSDir(), entry));
+                const content = readFileSafe(path.join(dsDir, entry));
                 const heading = (content.match(/^#\s+(.+)$/m) || [])[1] || entry.replace('.md', '');
                 const { id, title } = parseHeading(heading);
                 const trace = parseDSTrace(content);
-                return { id: id || extractDSIdFromFileName(entry) || heading, title: title || heading, ...trace };
+                return {
+                    id: id || extractDSIdFromFileName(entry) || heading,
+                    title: title || heading,
+                    fileName: entry,
+                    ...trace
+                };
             })
             .filter((entry) => entry.id);
 
@@ -833,7 +901,26 @@ ${body}
             entry.req || 'TBD',
         ]);
 
+        const soplangVars = [];
+        ursChapters.forEach((entry) => {
+            soplangVars.push(`@${entry.id} load URS.md#${entry.id}`);
+        });
+        fsChapters.forEach((entry) => {
+            soplangVars.push(`@${entry.id} load FS.md#${entry.id}`);
+        });
+        nfsChapters.forEach((entry) => {
+            soplangVars.push(`@${entry.id} load NFS.md#${entry.id}`);
+        });
+        dsEntries.forEach((entry) => {
+            soplangVars.push(`@${entry.id} load DS/${entry.fileName}`);
+        });
+
+        const soplangCode = soplangVars.join('\\n');
+        const soplangComment = buildSoplangComment(soplangCode);
+
         const content = [
+            soplangComment,
+            '',
             '# Specification Matrix',
             `_Last updated: ${formatTimestamp()}`,
             '',

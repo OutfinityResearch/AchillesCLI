@@ -11,7 +11,7 @@
 4) Prompt guidance: planner/spec prompts must ask for ASCII/text diagrams (not Mermaid) for complex flows and per-export visuals to keep docs readable without extra tooling.
 5) Use ASCII diagrams: represent flows/diagrams in plain text code fences; avoid Mermaid since there is no parser available.
 6) Matrix organization: keep `docs/specs/matrix.html` listing URS/FS/NFS tables as-is, and DS tables for Global, Core Code, Skills, and Tests with columns (DS ID, Requirements Covered URS/FS/NFS, Coverage, Test Status) and DS IDs clickable to their specs.
-7) Categories reference: DS groups—Global (DS-027..031), Core Code (DS-001..019), Skills (.AchillesSkills DS-032..045), Tests (DS-020..026); remember URS/FS/NFS live separately.
+7) Categories reference: DS groups—Global (DS-027..031), Core Code (DS-001..019), Skills (.AchillesSkills DS-032..046), Tests (DS-020..026); remember URS/FS/NFS live separately.
 8) Editing approach: prefer `apply_patch`, avoid destructive commands unless requested, and keep text ASCII unless the file already uses Unicode.
 9) Testing stance: run targeted suites when validation is needed (e.g., spec-management, achilles-cli e2e); tests were not run in this session unless explicitly requested.
 10) Narrative docs: prefer subject-and-predicate sentences over bullet lists when generating documentation/specifications; reserve bullets for enum-like data only.

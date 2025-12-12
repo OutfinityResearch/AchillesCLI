@@ -67,12 +67,20 @@ const applyAction = (step) => {
         GampRSP.updateNFS(payload.id, payload.title || 'Updated NFS', payload.description || '', payload.ursId || null);
         return { action, id: normaliseId(payload.id) };
     case 'createds': {
+        const options = {};
+        if (payload.implementationPath) {
+            options.implementationPath = payload.implementationPath;
+        }
+        if (payload.dsIds) {
+            options.dsIds = payload.dsIds;
+        }
         const id = GampRSP.createDS(
             payload.title || 'New DS',
             payload.description || '',
             payload.architecture || '',
-            payload.ursId || null,
-            payload.reqId || null,
+            payload.ursIds || payload.ursId || null,
+            payload.reqIds || payload.reqId || null,
+            options,
         );
         return { action, id };
     }
