@@ -9,7 +9,7 @@
     <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet'>
     <link href='https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
-    <title>Skill Manager CLI - Documentation</title>
+    <title>Achilles CLI - Documentation</title>
     <style>
         /* ========= BASE STYLES ========= */
         * {
@@ -533,14 +533,14 @@
             <header class="docs-header" id="overview">
                 <span class="badge">v0.1.0</span>
                 <span class="badge">Node.js &ge;18</span>
-                <h1>Skill Manager CLI</h1>
+                <h1>Achilles CLI</h1>
                 <p class="tagline">A command-line interface for managing, generating, testing, and refining AI skill definitions. Build powerful AI agents with a dual-interface approach combining natural language and slash commands.</p>
             </header>
 
             <!-- Overview Section -->
             <section class="doc-section">
-                <h2>What is Skill Manager CLI?</h2>
-                <p>Skill Manager CLI is a powerful tool for creating and managing skill-based AI agents. It provides a complete workflow for:</p>
+                <h2>What is Achilles CLI?</h2>
+                <p>Achilles CLI is a powerful tool for creating and managing skill-based AI agents. It provides a complete workflow for:</p>
                 <ul>
                     <li><strong>Creating skills</strong> - Define AI behaviors in human-readable Markdown files</li>
                     <li><strong>Validating skills</strong> - Ensure skills conform to schema requirements</li>
@@ -581,21 +581,21 @@
                 </ul>
 
                 <h3>Install from npm</h3>
-                <pre><code><span class="token-command">npm</span> install -g @outfinityresearch/skill-manager-cli</code></pre>
+                <pre><code><span class="token-command">npm</span> install -g @outfinityresearch/achilles-cli</code></pre>
 
                 <h3>Install from source</h3>
-                <pre><code><span class="token-command">git</span> clone https://github.com/OutfinityResearch/skill-manager-cli.git
-<span class="token-command">cd</span> skill-manager-cli/skill-manager
+                <pre><code><span class="token-command">git</span> clone https://github.com/OutfinityResearch/achilles-cli.git
+<span class="token-command">cd</span> achilles-cli/achilles-cli
 <span class="token-command">npm</span> install
 <span class="token-command">npm</span> link</code></pre>
 
                 <h3>Run as Ploinky Agent</h3>
-                <p>The skill-manager-cli is a ploinky repository with the <code>skill-manager</code> agent inside:</p>
+                <p>The achilles-cli is a ploinky repository with the <code>achilles-cli</code> agent inside:</p>
                 <pre><code><span class="token-comment"># Add to your ploinky workspace</span>
-<span class="token-command">ploinky</span> add skill-manager-cli
+<span class="token-command">ploinky</span> add achilles-cli
 
-<span class="token-comment"># Run the skill-manager agent</span>
-<span class="token-command">ploinky</span> run skill-manager</code></pre>
+<span class="token-comment"># Run the achilles-cli agent</span>
+<span class="token-command">ploinky</span> run achilles-cli</code></pre>
 
                 <h3>Environment Setup</h3>
                 <p>Set an API key for at least one of the supported LLM providers:</p>
@@ -627,7 +627,7 @@
                 <h3>1. Initialize a project</h3>
                 <pre><code><span class="token-command">mkdir</span> my-skills-project
 <span class="token-command">cd</span> my-skills-project
-<span class="token-command">skill-manager-cli</span></code></pre>
+<span class="token-command">achilles-cli</span></code></pre>
                 <p>This creates a <code>skills</code> directory for your custom skills.</p>
 
                 <h3>2. List available skills</h3>
@@ -654,7 +654,7 @@
             <!-- Natural Language Usage -->
             <section class="doc-section" id="natural-language">
                 <h2>Natural Language Usage</h2>
-                <p>Beyond slash commands, you can interact with skill-manager-cli using natural language. The orchestrator interprets your intent and routes to the appropriate skills.</p>
+                <p>Beyond slash commands, you can interact with achilles-cli using natural language. The orchestrator interprets your intent and routes to the appropriate skills.</p>
 
                 <h3>Skill Management Examples</h3>
                 <pre><code><span class="token-comment"># List and explore skills</span>
@@ -1793,10 +1793,10 @@ Generate clean ESM code with JSDoc comments.</code></pre>
 
                 <h3>Debugging Generation Issues</h3>
                 <pre><code><span class="token-comment"># Enable verbose mode to see prompts</span>
-<span class="token-command">skill-manager-cli</span> --verbose
+<span class="token-command">achilles-cli</span> --verbose
 
 <span class="token-comment"># Enable debug mode to see full JSON responses</span>
-<span class="token-command">skill-manager-cli</span> --debug
+<span class="token-command">achilles-cli</span> --debug
 
 <span class="token-comment"># Test generated code</span>
 <span class="token-command">/test</span> equipment
@@ -1884,7 +1884,7 @@ Generate clean ESM code with JSDoc comments.</code></pre>
 │   │   └── my-skill.tests.mjs
 │   └── another-skill/
 │       └── ...
-└── .skill-manager-history     <span class="token-comment"># Command history</span></code></pre>
+└── .achilles-cli-history     <span class="token-comment"># Command history</span></code></pre>
             </section>
 
             <!-- Workflows Section -->
@@ -1957,11 +1957,11 @@ Generate clean ESM code with JSDoc comments.</code></pre>
 └─────────────────────────────────────────────────────────────┘</code></pre>
 
                 <h3>Repository Structure</h3>
-                <pre><code>skill-manager-cli/           <span class="token-comment"># Ploinky repository</span>
+                <pre><code>achilles-cli/           <span class="token-comment"># Ploinky repository</span>
 ├── CLAUDE.md               <span class="token-comment"># Architecture documentation</span>
 ├── docs/                   <span class="token-comment"># This documentation</span>
 ├── tests/                  <span class="token-comment"># Test files</span>
-└── skill-manager/          <span class="token-comment"># Ploinky agent</span>
+└── achilles-cli/          <span class="token-comment"># Ploinky agent</span>
     ├── manifest.json       <span class="token-comment"># Agent manifest</span>
     ├── scripts/            <span class="token-comment"># Install scripts</span>
     ├── src/                <span class="token-comment"># Source code</span>
@@ -1971,7 +1971,7 @@ Generate clean ESM code with JSDoc comments.</code></pre>
 
                 <h3>Two-Layer Skill Discovery</h3>
                 <ol>
-                    <li><strong>Built-in Skills</strong> - Bundled with CLI in <code>skill-manager/src/skills/</code></li>
+                    <li><strong>Built-in Skills</strong> - Bundled with CLI in <code>achilles-cli/src/skills/</code></li>
                     <li><strong>User Skills</strong> - Project-specific in <code>skills/</code></li>
                 </ol>
                 <p>User skills can override built-in skills of the same name.</p>

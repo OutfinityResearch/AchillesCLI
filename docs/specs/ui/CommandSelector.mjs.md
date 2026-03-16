@@ -102,7 +102,7 @@ class CommandSelector {
 ### showCommandSelector Function
 ```javascript
 async function showCommandSelector(commands, options = {}) {
-    const { prompt = 'SkillManager> /', initialFilter = '', maxVisible = 8 } = options;
+    const { prompt = 'AchillesCli> /', initialFilter = '', maxVisible = 8 } = options;
 
     return new Promise((resolve) => {
         const selector = new CommandSelector(commands, { maxVisible });

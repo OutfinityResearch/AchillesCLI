@@ -4,7 +4,7 @@ ID: DS(/lib/constants.mjs)
 
 ## Overview
 
-**Role**: Centralized constants registry providing single source of truth for skill names, timeouts, configuration values, and error codes throughout skill-manager-cli.
+**Role**: Centralized constants registry providing single source of truth for skill names, timeouts, configuration values, and error codes throughout achilles-cli.
 
 **Pattern**: Module-level constants with grouped exports. No classes or state - pure constant definitions with utility functions for lookups.
 

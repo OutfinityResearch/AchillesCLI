@@ -1,6 +1,6 @@
 # Design Specifications
 
-This folder contains detailed design specifications for each module in the skill-manager-cli codebase. Each specification documents:
+This folder contains detailed design specifications for each module in the achilles-cli codebase. Each specification documents:
 
 - **What** the module does
 - **How** it accomplishes its tasks

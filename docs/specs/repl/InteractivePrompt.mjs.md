@@ -187,7 +187,7 @@ new InteractivePrompt({
     slashHandler,      // SlashCommandHandler for validation
     commandList,       // Array for command picker
     getUserSkills,     // Callback: () => skills[]
-    prompt,            // Prompt string (default: 'SkillManager> ')
+    prompt,            // Prompt string (default: 'AchillesCli> ')
 })
 ```
 

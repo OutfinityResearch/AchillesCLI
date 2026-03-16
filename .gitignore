@@ -4,7 +4,7 @@ node_modules
 package-lock.json
 .DS_Store
 *.log
-.skill-manager-history
+.achilles-cli-history
 temp_*
 .history
 .idea

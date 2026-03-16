@@ -67,7 +67,7 @@ For trusted environments, you can skip all permission prompts:
 
 ```bash
 # Via environment variable
-SKIP_BASH_PERMISSIONS=true skill-manager
+SKIP_BASH_PERMISSIONS=true achilles-cli
 
 # Via context flag (for programmatic use)
 # Pass { skipBashPermissions: true } in context

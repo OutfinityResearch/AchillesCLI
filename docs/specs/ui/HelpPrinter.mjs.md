@@ -201,7 +201,7 @@ Command history (last N of TOTAL):
     ...
    123  most recent command
 
-History stored at: /path/to/.skill-manager-history
+History stored at: /path/to/.achilles-cli-history
 ```
 
 ## Pseudocode

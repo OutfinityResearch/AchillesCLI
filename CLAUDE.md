@@ -1,4 +1,4 @@
-# Skill Manager CLI - Architecture Documentation
+# Achilles CLI - Architecture Documentation
 
 ## Table of Contents
 
@@ -15,18 +15,18 @@
 
 ## Overview
 
-The **skill-manager-cli** is a ploinky repository containing the **skill-manager** agent - a command-line interface for managing, generating, and testing skill definition files in `skills` directories. It provides both an interactive REPL mode and single-shot command execution, powered by LLM-based natural language understanding.
+The **achilles-cli** is a ploinky repository containing the **achilles-cli** agent - a command-line interface for managing, generating, and testing skill definition files in `skills` directories. It provides both an interactive REPL mode and single-shot command execution, powered by LLM-based natural language understanding.
 
 ## Repository Structure
 
 ```
-skill-manager-cli/           # Ploinky repository (outer)
+achilles-cli/           # Ploinky repository (outer)
 ├── CLAUDE.md               # This file
 ├── ARCHITECTURE.md         # Architecture documentation
 ├── docs/                   # Documentation website
 ├── tests/                  # Test files
 ├── test-env/               # Test environment
-└── skill-manager/          # Ploinky agent (inner)
+└── achilles-cli/          # Ploinky agent (inner)
     ├── manifest.json       # Ploinky agent manifest
     ├── scripts/            # Install scripts
     │   └── installPrerequisites.sh
@@ -39,7 +39,7 @@ skill-manager-cli/           # Ploinky repository (outer)
     │   ├── lib/            # Library modules
     │   └── schemas/        # Skill schemas
     └── bin/                # CLI binaries
-        └── skill-manager-cli
+        └── achilles-cli
 ```
 
 ### Key Capabilities
@@ -61,7 +61,7 @@ skill-manager-cli/           # Ploinky repository (outer)
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                     Entry Point (skill-manager/src/index.mjs)                         │   │
+│  │                     Entry Point (achilles-cli/src/index.mjs)                         │   │
 │  │  • CLI argument parsing                                                   │   │
 │  │  • Single-shot vs REPL mode detection                                     │   │
 │  │  • Logger configuration                                                   │   │
@@ -69,7 +69,7 @@ skill-manager-cli/           # Ploinky repository (outer)
 │                                       │                                          │
 │                                       ▼                                          │
 │  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                        SkillManagerCli (Core)                             │   │
+│  │                        AchillesCli (Core)                             │   │
 │  │  ┌─────────────────────────────────────────────────────────────────────┐ │   │
 │  │  │ • RecursiveSkilledAgent (from achilles-agent-lib)                   │ │   │
 │  │  │ • LLMAgent (LLM invocation)                                         │ │   │
@@ -123,7 +123,7 @@ skill-manager-cli/           # Ploinky repository (outer)
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │
-│  │  skill-manager  │  │  list-skills    │  │  read-skill     │                  │
+│  │  achilles-cli  │  │  list-skills    │  │  read-skill     │                  │
 │  │  (Orchestrator) │  │  (CodeGen)      │  │  (CodeGen)      │                  │
 │  │                 │  │                 │  │                 │                  │
 │  │  Routes all     │  │  Lists catalog  │  │  Reads .md      │                  │
@@ -153,7 +153,7 @@ skill-manager-cli/           # Ploinky repository (outer)
 
 ## Core Components
 
-### 1. Entry Point (`skill-manager/src/index.mjs`)
+### 1. Entry Point (`achilles-cli/src/index.mjs`)
 
 The main CLI entry point that initializes `RecursiveSkilledAgent` directly.
 
@@ -166,7 +166,7 @@ The main CLI entry point that initializes `RecursiveSkilledAgent` directly.
 **Key Design Decision:**
 > The CLI uses `RecursiveSkilledAgent` directly (no wrapper class) with `additionalSkillRoots` to register built-in skills. This reduces abstraction layers while still supporting multi-source skill discovery. The `REPLSession` owns all REPL-specific concerns (history, formatting, UI).
 
-### 2. REPLSession (`skill-manager/src/repl/REPLSession.mjs`)
+### 2. REPLSession (`achilles-cli/src/repl/REPLSession.mjs`)
 
 Manages the interactive command-line session. Takes a `RecursiveSkilledAgent` and options.
 
@@ -189,12 +189,12 @@ new REPLSession(agent, {
 - Manage spinner animations during LLM calls
 - Own `HistoryManager` instance
 - Build context object for skill execution
-- Process prompts through skill-manager orchestrator
+- Process prompts through achilles-cli orchestrator
 
 **Key Design Decision:**
 > Raw terminal mode (`stdin.setRawMode(true)`) is used instead of standard readline for precise control over key handling. This enables features like the "/" command picker, real-time hints, and ESC cancellation that wouldn't be possible with buffered input. REPLSession owns its dependencies (HistoryManager, context) rather than receiving them from a wrapper.
 
-### 3. SlashCommandHandler (`skill-manager/src/repl/SlashCommandHandler.mjs`)
+### 3. SlashCommandHandler (`achilles-cli/src/repl/SlashCommandHandler.mjs`)
 
 Maps slash commands to skill executions.
 
@@ -207,7 +207,7 @@ Maps slash commands to skill executions.
 **Key Design Decision:**
 > Slash commands provide deterministic, fast access to specific skills without LLM interpretation. This dual-interface approach (slash commands + natural language) gives users control when they know exactly what they want, while still supporting flexible natural language when exploring.
 
-### 4. CommandSelector (`skill-manager/src/ui/CommandSelector.mjs`)
+### 4. CommandSelector (`achilles-cli/src/ui/CommandSelector.mjs`)
 
 Interactive picker for commands and skills.
 
@@ -220,19 +220,19 @@ Interactive picker for commands and skills.
 **Key Design Decision:**
 > The selector uses a scroll-windowed approach (`maxVisible`) rather than showing all options at once. This scales gracefully as the number of skills grows and keeps the UI clean.
 
-### 5. HistoryManager (`skill-manager/src/repl/HistoryManager.mjs`)
+### 5. HistoryManager (`achilles-cli/src/repl/HistoryManager.mjs`)
 
 Persists command history per project.
 
 **Responsibilities:**
-- Store history in `.skill-manager-history` per working directory
+- Store history in `.achilles-cli-history` per working directory
 - Provide navigation and search APIs
 - Auto-trim to max entries
 
 **Key Design Decision:**
-> Per-directory history (stored in `.skill-manager-history` within each project) rather than global history. This provides context-relevant suggestions and keeps different project histories isolated.
+> Per-directory history (stored in `.achilles-cli-history` within each project) rather than global history. This provides context-relevant suggestions and keeps different project histories isolated.
 
-### 6. ResultFormatter (`skill-manager/src/ui/ResultFormatter.mjs`)
+### 6. ResultFormatter (`achilles-cli/src/ui/ResultFormatter.mjs`)
 
 Transforms raw execution results for display.
 
@@ -244,7 +244,7 @@ Transforms raw execution results for display.
 **Key Design Decision:**
 > Stateless utility functions extracted from the main CLI class. This follows the principle of separating concerns: the CLI handles orchestration, the formatter handles presentation.
 
-### 7. Spinner (`skill-manager/src/ui/spinner.mjs`)
+### 7. Spinner (`achilles-cli/src/ui/spinner.mjs`)
 
 Animated progress indicator.
 
@@ -257,7 +257,7 @@ Animated progress indicator.
 **Key Design Decision:**
 > The spinner writes to `stderr` by default, keeping `stdout` clean for actual command output. This enables proper piping and redirection of results.
 
-### 8. skillSchemas (`skill-manager/src/schemas/skillSchemas.mjs`)
+### 8. skillSchemas (`achilles-cli/src/schemas/skillSchemas.mjs`)
 
 Schema definitions and validation.
 
@@ -281,7 +281,7 @@ Schema definitions and validation.
 
 ### achilles-agent-lib
 
-The `skill-manager-cli` depends on `achilles-agent-lib` (linked locally via `file:../AchillesAgentLib`) for its core agent functionality.
+The `achilles-cli` depends on `achilles-agent-lib` (linked locally via `file:../AchillesAgentLib`) for its core agent functionality.
 
 ```
 achilles-agent-lib/
@@ -368,7 +368,7 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 ### 3. Two-Layer Skill Discovery
 
 **Decision:** Skills are loaded from two locations:
-1. Built-in skills (bundled with the CLI in `skill-manager/src/skills/`)
+1. Built-in skills (bundled with the CLI in `achilles-cli/src/skills/`)
 2. User skills (in the working directory's `skills/`)
 
 **Rationale:**
@@ -379,7 +379,7 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 
 ### 4. Orchestrator-First Routing
 
-**Decision:** All natural language prompts go through the `skill-manager` orchestrator by default.
+**Decision:** All natural language prompts go through the `achilles-cli` orchestrator by default.
 
 **Rationale:**
 - Single entry point for intent classification
@@ -419,7 +419,7 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 
 ### 8. Per-Project History
 
-**Decision:** Command history stored in `.skill-manager-history` per project.
+**Decision:** Command history stored in `.achilles-cli-history` per project.
 
 **Rationale:**
 - Different projects have different skill sets
@@ -484,11 +484,11 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 
 ### Built-in Skills
 
-The CLI ships with these built-in skills in `skill-manager/src/skills/`:
+The CLI ships with these built-in skills in `achilles-cli/src/skills/`:
 
 | Skill | Type | Purpose |
 |-------|------|---------|
-| `skill-manager` | oskill | Main orchestrator—routes all user requests |
+| `achilles-cli` | oskill | Main orchestrator—routes all user requests |
 | `list-skills` | cgskill | Lists skills in the catalog |
 | `read-skill` | cgskill | Reads skill definition content |
 | `write-skill` | cgskill | Creates/updates skill files |
@@ -583,15 +583,15 @@ User types: "list all skills"
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ SkillManagerCli.processPrompt()                             │
+│ AchillesCli.processPrompt()                             │
 │ • Delegates to skilledAgent.executePrompt()                 │
-│ • skillName defaults to 'skill-manager'                     │
+│ • skillName defaults to 'achilles-cli'                     │
 └─────────────────────────────────────────────────────────────┘
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ RecursiveSkilledAgent.executeWithReviewMode()               │
-│ • Looks up skill-manager in catalog                         │
+│ • Looks up achilles-cli in catalog                         │
 │ • Gets OrchestratorSkillsSubsystem                          │
 │ • Calls subsystem.executeSkillPrompt()                      │
 └─────────────────────────────────────────────────────────────┘
@@ -599,7 +599,7 @@ User types: "list all skills"
        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ OrchestratorSkillsSubsystem                                 │
-│ • Reads skill-manager oskill.md                             │
+│ • Reads achilles-cli oskill.md                             │
 │ • Sends prompt + instructions to LLM                        │
 │ • LLM returns plan: [{skill: "list-skills", input: ""}]     │
 │ • Executes each step via recursiveAgent                     │
@@ -643,7 +643,7 @@ User types: "/read my-skill"
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ SkillManagerCli.executeSkill()                              │
+│ AchillesCli.executeSkill()                              │
 │ • Direct execution (no orchestrator)                        │
 │ • skilledAgent.executePrompt() with skillName specified     │
 └─────────────────────────────────────────────────────────────┘
@@ -660,7 +660,7 @@ User types: "/read my-skill"
 
 ## Module Reference
 
-All modules are located in `skill-manager/src/`:
+All modules are located in `achilles-cli/src/`:
 
 | Module | Location | Purpose |
 |--------|----------|---------|
@@ -678,7 +678,7 @@ All modules are located in `skill-manager/src/`:
 
 ## Summary
 
-The skill-manager-cli is designed around these core principles:
+The achilles-cli is designed around these core principles:
 
 1. **Separation of Concerns**: CLI handles interaction, agent library handles skill execution
 2. **Dual Interface**: Natural language for flexibility, slash commands for speed

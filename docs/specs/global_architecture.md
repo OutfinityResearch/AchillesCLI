@@ -2,7 +2,7 @@
 
 ID: DS(/global_architecture)
 
-This design specification captures the cross-cutting architecture, module relationships, and key design decisions that apply to the entire skill-manager-cli application. It complements the module-level DS files and provides global context for understanding the system.
+This design specification captures the cross-cutting architecture, module relationships, and key design decisions that apply to the entire achilles-cli application. It complements the module-level DS files and provides global context for understanding the system.
 
 ## Scope
 
@@ -78,7 +78,7 @@ This design specification captures the cross-cutting architecture, module relati
 
 ## Dual-Interface Architecture
 
-The skill-manager-cli provides two complementary interfaces for user interaction:
+The achilles-cli provides two complementary interfaces for user interaction:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -198,7 +198,7 @@ The following rules govern data flow throughout the application:
 ### 2. History Management
 - Commands are saved to history only on successful execution
 - Interrupted operations (ESC) do not add to history
-- History is per-project (stored in `.skill-manager-history`)
+- History is per-project (stored in `.achilles-cli-history`)
 - Navigation uses index-based tracking (-1 = new input)
 
 ### 3. Skill Execution
@@ -250,7 +250,7 @@ The following rules govern data flow throughout the application:
 - Avoids shared mutable state
 
 ### 5. Per-Project History
-**Decision:** Store history in `.skill-manager-history` in the working directory.
+**Decision:** Store history in `.achilles-cli-history` in the working directory.
 
 **Rationale:**
 - Different projects have different skill sets
@@ -298,7 +298,7 @@ The following rules govern data flow throughout the application:
 
 ## Summary
 
-The skill-manager-cli is designed around these core architectural principles:
+The achilles-cli is designed around these core architectural principles:
 
 1. **Separation of Concerns**: Each module has a single, well-defined responsibility
 2. **Dual Interface**: Natural language for flexibility, slash commands for speed

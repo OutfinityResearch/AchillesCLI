@@ -17,7 +17,7 @@ ID: DS(/repl/HistoryManager.mjs)
 
 HistoryManager provides:
 
-1. **Persistence**: Stores history in `.skill-manager-history` per working directory
+1. **Persistence**: Stores history in `.achilles-cli-history` per working directory
 2. **Navigation**: Arrow key navigation through history (getPrevious, getNext)
 3. **Search**: Find commands containing a query string
 4. **Deduplication**: Prevents consecutive duplicate entries
@@ -138,7 +138,7 @@ search(query, limit = 10) {
 ## Why This Design
 
 ### 1. Per-Project History
-**Decision**: Store history in `.skill-manager-history` in the working directory.
+**Decision**: Store history in `.achilles-cli-history` in the working directory.
 
 **Rationale**:
 - Different projects have different skill sets
@@ -189,7 +189,7 @@ search(query, limit = 10) {
 ```javascript
 new HistoryManager({
     workingDir,   // Base directory (default: cwd)
-    historyFile,  // Filename (default: '.skill-manager-history')
+    historyFile,  // Filename (default: '.achilles-cli-history')
     maxEntries,   // Max entries to keep (default: 1000)
 })
 ```
@@ -216,7 +216,7 @@ length                           // Number of history entries (getter)
 ```javascript
 class HistoryManager {
     constructor(options) {
-        this.historyPath = path.join(options.workingDir, '.skill-manager-history');
+        this.historyPath = path.join(options.workingDir, '.achilles-cli-history');
         this.maxEntries = options.maxEntries || 1000;
         this.history = [];
         this.currentIndex = -1;  // -1 = new input position

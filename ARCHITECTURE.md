@@ -1,4 +1,4 @@
-# Skill Manager CLI - Architecture Documentation
+# Achilles CLI - Architecture Documentation
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@
 
 ## Overview
 
-The **skill-manager-cli** is a command-line interface for managing, generating, and testing skill definition files in `skills` directories. It provides both an interactive REPL mode and single-shot command execution, powered by LLM-based natural language understanding.
+The **achilles-cli** is a command-line interface for managing, generating, and testing skill definition files in `skills` directories. It provides both an interactive REPL mode and single-shot command execution, powered by LLM-based natural language understanding.
 
 ### Key Capabilities
 
@@ -44,7 +44,7 @@ The **skill-manager-cli** is a command-line interface for managing, generating, 
 │                                       │                                          │
 │                                       ▼                                          │
 │  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                        SkillManagerCli (Core)                             │   │
+│  │                        AchillesCli (Core)                             │   │
 │  │  ┌─────────────────────────────────────────────────────────────────────┐ │   │
 │  │  │ • RecursiveSkilledAgent (from achilles-agent-lib)                   │ │   │
 │  │  │ • LLMAgent (LLM invocation)                                         │ │   │
@@ -98,7 +98,7 @@ The **skill-manager-cli** is a command-line interface for managing, generating, 
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │
-│  │  skill-manager  │  │  list-skills    │  │  read-skill     │                  │
+│  │  achilles-cli  │  │  list-skills    │  │  read-skill     │                  │
 │  │  (Orchestrator) │  │  (Code Skill)   │  │  (Code Skill)   │                  │
 │  │                 │  │                 │  │                 │                  │
 │  │  Routes all     │  │  Lists catalog  │  │  Reads .md      │                  │
@@ -164,7 +164,7 @@ new REPLSession(agent, {
 - Manage spinner animations during LLM calls
 - Own `HistoryManager` instance
 - Build context object for skill execution
-- Process prompts through skill-manager orchestrator
+- Process prompts through achilles-cli orchestrator
 
 **Key Design Decision:**
 > Raw terminal mode (`stdin.setRawMode(true)`) is used instead of standard readline for precise control over key handling. This enables features like the "/" command picker, real-time hints, and ESC cancellation that wouldn't be possible with buffered input. REPLSession owns its dependencies (HistoryManager, context) rather than receiving them from a wrapper.
@@ -200,12 +200,12 @@ Interactive picker for commands and skills.
 Persists command history per project.
 
 **Responsibilities:**
-- Store history in `.skill-manager-history` per working directory
+- Store history in `.achilles-cli-history` per working directory
 - Provide navigation and search APIs
 - Auto-trim to max entries
 
 **Key Design Decision:**
-> Per-directory history (stored in `.skill-manager-history` within each project) rather than global history. This provides context-relevant suggestions and keeps different project histories isolated.
+> Per-directory history (stored in `.achilles-cli-history` within each project) rather than global history. This provides context-relevant suggestions and keeps different project histories isolated.
 
 ### 6. ResultFormatter (`src/ResultFormatter.mjs`)
 
@@ -256,7 +256,7 @@ Schema definitions and validation.
 
 ### achilles-agent-lib
 
-The `skill-manager-cli` depends on `achilles-agent-lib` (linked locally via `file:../AchillesAgentLib`) for its core agent functionality.
+The `achilles-cli` depends on `achilles-agent-lib` (linked locally via `file:../AchillesAgentLib`) for its core agent functionality.
 
 ```
 achilles-agent-lib/
@@ -350,7 +350,7 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 
 ### 4. Orchestrator-First Routing
 
-**Decision:** All natural language prompts go through the `skill-manager` orchestrator by default.
+**Decision:** All natural language prompts go through the `achilles-cli` orchestrator by default.
 
 **Rationale:**
 - Single entry point for intent classification
@@ -390,7 +390,7 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 
 ### 8. Per-Project History
 
-**Decision:** Command history stored in `.skill-manager-history` per project.
+**Decision:** Command history stored in `.achilles-cli-history` per project.
 
 **Rationale:**
 - Different projects have different skill sets
@@ -459,7 +459,7 @@ The CLI ships with these built-in skills in `src/skills/`:
 
 | Skill | Type | Purpose |
 |-------|------|---------|
-| `skill-manager` | oskill | Main orchestrator—routes all user requests |
+| `achilles-cli` | oskill | Main orchestrator—routes all user requests |
 | `list-skills` | cskill | Lists skills in the catalog |
 | `read-skill` | cskill | Reads skill definition content |
 | `write-skill` | cskill | Creates/updates skill files |
@@ -553,15 +553,15 @@ User types: "list all skills"
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ SkillManagerCli.processPrompt()                             │
+│ AchillesCli.processPrompt()                             │
 │ • Delegates to skilledAgent.executePrompt()                 │
-│ • skillName defaults to 'skill-manager'                     │
+│ • skillName defaults to 'achilles-cli'                     │
 └─────────────────────────────────────────────────────────────┘
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ RecursiveSkilledAgent.executeWithReviewMode()               │
-│ • Looks up skill-manager in catalog                         │
+│ • Looks up achilles-cli in catalog                         │
 │ • Gets OrchestratorSkillsSubsystem                          │
 │ • Calls subsystem.executeSkillPrompt()                      │
 └─────────────────────────────────────────────────────────────┘
@@ -569,7 +569,7 @@ User types: "list all skills"
        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ OrchestratorSkillsSubsystem                                 │
-│ • Reads skill-manager oskill.md                             │
+│ • Reads achilles-cli oskill.md                             │
 │ • Sends prompt + instructions to LLM                        │
 │ • LLM returns plan: [{skill: "list-skills", input: ""}]     │
 │ • Executes each step via recursiveAgent                     │
@@ -613,7 +613,7 @@ User types: "/read my-skill"
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ SkillManagerCli.executeSkill()                              │
+│ AchillesCli.executeSkill()                              │
 │ • Direct execution (no orchestrator)                        │
 │ • skilledAgent.executePrompt() with skillName specified     │
 └─────────────────────────────────────────────────────────────┘
@@ -633,7 +633,7 @@ User types: "/read my-skill"
 | Module | Lines | Purpose |
 |--------|-------|---------|
 | `index.mjs` | ~200 | CLI entry point, argument parsing, mode detection |
-| `SkillManagerCli.mjs` | ~310 | Core orchestration, agent initialization |
+| `AchillesCli.mjs` | ~310 | Core orchestration, agent initialization |
 | `REPLSession.mjs` | ~830 | Interactive session, input handling |
 | `SlashCommandHandler.mjs` | ~390 | Slash command definitions and execution |
 | `CommandSelector.mjs` | ~460 | Interactive command/skill picker |
@@ -647,7 +647,7 @@ User types: "/read my-skill"
 
 ## Summary
 
-The skill-manager-cli is designed around these core principles:
+The achilles-cli is designed around these core principles:
 
 1. **Separation of Concerns**: CLI handles interaction, agent library handles skill execution
 2. **Dual Interface**: Natural language for flexibility, slash commands for speed

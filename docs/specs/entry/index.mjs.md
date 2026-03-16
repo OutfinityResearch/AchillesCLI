@@ -99,7 +99,7 @@ function isRunDirectly() {
 
 **Rationale**:
 - Single import point for library consumers
-- Enables `import { REPLSession, HistoryManager } from 'skill-manager-cli'`
+- Enables `import { REPLSession, HistoryManager } from 'achilles-cli'`
 - Cleaner than requiring users to know internal paths
 - Forward compatibility - internal reorganization doesn't break imports
 
@@ -119,7 +119,7 @@ function isRunDirectly() {
 - Reduces abstraction layers
 - `additionalSkillRoots` provides multi-source skill discovery
 - Agent is passed to REPLSession which owns REPL concerns
-- Previous `SkillManagerCli` wrapper was eliminated as unnecessary
+- Previous `AchillesCli` wrapper was eliminated as unnecessary
 
 ### 4. Shared Context Object
 **Decision**: Create a context object passed to all skill executions.
@@ -170,7 +170,7 @@ export {
 
 ### CLI Usage
 ```
-skill-manager [options] [prompt]
+achilles-cli [options] [prompt]
 
 Options:
   -d, --dir <path>   Working directory (default: cwd)
@@ -195,7 +195,7 @@ async function main() {
     ensureDir(path.join(workingDir, 'skills'));
 
     // 3. Initialize LLM agent
-    llmAgent = new LLMAgent({ name: 'skill-manager-agent' });
+    llmAgent = new LLMAgent({ name: 'achilles-cli-agent' });
 
     // 4. Initialize RecursiveSkilledAgent with built-in skills
     agent = new RecursiveSkilledAgent({
