@@ -220,14 +220,13 @@ async function main() {
             process.exit(1);
         }
     } else {
-        // REPL mode - first await any pending skill preparations
+        // REPL mode - wait for all pending skill preparations to settle
         if (agent.pendingPreparations && agent.pendingPreparations.length > 0) {
-            const count = agent.pendingPreparations.length;
+            const pendingCount = agent.pendingPreparations.length;
             if (verbose) {
-                console.log(`Waiting for ${count} skill preparation(s) to complete...`);
+                console.log(`Waiting for ${pendingCount} skill preparation(s) to complete...`);
             }
-            await Promise.all(agent.pendingPreparations);
-            agent.pendingPreparations.length = 0; // Clear the array
+            await agent.awaitPreparations();
         }
 
         const session = new REPLSession(agent, {
