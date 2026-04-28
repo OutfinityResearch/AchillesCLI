@@ -8,3 +8,7 @@ package-lock.json
 temp_*
 .history
 .idea
+# >>> ploinky default-skills >>>
+.claude/skills/
+.agents/skills/
+# <<< ploinky default-skills <<<
