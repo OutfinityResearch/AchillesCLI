@@ -1,0 +1,47 @@
+---
+id: DS010
+title: Ecosystem Integration (Ploinky, AchillesAgentLib, AchillesIDE)
+status: active
+owner: AchillesCLI Maintainers
+summary: Defines integration boundaries and contracts between AchillesCLI and the surrounding ecosystem repositories.
+---
+
+# DS010-ecosystem-integration
+
+## Introduction
+This DS defines the required integration boundaries for AchillesCLI across the local ecosystem repositories used in development and runtime workflows.
+
+## Core Content
+Integration scope:
+1. AchillesCLI is a runnable CLI/runtime repository.
+2. AchillesAgentLib provides the core agent runtime primitives consumed by AchillesCLI.
+3. Ploinky provides workspace/runtime orchestration where AchillesCLI can be enabled and executed.
+4. AchillesIDE provides a related multi-agent workspace/IDE surface whose contracts shape interoperability expectations.
+
+Portable integration references (any environment):
+1. Ploinky repository: `<workspace-root>/ploinky`
+2. AchillesAgentLib installation path: `<ploinky-root>/node_modules/achillesAgentLib` (or equivalent dependency root resolved by runtime config)
+3. AchillesIDE repository: `<workspace-root>/.ploinky/repos/AchillesIDE`
+
+AchillesAgentLib contract:
+1. AchillesCLI imports and uses `MainAgent`, `LLMAgent`, and related runtime helpers.
+2. AchillesCLI delegates skill discovery/orchestration semantics to AchillesAgentLib.
+3. AchillesCLI must preserve compatibility with AchillesAgentLib skill subsystem expectations.
+
+Ploinky integration boundary:
+1. AchillesCLI should remain compatible with workspace-managed runtime contexts.
+2. Startup assumptions must avoid hardcoded machine-specific paths in core runtime logic.
+3. Session/webchat runtime paths should keep durable-state assumptions aligned with orchestrated process lifecycles.
+
+AchillesIDE interoperability boundary:
+1. AchillesIDE documents a broader agent ecosystem with MCP and workspace routing expectations.
+2. AchillesCLI documentation must remain explicit about what is native to CLI vs what belongs to IDE/router hosts.
+3. Shared conventions (safe user output, debug gating, deterministic command behavior) must remain compatible across ecosystem tools.
+
+Cross-repository invariants:
+1. No repository should assume hidden runtime side effects from another without documented contracts.
+2. Integration docs must describe boundaries and responsibilities, not duplicate entire external specs.
+3. When AchillesAgentLib or host-runtime integration points change, AchillesCLI DS files must be updated in the same change set.
+
+## Conclusion
+AchillesCLI is a first-class runtime component inside a larger ecosystem; integration quality depends on explicit boundaries with Ploinky orchestration, AchillesAgentLib runtime semantics, and AchillesIDE interoperability expectations.
