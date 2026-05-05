@@ -84,6 +84,13 @@ export class SlashCommandHandler {
             args: 'required',
             needsSkillArg: true,
         },
+        'build': {
+            skill: null,
+            usage: '/build',
+            description: 'Build pending skills from specs',
+            args: 'optional',
+            needsSkillArg: false,
+        },
         'test': {
             skill: null, // Special handling - shows picker if no args, runs test-code if skill specified
             usage: '/test [skill-name]',
@@ -164,11 +171,13 @@ export class SlashCommandHandler {
      *
      * @param {Object} options
      * @param {Function} options.executeSkill - Function to execute a skill: (skillName, input, options) => Promise
+     * @param {Function} [options.buildSkills] - Function to build pending skills: () => Promise<void>
      * @param {Function} options.getUserSkills - Function to get user skills: () => Array
      * @param {Function} options.getSkills - Function to get all skills: () => Array
      */
-    constructor({ executeSkill, getUserSkills, getSkills }) {
+    constructor({ executeSkill, buildSkills, getUserSkills, getSkills }) {
         this.executeSkill = executeSkill;
+        this.buildSkills = buildSkills;
         this.getUserSkills = getUserSkills;
         this.getSkills = getSkills;
     }
@@ -324,6 +333,28 @@ export class SlashCommandHandler {
                 return {
                     handled: true,
                     result: formatSlashResult(result),
+                };
+            } catch (error) {
+                return {
+                    handled: true,
+                    error: error.message,
+                };
+            }
+        }
+
+        // Handle /build specially - manual build trigger
+        if (command === 'build') {
+            if (typeof this.buildSkills !== 'function') {
+                return {
+                    handled: true,
+                    error: 'Build is unavailable in this session.',
+                };
+            }
+            try {
+                await this.buildSkills();
+                return {
+                    handled: true,
+                    result: 'Skills build complete.',
                 };
             } catch (error) {
                 return {

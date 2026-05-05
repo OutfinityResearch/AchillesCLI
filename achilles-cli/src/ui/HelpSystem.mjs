@@ -112,6 +112,7 @@ ${C.bold}${C.yellow}Slash Commands${C.reset} ${C.dim}(direct skill execution)${C
   ${C.cyan}/delete${C.reset} <skill>          Delete a skill
   ${C.cyan}/validate${C.reset} <skill>        Validate against schema
   ${C.cyan}/template${C.reset} <type>         Get blank template
+  ${C.cyan}/build${C.reset}                   Build pending skills from specs
   ${C.cyan}/generate${C.reset} <skill>        Generate .mjs from tskill
   ${C.cyan}/test${C.reset} [skill]            Test skill code
   ${C.cyan}/run-tests${C.reset} [skill|all]   Run test files
@@ -617,6 +618,29 @@ ${C.bold}${C.yellow}After Generation:${C.reset}
 `,
     },
 
+    build: {
+        title: '/build - Build Pending Skills',
+        content: `
+${C.bold}${C.cyan}/build - Build Pending Skills from specs${C.reset}
+
+${C.bold}${C.yellow}Usage:${C.reset}
+  ${C.green}/build${C.reset}
+
+${C.bold}${C.yellow}Description:${C.reset}
+  Manually runs skill build for discovered skills. This generates code for
+  skills that have specs and are missing generated entrypoints.
+
+${C.bold}${C.yellow}When to Use:${C.reset}
+  ${C.green}•${C.reset} After creating a new cskill/tskill with specs
+  ${C.green}•${C.reset} After editing specs and wanting to refresh generated code
+  ${C.green}•${C.reset} When webchat/REPL starts and you want explicit control
+
+${C.bold}${C.yellow}Examples:${C.reset}
+  ${C.green}>${C.reset} /build
+  ${C.dim}Skills build complete.${C.reset}
+`,
+    },
+
     test: {
         title: '/test - Test Skill Code',
         content: `
@@ -1030,6 +1054,7 @@ ${C.bold}${C.yellow}Quick Commands${C.reset} ${C.dim}(no LLM)${C.reset}
 ${C.bold}${C.yellow}Common Slash Commands${C.reset}
   ${C.cyan}/read${C.reset} <skill>     Read skill definition
   ${C.cyan}/write${C.reset} <skill>    Create/update skill
+  ${C.cyan}/build${C.reset}            Build pending skills
   ${C.cyan}/generate${C.reset} <skill> Generate code from tskill
   ${C.cyan}/test${C.reset} <skill>     Test generated code
   ${C.cyan}/refine${C.reset} <skill>   Improve until tests pass

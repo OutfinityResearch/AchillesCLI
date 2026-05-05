@@ -100,7 +100,7 @@ export class QuickCommands {
     _handleReload() {
         const spinner = createSpinner('Reloading skills');
         const count = this.reloadSkills();
-        spinner.succeed(`Reloaded ${count} skill(s)`);
+        spinner.succeed(`Indexed ${count} skill(s). Use /build to generate pending code.`);
         return { handled: true };
     }
 

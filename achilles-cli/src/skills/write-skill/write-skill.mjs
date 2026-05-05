@@ -62,19 +62,7 @@ export async function action(mainAgent, prompt) {
 
         const action = existed ? 'Updated' : 'Created';
 
-        // Auto-reload skills so the new skill is immediately available
-        let reloadMessage = '';
-        if (mainAgent && typeof mainAgent.buildSkills === 'function') {
-            try {
-                mainAgent.buildSkills();
-                const count = mainAgent.getSkills().length;
-                reloadMessage = `\nSkills reloaded (${count} skill(s) registered).`;
-            } catch (e) {
-                reloadMessage = '\nNote: Could not auto-reload skills. Use "reload" command.';
-            }
-        }
-
-        return `${action}: ${skillName}/${fileName} (${content.length} bytes)${reloadMessage}`;
+        return `${action}: ${skillName}/${fileName} (${content.length} bytes)\nRun /build to generate pending skills.`;
     } catch (error) {
         return `Error writing file: ${error.message}`;
     }

@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
+import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { realpathSync } from 'node:fs';
 import { MainAgent, discoverSkillsFromRoot } from 'achillesAgentLib/MainAgent';
@@ -137,6 +138,7 @@ async function main() {
     const skillsDir = path.join(workingDir, 'skills');
 
     const nodeModulesSkillRoots = collectNodeModulesSkillRoots(__dirname, logger);
+    const webchatRuntime = !prompt && isWebchatRuntime();
 
     // Merge all skill roots: built-in + bash-skills + CLI flags + node_modules skills
     const allSkillRoots = [
@@ -164,7 +166,9 @@ async function main() {
 
     // Set up I/O (LLMAgent API fallback to global IOServices)
     const inputReader = createCliInputReader();
-    const outputWriter = createCliOutputWriter();
+    const outputWriter = webchatRuntime
+        ? createSilentOutputWriter()
+        : createCliOutputWriter();
     if (typeof agent.llmAgent?.setInputReader === 'function') {
         agent.llmAgent.setInputReader(inputReader);
     } else {
@@ -234,13 +238,17 @@ async function main() {
             }
             process.exit(1);
         }
+    } else if (webchatRuntime) {
+        // Webchat mode: simple stdin → process → stdout loop (no REPL, no banner, no prompt)
+        await runWebchatInteractive(agent, {
+            workingDir,
+            skillsDir,
+            skipBashPermissions,
+            debug,
+            renderMarkdown,
+        });
     } else {
-        // REPL mode - wait for skill preparations to complete
-        if (verbose) {
-            console.log('Building skills...');
-        }
-        await agent.buildSkills();
-
+        // REPL mode
         const session = new REPLSession(agent, {
             workingDir,
             skillsDir,
@@ -251,6 +259,128 @@ async function main() {
         });
         await session.start();
     }
+}
+
+function isWebchatRuntime() {
+    if (hasSsoEnvironment()) {
+        return true;
+    }
+    return process.argv.some((arg) => typeof arg === 'string' && (
+        arg.startsWith('--sso-user=')
+        || arg.startsWith('--sso-user-id=')
+        || arg.startsWith('--sso-email=')
+        || arg.startsWith('--sso-roles=')
+        || arg.startsWith('--sso-session-id=')
+    ));
+}
+
+function hasSsoEnvironment() {
+    return [
+        'SSO_USER',
+        'SSO_USER_ID',
+        'SSO_EMAIL',
+        'SSO_ROLES',
+        'SSO_SESSION_ID',
+    ].some((key) => {
+        const value = process.env[key];
+        return typeof value === 'string' && value.trim().length > 0;
+    });
+}
+
+async function runWebchatInteractive(agent, options) {
+    const { workingDir, skillsDir, skipBashPermissions, debug, renderMarkdown } = options;
+
+    const rlOutput = new Writable({ write(_chunk, _encoding, callback) { callback(); } });
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: rlOutput,
+        terminal: false,
+    });
+
+    let isClosing = false;
+    let pendingLines = [];
+    let flushTimer = null;
+    let processingChain = Promise.resolve();
+
+    const flushPendingLines = () => {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+        }
+        if (pendingLines.length === 0) {
+            return;
+        }
+
+        const message = pendingLines.join('\n').trim();
+        pendingLines = [];
+
+        if (!message) {
+            return;
+        }
+        if (message === 'exit' || message === 'quit' || message === ':q') {
+            isClosing = true;
+            rl.close();
+            return;
+        }
+
+        processingChain = processingChain.then(async () => {
+            try {
+                const context = {
+                    workingDir,
+                    skillsDir,
+                    skilledAgent: agent,
+                    llmAgent: agent.llmAgent,
+                    skipBashPermissions,
+                };
+
+                let result = await agent.executePrompt(message, {
+                    context,
+                    systemPrompt: buildOrchestratorSystemPrompt(),
+                });
+
+                if (typeof result === 'string') {
+                    try {
+                        const parsed = JSON.parse(result);
+                        if (parsed && (parsed.executions || parsed.type === 'orchestrator')) {
+                            result = debug ? JSON.stringify(parsed, null, 2) : summarizeResult(parsed);
+                        }
+                    } catch {
+                        // Not JSON, use as-is
+                    }
+                } else if (!debug) {
+                    result = summarizeResult(result);
+                } else {
+                    result = JSON.stringify(result, null, 2);
+                }
+
+                process.stdout.write(`${result}\n`);
+            } catch (error) {
+                process.stdout.write(`[error] ${error.message}\n`);
+            }
+        });
+    };
+
+    const scheduleFlush = () => {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+        }
+        flushTimer = setTimeout(() => {
+            flushPendingLines();
+        }, 150);
+    };
+
+    rl.on('line', (line) => {
+        pendingLines.push(line);
+        scheduleFlush();
+    });
+
+    rl.on('close', () => {
+        isClosing = true;
+        flushPendingLines();
+    });
+
+    await new Promise((resolve) => rl.once('close', resolve));
+    await processingChain;
 }
 
 function createCliInputReader() {
@@ -292,6 +422,13 @@ function createCliOutputWriter() {
                 : JSON.stringify(message, null, 2);
             console.log(text);
         },
+    };
+}
+
+function createSilentOutputWriter() {
+    return {
+        write: async () => {},
+        writeError: async () => {},
     };
 }
 

@@ -8,6 +8,9 @@
         "ACHILLES_MODEL_CODE",
         "ACHILLES_DEBUG"
     ],
+    "webchat": {
+        "auth": "static"
+    },
     "cli": "node /code/src/index.mjs",
     "about": "Achilles CLI for managing, generating, and testing skill definition files in skills directories."
 }
