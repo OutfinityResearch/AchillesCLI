@@ -13,7 +13,7 @@ This module allows direct execution of user-created skills (not built-in managem
 Main entry point for the skill.
 
 Accepts:
-- recursiveSkilledAgent: The RecursiveSkilledAgent instance
+- mainAgent: The MainAgent instance
 - prompt: Input string or object specifying skill to execute
 
 ## Input Parsing
@@ -34,22 +34,21 @@ Object format:
 
 Processing steps:
 1. Normalize skill name (lowercase, replace non-alphanumeric with hyphens)
-2. Look up skill record in catalog
+2. Look up skill record using agent.getSkillRecord()
 3. If not found with normalized name, try original name
 4. Verify skill exists in catalog
 
 ## Execution Restrictions
 
 Only user skills can be executed:
-- Built-in management skills are rejected
+- Internal/built-in management skills are rejected (check record.isInternal)
 - Error message suggests using the skill directly instead
 
 ## Execution
 
-Uses agent's executeWithReviewMode with:
+Uses agent.executePrompt() with:
 - Input: The parsed skill input or default message
 - Options: skillName pointing to the resolved skill
-- Review mode: 'none'
 
 ## Output Format
 
@@ -93,8 +92,7 @@ Error executing skill "name": [error message]
 
 ## Dependencies
 
-- RecursiveSkilledAgent methods:
+- MainAgent methods:
   - getSkillRecord: Find skill by name
-  - getUserSkills: List available user skills
-  - isBuiltInSkill: Check if skill is built-in
-  - executeWithReviewMode: Execute the skill
+  - getSkills: List available skills (filtered by !isInternal for user skills)
+  - executePrompt: Execute the skill

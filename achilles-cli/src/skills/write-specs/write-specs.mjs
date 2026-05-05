@@ -155,12 +155,14 @@ Generate ONLY JavaScript code, no markdown code blocks, no explanations.
 `;
 }
 
-export async function action(recursiveSkilledAgent, prompt) {
-    const skillsDir = recursiveSkilledAgent?.getSkillsDir?.();
-
-    if (!skillsDir) {
-        return 'Error: skillsDir not available (agent.getSkillsDir() returned null)';
+export async function action(mainAgent, prompt) {
+    // Derive skills directory from startDir
+    const startDir = mainAgent?.startDir;
+    if (!startDir) {
+        return 'Error: startDir not available';
     }
+
+    const skillsDir = path.join(startDir, 'skills');
 
     // Parse arguments
     let args;
@@ -187,11 +189,11 @@ export async function action(recursiveSkilledAgent, prompt) {
     }
 
     // Find the skill to get its directory
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
 
     let skillDir;
-    if (skillInfo) {
-        skillDir = skillInfo.record?.skillDir || path.dirname(skillInfo.filePath);
+    if (skillRecord) {
+        skillDir = skillRecord.skillDir || path.dirname(skillRecord.filePath);
 
     } else {
         // Skill doesn't exist yet - create in skillsDir
@@ -233,7 +235,7 @@ export async function action(recursiveSkilledAgent, prompt) {
     let finalContent = content;
 
     if (!finalContent && generateTemplate) {
-        const skillType = skillInfo?.type || 'cskill';
+        const skillType = skillRecord?.type || 'cskill';
         finalContent = generateSpecsTemplate(skillName, skillType);
     }
 

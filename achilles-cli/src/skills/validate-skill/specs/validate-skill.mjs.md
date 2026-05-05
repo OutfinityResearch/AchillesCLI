@@ -13,7 +13,7 @@ This module validates skill definition files against their type-specific schemas
 Main entry point for validation.
 
 Accepts:
-- recursiveSkilledAgent: The RecursiveSkilledAgent instance
+- mainAgent: The MainAgent instance
 - prompt: Skill name as string or object
 
 ## Input Parsing
@@ -25,7 +25,7 @@ Accepts:
 ## Validation Process
 
 1. Parse skill name from input
-2. Find skill file using agent's findSkillFile method
+2. Find skill record using agent.getSkillRecord() to get the skill's filePath
 3. Read skill definition content
 4. Call validateSkillContent from skillSchemas
 5. Format and return results

@@ -54,12 +54,12 @@ function parseInput(prompt) {
 /**
  * Main action function
  */
-export async function action(recursiveSkilledAgent, prompt) {
+export async function action(mainAgent, prompt) {
     const { target, options } = parseInput(prompt);
 
     // If no target, list available tests
     if (!target) {
-        const tests = discoverSkillTests(recursiveSkilledAgent);
+        const tests = discoverSkillTests(mainAgent);
 
         if (tests.length === 0) {
             return 'No tests found. Create .tests.mjs files in skill directories to add tests.';
@@ -78,7 +78,7 @@ export async function action(recursiveSkilledAgent, prompt) {
 
     // Run all tests
     if (target.toLowerCase() === 'all') {
-        const tests = discoverSkillTests(recursiveSkilledAgent);
+        const tests = discoverSkillTests(mainAgent);
 
         if (tests.length === 0) {
             return 'No tests found. Create .tests.mjs files in skill directories to add tests.';
@@ -95,14 +95,14 @@ export async function action(recursiveSkilledAgent, prompt) {
     }
 
     // Run tests for specific skill
-    const testInfo = discoverSkillTest(recursiveSkilledAgent, target);
+    const testInfo = discoverSkillTest(mainAgent, target);
 
     if (!testInfo) {
         // Check if skill exists but has no tests
-        const skillInfo = recursiveSkilledAgent?.findSkillFile?.(target);
+        const skillRecord = mainAgent?.getSkillRecord?.(target);
 
-        if (skillInfo) {
-            return `Skill "${target}" found but has no .tests.mjs file.\n\nCreate a test file at:\n  ${skillInfo.record?.skillDir || 'skill-dir'}/.tests.mjs`;
+        if (skillRecord) {
+            return `Skill "${target}" found but has no .tests.mjs file.\n\nCreate a test file at:\n  ${skillRecord.skillDir || 'skill-dir'}/.tests.mjs`;
         }
 
         return `Skill "${target}" not found. Use /test to see available tests.`;
@@ -127,8 +127,8 @@ export async function action(recursiveSkilledAgent, prompt) {
 /**
  * Get list of available tests for interactive selection
  */
-export function getAvailableTests(recursiveSkilledAgent) {
-    const tests = discoverSkillTests(recursiveSkilledAgent);
+export function getAvailableTests(mainAgent) {
+    const tests = discoverSkillTests(mainAgent);
     return formatTestList(tests);
 }
 

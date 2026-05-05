@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export async function action(recursiveSkilledAgent, prompt) {
+export async function action(mainAgent, prompt) {
     // Parse arguments
     let skillName = null;
     let testInput = undefined;
@@ -28,9 +28,9 @@ export async function action(recursiveSkilledAgent, prompt) {
         return 'Error: skillName is required. Usage: test-code <skillName> or {skillName, testInput}';
     }
 
-    // Use findSkillFile to get skill directory
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
-    const skillDir = skillInfo?.record?.skillDir || (skillInfo ? path.dirname(skillInfo.filePath) : null);
+    // Use getSkillRecord to get skill directory
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
+    const skillDir = skillRecord?.skillDir;
 
     if (!skillDir || !fs.existsSync(skillDir)) {
         return `Error: Skill directory not found for "${skillName}"`;

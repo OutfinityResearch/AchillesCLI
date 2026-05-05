@@ -1,6 +1,7 @@
 node_modules
 !node_modules/achillesAgentLib/
 !node_modules/GAMPSkills/
+achilles-cli/package.json
 package-lock.json
 .DS_Store
 *.log

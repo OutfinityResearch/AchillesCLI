@@ -1,15 +1,15 @@
 /**
  * List Skills - Returns all registered skills from the catalog
  *
- * By default, only shows user skills (excludes built-in).
+ * By default, only shows user skills (excludes internal).
  *
- * Use "list all skills" to include built-in skills.
+ * Use "list all skills" to include internal skills.
  */
 
 import { Sanitiser } from 'achillesAgentLib/utils/Sanitiser.mjs';
 
-export async function action(recursiveSkilledAgent, prompt) {
-    if (!recursiveSkilledAgent || typeof recursiveSkilledAgent.getSkills !== 'function') {
+export async function action(mainAgent, prompt) {
+    if (!mainAgent || typeof mainAgent.getSkills !== 'function') {
         return 'Error: No skill catalog available';
     }
 
@@ -23,7 +23,7 @@ export async function action(recursiveSkilledAgent, prompt) {
         'get skills', 'skills', 'all', 'all skills', 'list', 'show',
     ];
 
-    // Check if user wants all skills (including built-in)
+    // Check if user wants all skills (including internal)
     const allSkillPatterns = [
         'list all skills', 'show all skills', 'all', 'all skills',
     ];
@@ -48,12 +48,10 @@ export async function action(recursiveSkilledAgent, prompt) {
         filter = prompt.filter.toLowerCase();
     }
 
-    // Get user skills only (exclude built-in) unless explicitly requested all
+    // Get user skills only (exclude internal) unless explicitly requested all
     let skills = showAllSkills
-        ? recursiveSkilledAgent.getSkills()
-        : (typeof recursiveSkilledAgent.getUserSkills === 'function'
-            ? recursiveSkilledAgent.getUserSkills()
-            : recursiveSkilledAgent.getSkills());
+        ? mainAgent.getSkills()
+        : mainAgent.getSkills().filter(s => !s.isInternal);
 
     if (skills.length === 0) {
         return showAllSkills

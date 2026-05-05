@@ -69,9 +69,9 @@ achilles-cli/           # Ploinky repository (outer)
 │                                       │                                          │
 │                                       ▼                                          │
 │  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                        AchillesCli (Core)                             │   │
+│  │                        MainAgent (Core)                               │   │
 │  │  ┌─────────────────────────────────────────────────────────────────────┐ │   │
-│  │  │ • RecursiveSkilledAgent (from achilles-agent-lib)                   │ │   │
+│  │  │ • MainAgent (from achillesAgentLib)                                 │ │   │
 │  │  │ • LLMAgent (LLM invocation)                                         │ │   │
 │  │  │ • HistoryManager (command persistence)                              │ │   │
 │  │  │ • SlashCommandHandler (direct commands)                             │ │   │
@@ -97,11 +97,12 @@ achilles-cli/           # Ploinky repository (outer)
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │  ┌────────────────────────────────────────────────────────────────────────┐     │
-│  │                     RecursiveSkilledAgent                              │     │
+│  │                     MainAgent                                          │     │
 │  │  • Skill discovery from skills directories                    │     │
 │  │  • Skill catalog management                                            │     │
 │  │  • Subsystem routing                                                   │     │
-│  │  • Prompt execution                                                    │     │
+│  │  • Prompt execution (persistent LoopAgentSession)                      │     │
+│  │  • Direct skill execution (executeSkill)                               │     │
 │  └────────────────────────────────────────────────────────────────────────┘     │
 │                                       │                                          │
 │              ┌────────────────────────┼────────────────────────┐                │
@@ -119,17 +120,17 @@ achilles-cli/           # Ploinky repository (outer)
                                         │
                                         ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          BUILT-IN SKILLS (skills)                       │
+│                          BUILT-IN SKILLS (skills)                               │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                  │
+│                                                                                 │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │
-│  │  achilles-cli  │  │  list-skills    │  │  read-skill     │                  │
+│  │  achilles-cli   │  │  list-skills    │  │  read-skill     │                  │
 │  │  (Orchestrator) │  │  (CodeGen)      │  │  (CodeGen)      │                  │
 │  │                 │  │                 │  │                 │                  │
 │  │  Routes all     │  │  Lists catalog  │  │  Reads .md      │                  │
 │  │  user requests  │  │  entries        │  │  definitions    │                  │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │
-│                                                                                  │
+│                                                                                 │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │
 │  │  write-skill    │  │  validate-skill │  │  generate-code  │                  │
 │  │  (CodeGen)      │  │  (CodeGen)      │  │  (CodeGen)      │                  │
@@ -137,7 +138,7 @@ achilles-cli/           # Ploinky repository (outer)
 │  │  Creates/updates│  │  Schema checks  │  │  .md → .mjs     │                  │
 │  │  skill files    │  │                 │  │  conversion     │                  │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │
-│                                                                                  │
+│                                                                                 │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐                  │
 │  │  skill-refiner  │  │  test-code      │  │  execute-skill  │                  │
 │  │  (Orchestrator) │  │  (CodeGen)      │  │  (CodeGen)      │                  │
@@ -145,7 +146,7 @@ achilles-cli/           # Ploinky repository (outer)
 │  │  Iterative      │  │  Runs tests     │  │  Direct skill   │                  │
 │  │  improvement    │  │  in sandbox     │  │  invocation     │                  │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘                  │
-│                                                                                  │
+│                                                                                 │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -155,20 +156,20 @@ achilles-cli/           # Ploinky repository (outer)
 
 ### 1. Entry Point (`achilles-cli/src/index.mjs`)
 
-The main CLI entry point that initializes `RecursiveSkilledAgent` directly.
+The main CLI entry point that initializes `MainAgent` directly.
 
 **Responsibilities:**
 - Parse command-line arguments
-- Initialize `RecursiveSkilledAgent` with `additionalSkillRoots` for built-in skills
+- Initialize `MainAgent` with `disableInternalSkills: false` to include built-in skills
 - Create `REPLSession` for interactive mode
-- Handle single-shot command execution
+- Handle single-shot command execution via `agent.executePrompt()`
 
 **Key Design Decision:**
-> The CLI uses `RecursiveSkilledAgent` directly (no wrapper class) with `additionalSkillRoots` to register built-in skills. This reduces abstraction layers while still supporting multi-source skill discovery. The `REPLSession` owns all REPL-specific concerns (history, formatting, UI).
+> The CLI uses `MainAgent` directly (no wrapper class). MainAgent handles skill discovery internally by scanning from `startDir`. The `REPLSession` owns all REPL-specific concerns (history, formatting, UI).
 
 ### 2. REPLSession (`achilles-cli/src/repl/REPLSession.mjs`)
 
-Manages the interactive command-line session. Takes a `RecursiveSkilledAgent` and options.
+Manages the interactive command-line session. Takes a `MainAgent` and options.
 
 **Constructor signature:**
 ```javascript
@@ -189,7 +190,8 @@ new REPLSession(agent, {
 - Manage spinner animations during LLM calls
 - Own `HistoryManager` instance
 - Build context object for skill execution
-- Process prompts through achilles-cli orchestrator
+- Process natural language prompts through `agent.executePrompt()` (persistent session)
+- Execute slash commands through `agent.executeSkill()` (direct execution)
 
 **Key Design Decision:**
 > Raw terminal mode (`stdin.setRawMode(true)`) is used instead of standard readline for precise control over key handling. This enables features like the "/" command picker, real-time hints, and ESC cancellation that wouldn't be possible with buffered input. REPLSession owns its dependencies (HistoryManager, context) rather than receiving them from a wrapper.
@@ -202,10 +204,10 @@ Maps slash commands to skill executions.
 - Define slash command → skill mappings
 - Parse command syntax (`/command <args>`)
 - Provide tab completion and hints
-- Execute skills directly (bypassing orchestrator)
+- Execute skills directly via `agent.executeSkill()` (bypassing orchestrator)
 
 **Key Design Decision:**
-> Slash commands provide deterministic, fast access to specific skills without LLM interpretation. This dual-interface approach (slash commands + natural language) gives users control when they know exactly what they want, while still supporting flexible natural language when exploring.
+> Slash commands provide deterministic, fast access to specific skills without LLM interpretation. The `/exec` command uses `agent.executeSkill()` for direct skill execution. Other slash commands also route through `executeSkill()` since the built-in skills handle the functionality. Non-skill commands like `/tier`, `/model`, `/raw`, `/quit`, `/help` are handled natively by the CLI.
 
 ### 4. CommandSelector (`achilles-cli/src/ui/CommandSelector.mjs`)
 
@@ -290,11 +292,14 @@ achilles-agent-lib/
 │   ├── LLMAgentRegistry.mjs   # Agent instance management
 │   └── envAutoConfig.mjs      # Auto-configure from environment
 │
-├── RecursiveSkilledAgents/
-│   └── RecursiveSkilledAgent.mjs  # Core skill discovery & execution
-│       ├── additionalSkillRoots   # NEW: Register extra skill directories
-│       ├── getSkills()            # NEW: Get all registered skills
-│       └── reloadSkills()         # NEW: Re-discover and re-register
+├── MainAgent/
+│   └── MainAgent.mjs          # Core skill discovery & execution
+│       ├── startDir             # Base directory for user skill discovery
+│       ├── getSkills()          # Get all registered skills
+│       ├── getSkillRecord()     # Get skill by name/alias
+│       ├── executePrompt()      # Natural language execution (persistent session)
+│       ├── executeSkill()       # Direct skill execution
+│       └── buildSkills()        # Async skill setup
 │
 ├── *SkillsSubsystem/              # Skill type handlers
 │   ├── CodeGenerationSkillsSubsystem # cgskill: Hand-written module or LLM runtime
@@ -311,19 +316,24 @@ achilles-agent-lib/
     └── flexsearchAdapter.mjs   # Full-text search for skills
 ```
 
-**Key Addition: `additionalSkillRoots`**
+**MainAgent API:**
 
-The `RecursiveSkilledAgent` now accepts an `additionalSkillRoots` option:
+The `MainAgent` provides the core agent functionality:
 
 ```javascript
-new RecursiveSkilledAgent({
+new MainAgent({
   startDir: workingDir,
-  additionalSkillRoots: [builtInSkillsDir],  // Extra skill sources
-  llmAgent,
+  disableInternalSkills: false,  // Include built-in skills
+  llmAgentOptions: {},           // Options for LLMAgent
 })
 ```
 
-This enables multi-source skill discovery without wrapper classes. The CLI uses this to register built-in skills alongside user skills.
+**Key Methods:**
+- `getSkills()` - Returns all registered skills as array
+- `getSkillRecord(name)` - Returns skill record by name or alias
+- `executePrompt(message, options)` - Natural language execution with persistent LoopAgentSession
+- `executeSkill(skillName, prompt, options)` - Direct skill execution
+- `buildSkills()` - Async setup for skills that need preparation
 
 **Why This Dependency Structure?**
 
@@ -368,24 +378,25 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 ### 3. Two-Layer Skill Discovery
 
 **Decision:** Skills are loaded from two locations:
-1. Built-in skills (bundled with the CLI in `achilles-cli/src/skills/`)
-2. User skills (in the working directory's `skills/`)
+1. Internal skills (bundled with the agent library)
+2. User skills (discovered by scanning from startDir downward for skills/ directories)
 
 **Rationale:**
-- Built-in skills provide core functionality (list, read, write, validate)
+- Internal skills provide core functionality (list, read, write, validate)
 - User skills extend the system for project-specific needs
-- Clear precedence: user skills can override built-in behavior if desired
-- Portable: built-in skills ship with the CLI package
+- Clear precedence: user skills can override internal behavior if desired
+- Portable: internal skills ship with the agent library
 
 ### 4. Orchestrator-First Routing
 
-**Decision:** All natural language prompts go through the `achilles-cli` orchestrator by default.
+**Decision:** All natural language prompts go through the `achilles-cli` orchestrator by default via `agent.executePrompt()`.
 
 **Rationale:**
 - Single entry point for intent classification
 - Orchestrator has context about available operations
 - Can plan multi-step operations (read → modify → validate)
 - Provides consistent behavior regardless of input phrasing
+- Persistent LoopAgentSession maintains conversation context
 
 ### 5. Slash Commands for Determinism
 
@@ -533,16 +544,15 @@ Skills can optionally include a `.specs.md` file that defines requirements and c
 ### Skill Discovery Process
 
 ```
-1. RecursiveSkilledAgent constructor called
+1. MainAgent constructor called with { startDir, disableInternalSkills: false }
        │
        ▼
-2. findAchillesSkillRoots() scans directories
-   • Searches upward from startDir by default
-   • Finds all skills directories
+2. _discoverAndRegister() scans directories
+   • Internal skills (if not disabled)
+   • User skills by scanning downward from startDir for skills/ directories
        │
        ▼
-3. registerSkillsFromRoot() for each root
-   • Iterates subdirectories
+3. For each skill directory found:
    • Looks for recognized skill files (tskill.md, cgskill.md, cskill.md, etc.)
        │
        ▼
@@ -551,17 +561,16 @@ Skills can optionally include a `.specs.md` file that defines requirements and c
    • Builds searchable text for routing
        │
        ▼
-5. ensureSubsystem() creates appropriate handler
-   • CodeGenerationSkillsSubsystem for cgskill
-   • CodeSkillsSubsystem for cskill
-   • OrchestratorSkillsSubsystem for oskill
-   • etc.
+5. _registerSkill() for each discovered skill
+   • Creates aliases via Sanitiser.sanitiseName()
+   • Stores in _skills Map and _skillAliases Map
+   • Parses descriptor via subsystem
+   • Calls subsystem.prepareSkill()
        │
        ▼
 6. Skills registered in:
-   • skillCatalog (canonical name → record)
-   • skillAliases (all aliases → record)
-   • skillToSubsystem (name → subsystem type)
+   • _skills (canonical name → record)
+   • _skillAliases (all aliases → record)
 ```
 
 ---
@@ -578,22 +587,22 @@ User types: "list all skills"
 │ REPLSession._processNaturalLanguage()                       │
 │ • Creates ActionReporter (spinner mode)                     │
 │ • Sets up ESC cancellation handler                          │
-│ • Calls cli.processPrompt()                                 │
+│ • Calls processPrompt()                                     │
 └─────────────────────────────────────────────────────────────┘
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ AchillesCli.processPrompt()                             │
-│ • Delegates to skilledAgent.executePrompt()                 │
-│ • skillName defaults to 'achilles-cli'                     │
+│ REPLSession.processPrompt()                                 │
+│ • Delegates to agent.executePrompt()                        │
+│ • Maintains persistent LoopAgentSession                     │
 └─────────────────────────────────────────────────────────────┘
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ RecursiveSkilledAgent.executeWithReviewMode()               │
-│ • Looks up achilles-cli in catalog                         │
-│ • Gets OrchestratorSkillsSubsystem                          │
-│ • Calls subsystem.executeSkillPrompt()                      │
+│ MainAgent.executePrompt()                                   │
+│ • Creates or reuses LoopAgentSession                        │
+│ • Builds tools from all registered skills                   │
+│ • Session routes to orchestrator skill                      │
 └─────────────────────────────────────────────────────────────┘
        │
        ▼
@@ -602,7 +611,7 @@ User types: "list all skills"
 │ • Reads achilles-cli oskill.md                             │
 │ • Sends prompt + instructions to LLM                        │
 │ • LLM returns plan: [{skill: "list-skills", input: ""}]     │
-│ • Executes each step via recursiveAgent                     │
+│ • Executes each step via executeSkill()                     │
 └─────────────────────────────────────────────────────────────┘
        │
        ▼
@@ -643,9 +652,17 @@ User types: "/read my-skill"
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ AchillesCli.executeSkill()                              │
+│ REPLSession._executeSkill()                                 │
+│ • Calls agent.executeSkill(skillName, input, options)       │
 │ • Direct execution (no orchestrator)                        │
-│ • skilledAgent.executePrompt() with skillName specified     │
+└─────────────────────────────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────┐
+│ MainAgent.executeSkill()                                    │
+│ • Looks up skill record                                     │
+│ • Gets subsystem for skill type                             │
+│ • Calls subsystem.executeSkillPrompt()                      │
 └─────────────────────────────────────────────────────────────┘
        │
        ▼
@@ -681,9 +698,7 @@ All modules are located in `achilles-cli/src/`:
 The achilles-cli is designed around these core principles:
 
 1. **Separation of Concerns**: CLI handles interaction, agent library handles skill execution
-2. **Dual Interface**: Natural language for flexibility, slash commands for speed
+2. **Dual Interface**: Natural language for flexibility (executePrompt with persistent session), slash commands for speed (executeSkill direct)
 3. **Extensibility**: User skills extend built-in capabilities
 4. **Transparency**: Real-time feedback shows what's happening
 5. **Reliability**: Native file ops, schema validation, iterative refinement
-
-The architecture enables a powerful skill management system while keeping the CLI codebase focused and maintainable.

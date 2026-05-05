@@ -1,5 +1,5 @@
 /**
- * REPLSession - Manages the interactive REPL session for RecursiveSkilledAgent.
+ * REPLSession - Manages the interactive REPL session for MainAgent.
  *
  * Coordinates between InteractivePrompt, QuickCommands, and NaturalLanguageProcessor
  * to provide a complete interactive CLI experience.
@@ -22,7 +22,8 @@ import { TIERS } from '../lib/constants.mjs';
 import { formatTestResult, formatSuiteResults } from '../ui/TestResultFormatter.mjs';
 import { showHelp, getHelpTopics, getCommandHelp } from '../ui/HelpSystem.mjs';
 import { UIContext } from '../ui/UIContext.mjs';
-import { BUILT_IN_SKILLS } from '../lib/constants.mjs';
+import { buildOrchestratorSystemPrompt } from '../prompts/orchestrator-prompt.mjs';
+import { IOServices } from 'achillesAgentLib';
 
 // Import tier/model utilities from achillesAgentLib (direct path — not re-exported from index)
 let _listTiersFromCache = null;
@@ -42,7 +43,7 @@ export class REPLSession {
     /**
      * Create a new REPLSession.
      *
-     * @param {RecursiveSkilledAgent} agent - The RecursiveSkilledAgent instance
+     * @param {MainAgent} agent - The MainAgent instance
      * @param {Object} options - Session options
      * @param {string} options.workingDir - Working directory path
      * @param {string} [options.skillsDir] - Skills directory path (defaults to workingDir/skills)
@@ -143,7 +144,7 @@ export class REPLSession {
 
         const { colors } = UIContext.getTheme();
 
-        llmAgent.setInputReader({
+        const inputReader = {
             read: async (prompt = '> ') => {
                 if (!process.stdin.isTTY) {
                     throw new Error('Interactive input requested but stdin is not a TTY.');
@@ -165,9 +166,9 @@ export class REPLSession {
 
                 return answer;
             },
-        });
+        };
 
-        llmAgent.setOutputWriter({
+        const outputWriter = {
             write: async (message) => {
                 if (message === null || message === undefined) {
                     return;
@@ -177,56 +178,70 @@ export class REPLSession {
                     : JSON.stringify(message, null, 2);
                 console.log(text);
             },
-        });
+        };
+
+        if (typeof llmAgent.setInputReader === 'function') {
+            llmAgent.setInputReader(inputReader);
+        } else {
+            IOServices.setInputReader(inputReader);
+        }
+
+        if (typeof llmAgent.setOutputWriter === 'function') {
+            llmAgent.setOutputWriter(outputWriter);
+        } else {
+            IOServices.setOutputWriter(outputWriter);
+        }
     }
 
     /**
-     * Execute a skill directly
+     * Execute a skill directly via MainAgent.executeSkill()
      * @private
      */
     async _executeSkill(skillName, input, opts = {}) {
         this._logEnvSnapshot(`execute-skill:${skillName}`);
         const execOpts = {
-            skillName,
-            context: this.context,
             tier: this.activeTier,
             ...opts,
         };
         if (this.pinnedModel) {
             execOpts.model = this.pinnedModel;
         }
-        return this.agent.executePrompt(input, execOpts);
+        return this.agent.executeSkill(skillName, input, execOpts);
     }
 
     /**
-     * Get user skills (exclude built-in skills)
+     * Get user skills (exclude internal/built-in skills)
      */
     getUserSkills() {
-        const skills = this.agent.getSkills();
-        if (!this.builtInSkillsDir) {
-            return skills;
-        }
-        return skills.filter(s => !s.skillDir?.startsWith(this.builtInSkillsDir));
+        return this.agent.getSkills().filter(s => !s.isInternal);
     }
 
     /**
      * Reload skills from disk
      */
     reloadSkills() {
-        return this.agent.reloadSkills();
+        // MainAgent doesn't expose reloadSkills directly, so we re-run buildSkills
+        // which is safe to call multiple times (already-built skills are skipped)
+        try {
+            const before = this.agent.getSkills().length;
+            this.agent.buildSkills();
+            const after = this.agent.getSkills().length;
+            return after;
+        } catch (e) {
+            return this.agent.getSkills().length;
+        }
     }
 
     /**
-     * Process a prompt through the skills-orchestrator
+     * Process a natural language prompt via MainAgent.executePrompt()
      */
     async processPrompt(userPrompt, opts = {}) {
-        const { skillName = BUILT_IN_SKILLS.ORCHESTRATOR, ...restOptions } = opts;
+        const { ...restOptions } = opts;
 
-        this._logEnvSnapshot(`process-prompt:${skillName}`);
+        this._logEnvSnapshot('process-prompt');
         const execOpts = {
-            skillName,
-            context: this.context,
             tier: this.activeTier,
+            systemPrompt: buildOrchestratorSystemPrompt(),
             ...restOptions,
         };
         if (this.pinnedModel) {
@@ -359,6 +374,11 @@ export class REPLSession {
     }
 
     _logEnvSnapshot(reason) {
+        const debug = this.agent?.logger?.debug;
+        if (typeof debug !== 'function') {
+            return;
+        }
+
         const prefixes = [
             'ACHILLES_',
             'LLM_',
@@ -378,9 +398,9 @@ export class REPLSession {
             .filter(([key]) => prefixes.some((prefix) => key.startsWith(prefix)))
             .sort(([a], [b]) => a.localeCompare(b));
 
-        console.info(`[AchillesCli] Env snapshot (${reason})`);
+        debug(`[AchillesCli] Env snapshot (${reason})`);
         if (!entries.length) {
-            console.info('[AchillesCli]   (no matching env vars found)');
+            debug('[AchillesCli]   (no matching env vars found)');
             return;
         }
 
@@ -388,7 +408,7 @@ export class REPLSession {
             const displayValue = isSensitive(key)
                 ? (value ? '[set]' : '')
                 : (value ?? '');
-            console.info(`[AchillesCli]   ${key}=${displayValue}`);
+            debug(`[AchillesCli]   ${key}=${displayValue}`);
         }
     }
 

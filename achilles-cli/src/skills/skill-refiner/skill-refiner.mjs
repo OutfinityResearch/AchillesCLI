@@ -33,9 +33,9 @@ function parseInput(prompt) {
 /**
  * Build tools for the agentic session
  */
-function buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, specsContent) {
-    const filePath = skillInfo.filePath;
-    const skillDir = skillInfo.record?.skillDir || path.dirname(filePath);
+function buildTools(mainAgent, skillName, skillRecord, requirements, specsContent) {
+    const filePath = skillRecord.filePath;
+    const skillDir = skillRecord.skillDir || path.dirname(filePath);
 
     return {
         'read_skill': {
@@ -65,9 +65,7 @@ function buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, s
             description: `Generate .mjs code from the tskill definition. Only use for tskill type skills.`,
             handler: async (agent, input) => {
                 try {
-                    const result = await recursiveSkilledAgent.executePrompt(skillName, {
-                        skillName: 'generate-code',
-                    });
+                    const result = await mainAgent.executeSkill('generate-code', skillName);
 
                     // Extract meaningful result
                     const output = result?.result?.output || result?.result || result;
@@ -90,9 +88,9 @@ function buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, s
             handler: async (agent, input) => {
                 try {
                     const testInput = requirements?.testInput || {};
-                    const result = await recursiveSkilledAgent.executePrompt(
-                        JSON.stringify({ skillName, testInput }),
-                        { skillName: 'test-code' }
+                    const result = await mainAgent.executeSkill(
+                        'test-code',
+                        JSON.stringify({ skillName, testInput })
                     );
 
                     const output = result?.result?.output || result?.result || result;
@@ -161,9 +159,7 @@ function buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, s
             description: `Validate the skill definition against its schema. Returns validation errors if any.`,
             handler: async (agent, input) => {
                 try {
-                    const result = await recursiveSkilledAgent.executePrompt(skillName, {
-                        skillName: 'validate-skill',
-                    });
+                    const result = await mainAgent.executeSkill('validate-skill', skillName);
 
                     const output = result?.result?.output || result?.result || result;
                     return JSON.stringify({
@@ -201,9 +197,9 @@ function buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, s
                         });
                     }
 
-                    const result = await recursiveSkilledAgent.executePrompt(
-                        JSON.stringify({ skillName, section, content }),
-                        { skillName: 'update-section' }
+                    const result = await mainAgent.executeSkill(
+                        'update-section',
+                        JSON.stringify({ skillName, section, content })
                     );
 
                     const output = result?.result?.output || result?.result || result;
@@ -224,7 +220,7 @@ function buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, s
         'evaluate_requirements': {
             description: `Evaluate if the current test results meet the requirements. Input: the test result to evaluate.`,
             handler: async (agent, input) => {
-                const llmAgent = recursiveSkilledAgent?.llmAgent;
+                const llmAgent = mainAgent?.llmAgent;
                 if (!llmAgent) {
                     return JSON.stringify({
                         success: false,
@@ -275,8 +271,8 @@ function buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, s
 /**
  * Main action function for the skill refiner using LoopAgentSession
  */
-export async function action(recursiveSkilledAgent, prompt) {
-    const llmAgent = recursiveSkilledAgent?.llmAgent;
+export async function action(mainAgent, prompt) {
+    const llmAgent = mainAgent?.llmAgent;
 
     // Parse input
     const {
@@ -294,17 +290,17 @@ export async function action(recursiveSkilledAgent, prompt) {
     }
 
     // Find the skill
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
-    if (!skillInfo) {
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
+    if (!skillRecord) {
         return `Error: Skill "${skillName}" not found`;
     }
 
-    const skillDir = skillInfo.record?.skillDir || path.dirname(skillInfo.filePath);
+    const skillDir = skillRecord.skillDir || path.dirname(skillRecord.filePath);
 
     const specsContent = loadSpecsContent(skillDir);
 
     // Build tools
-    const tools = buildTools(recursiveSkilledAgent, skillName, skillInfo, requirements, specsContent);
+    const tools = buildTools(mainAgent, skillName, skillRecord, requirements, specsContent);
 
     // Build system prompt
     const systemPrompt = buildSystemPrompt(skillName, requirements, specsContent);

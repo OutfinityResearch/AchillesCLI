@@ -4,7 +4,7 @@ Lists registered skills from the catalog with filtering.
 
 ## Overview
 
-This module returns all registered skills. By default, it shows only user skills (excluding built-in skills).
+This module returns all registered skills. By default, it shows only user skills (excluding internal/built-in skills).
 
 ## Exported Function
 
@@ -13,14 +13,14 @@ This module returns all registered skills. By default, it shows only user skills
 Main entry point for the skill.
 
 Accepts:
-- recursiveSkilledAgent: The RecursiveSkilledAgent instance
+- mainAgent: The MainAgent instance
 - prompt: Input string or object specifying filter options
 
 ## Input Parsing
 
 The prompt can be:
 - Empty: List all user skills
-- String "all" or "list all skills": Include built-in skills
+- String "all" or "list all skills": Include internal skills
 - String with type name: Filter by skill type
 - Object with filter property: Filter by skill type
 
@@ -33,7 +33,6 @@ Ignored patterns:
 Success output:
 ```
 Found N user skill(s):
-
 
 [type] skillName
    Description: Skill description text
@@ -50,7 +49,7 @@ Found N skill(s) matching "filter":
 ...
 ```
 
-When showing all (including built-in):
+When showing all (including internal):
 ```
 Found N skill(s):
 ...

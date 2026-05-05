@@ -4,7 +4,7 @@
 
 import { SKILL_TYPES, SKILL_TEMPLATES } from '../../schemas/skillSchemas.mjs';
 
-export async function action(recursiveSkilledAgent, prompt) {
+export async function action(mainAgent, prompt) {
     // Parse skill type
     let skillType = null;
     if (typeof prompt === 'string' && prompt.trim()) {

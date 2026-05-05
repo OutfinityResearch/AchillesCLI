@@ -13,7 +13,7 @@ This module writes skill definition files to the skills directory. It creates th
 Main entry point for writing skills.
 
 Accepts:
-- recursiveSkilledAgent: The RecursiveSkilledAgent instance
+- mainAgent: The MainAgent instance
 - prompt: JSON object with write parameters
 
 ## Input Format
@@ -26,14 +26,14 @@ Requires JSON input (string or object) with:
 ## File Name Validation
 
 Valid file names:
-- Standard skill files from SKILL_FILE_NAMES constant
+- Standard skill files from SKILL_FILE_NAMES constant (defined in src/lib/constants.mjs)
 - Files ending with .mjs or .js
 
 Non-standard files generate a warning but are still written.
 
 ## Write Process
 
-1. Get skills directory from agent
+1. Derive skills directory from agent.startDir (typically startDir/skills)
 2. Parse input arguments
 3. Validate required fields (skillName, fileName, content)
 4. Validate fileName against known patterns
@@ -47,7 +47,7 @@ Non-standard files generate a warning but are still written.
 ## Auto-Reload
 
 After writing, attempts to reload skills:
-- Calls agent.reloadSkills() if available
+- Re-discovers skills by clearing internal maps and re-scanning
 - Reports count of registered skills
 - Falls back gracefully if reload fails
 
@@ -75,7 +75,7 @@ Note: Could not auto-reload skills. Use "reload" command.
 
 No skills directory:
 ```
-Error: skillsDir not available (agent.getSkillsDir() returned null)
+Error: skillsDir not available
 ```
 
 Invalid JSON input:
@@ -110,6 +110,6 @@ Error writing file: [message]
 
 ## Dependencies
 
-- SKILL_FILE_NAMES from achillesAgentLib
+- SKILL_FILE_NAMES from src/lib/constants.mjs
 - fs: File operations
 - path: Path manipulation

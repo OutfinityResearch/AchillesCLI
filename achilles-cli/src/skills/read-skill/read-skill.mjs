@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export async function action(recursiveSkilledAgent, prompt) {
+export async function action(mainAgent, prompt) {
     // Parse skill name from prompt
     let skillName = null;
     if (typeof prompt === 'string') {
@@ -26,20 +26,20 @@ export async function action(recursiveSkilledAgent, prompt) {
         return 'Error: skillName is required. Usage: read-skill <skillName>';
     }
 
-    // Use findSkillFile to locate the skill
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
+    // Use getSkillRecord to locate the skill
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
 
-    if (!skillInfo) {
+    if (!skillRecord) {
         // List available skills
-        const userSkills = recursiveSkilledAgent?.getUserSkills?.() || [];
+        const userSkills = mainAgent?.getSkills?.().filter(s => !s.isInternal) || [];
         const available = userSkills.map(s => s.shortName || s.name).join(', ');
         return `Error: Skill "${skillName}" not found.\nAvailable skills: ${available || 'none'}`;
     }
 
     try {
-        const content = fs.readFileSync(skillInfo.filePath, 'utf8');
+        const content = fs.readFileSync(skillRecord.filePath, 'utf8');
 
-        return `=== ${path.basename(skillInfo.filePath)} ===\nPath: ${skillInfo.filePath}\nType: ${skillInfo.type}\n\n${content}`;
+        return `=== ${path.basename(skillRecord.filePath)} ===\nPath: ${skillRecord.filePath}\nType: ${skillRecord.type}\n\n${content}`;
     } catch (error) {
         return `Error reading skill file: ${error.message}`;
     }

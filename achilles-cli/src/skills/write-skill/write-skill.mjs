@@ -4,14 +4,16 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { SKILL_FILE_NAMES } from 'achillesAgentLib/RecursiveSkilledAgents';
+import { SKILL_FILE_NAMES } from '../../lib/constants.mjs';
 
-export async function action(recursiveSkilledAgent, prompt) {
-    const skillsDir = recursiveSkilledAgent?.getSkillsDir?.();
-
-    if (!skillsDir) {
-        return 'Error: skillsDir not available (agent.getSkillsDir() returned null)';
+export async function action(mainAgent, prompt) {
+    // Derive skills directory from startDir
+    const startDir = mainAgent?.startDir;
+    if (!startDir) {
+        return 'Error: startDir not available';
     }
+
+    const skillsDir = path.join(startDir, 'skills');
 
     // Parse arguments
     let args;
@@ -62,9 +64,10 @@ export async function action(recursiveSkilledAgent, prompt) {
 
         // Auto-reload skills so the new skill is immediately available
         let reloadMessage = '';
-        if (recursiveSkilledAgent && typeof recursiveSkilledAgent.reloadSkills === 'function') {
+        if (mainAgent && typeof mainAgent.buildSkills === 'function') {
             try {
-                const count = recursiveSkilledAgent.reloadSkills();
+                mainAgent.buildSkills();
+                const count = mainAgent.getSkills().length;
                 reloadMessage = `\nSkills reloaded (${count} skill(s) registered).`;
             } catch (e) {
                 reloadMessage = '\nNote: Could not auto-reload skills. Use "reload" command.';

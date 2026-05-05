@@ -5,10 +5,10 @@
  */
 
 import readline from 'node:readline';
-import { ActionReporter } from 'achillesAgentLib/utils/ActionReporter.mjs';
 import { createSpinner } from '../ui/spinner.mjs';
 import { renderMarkdown } from '../ui/MarkdownRenderer.mjs';
 import { colors, icons, style, line, box } from '../ui/theme.mjs';
+import { IOServices } from 'achillesAgentLib';
 
 /**
  * NaturalLanguageProcessor class for handling LLM interactions.
@@ -18,7 +18,7 @@ export class NaturalLanguageProcessor {
      * Create a new NaturalLanguageProcessor.
      *
      * @param {Object} options - Processor options
-     * @param {Object} options.agent - The RecursiveSkilledAgent instance
+     * @param {Object} options.agent - The MainAgent instance
      * @param {Function} options.processPrompt - Callback to process prompts
      * @param {HistoryManager} options.historyManager - Command history manager
      * @param {Function} options.isMarkdownEnabled - Callback to check markdown state
@@ -40,16 +40,14 @@ export class NaturalLanguageProcessor {
         let wasInterrupted = false;
 
         // Create ActionReporter for real-time feedback (Claude Code style)
-        const actionReporter = new ActionReporter({
+        const actionReporter = new (await import('achillesAgentLib/utils/ActionReporter.mjs')).ActionReporter({
             mode: 'spinner',
-            spinnerFactory: createSpinner,  // Inject spinner implementation
+            spinnerFactory: createSpinner,
             showInterruptHint: true,
         });
-        this.agent.setActionReporter(actionReporter);
 
         // Set up ESC key listener
         const handleKeypress = (key) => {
-            // ESC key
             if (key === '\x1b' || key === '\u001b') {
                 wasInterrupted = true;
                 abortController.abort();
@@ -65,19 +63,20 @@ export class NaturalLanguageProcessor {
 
         // Set up a prompt reader that pauses the reporter during user input
         const llmAgent = this.agent.llmAgent;
-        const previousInputReader = llmAgent?.inputReader || null;
+        const hasSetter = typeof llmAgent?.setInputReader === 'function';
+        const previousInputReader = hasSetter
+            ? (llmAgent?.inputReader || null)
+            : IOServices.getInputReader();
 
         if (llmAgent) {
-            llmAgent.setInputReader({
+            const interactiveReader = {
                 read: async (prompt = '> ') => {
                     if (!process.stdin.isTTY) {
                         throw new Error('Interactive input requested but stdin is not a TTY.');
                     }
 
-                    // Pause the action reporter while waiting for user input
                     actionReporter.pause();
 
-                    // Temporarily disable raw mode for readline
                     if (process.stdin.isTTY) {
                         process.stdin.setRawMode(false);
                         process.stdin.removeListener('data', handleKeypress);
@@ -90,18 +89,22 @@ export class NaturalLanguageProcessor {
                         });
                         rl.question(prompt, (answer) => {
                             rl.close();
-                            // Re-enable raw mode and ESC listener
                             if (process.stdin.isTTY) {
                                 process.stdin.setRawMode(true);
                                 process.stdin.on('data', handleKeypress);
                             }
-                            // Resume the action reporter after user responds
                             actionReporter.resume();
                             resolve(answer);
                         });
                     });
                 },
-            });
+            };
+
+            if (hasSetter) {
+                llmAgent.setInputReader(interactiveReader);
+            } else {
+                IOServices.setInputReader(interactiveReader);
+            }
         }
 
         // Start with initial "Thinking" action
@@ -144,10 +147,13 @@ export class NaturalLanguageProcessor {
                 process.stdin.removeListener('data', handleKeypress);
             }
 
-            // Clean up reporter and prompt reader
-            this.agent.setActionReporter(null);
+            // Restore previous input reader
             if (llmAgent) {
-                llmAgent.setInputReader(previousInputReader);
+                if (hasSetter) {
+                    llmAgent.setInputReader(previousInputReader);
+                } else {
+                    IOServices.setInputReader(previousInputReader);
+                }
             }
 
             // Save command to history (unless interrupted)

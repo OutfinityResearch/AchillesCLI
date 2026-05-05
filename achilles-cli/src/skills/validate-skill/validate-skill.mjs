@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { validateSkillContent } from '../../schemas/skillSchemas.mjs';
 
-export async function action(recursiveSkilledAgent, prompt) {
+export async function action(mainAgent, prompt) {
     // Parse skill name
     let skillName = null;
     if (typeof prompt === 'string') {
@@ -26,16 +26,16 @@ export async function action(recursiveSkilledAgent, prompt) {
         return 'Error: skillName is required. Usage: validate-skill <skillName>';
     }
 
-    // Use findSkillFile to locate the skill
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
+    // Use getSkillRecord to locate the skill
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
 
-    if (!skillInfo) {
+    if (!skillRecord) {
         return `Error: Skill "${skillName}" not found`;
     }
 
     let content;
     try {
-        content = fs.readFileSync(skillInfo.filePath, 'utf8');
+        content = fs.readFileSync(skillRecord.filePath, 'utf8');
     } catch (error) {
         return `Error reading skill file: ${error.message}`;
     }
@@ -45,7 +45,7 @@ export async function action(recursiveSkilledAgent, prompt) {
 
     const output = [];
     output.push(`Validation: ${skillName}`);
-    output.push(`File: ${path.basename(skillInfo.filePath)}`);
+    output.push(`File: ${path.basename(skillRecord.filePath)}`);
     output.push(`Detected Type: ${result.detectedType || 'unknown'}`);
     output.push(`Status: ${result.valid ? 'VALID' : 'INVALID'}`);
 

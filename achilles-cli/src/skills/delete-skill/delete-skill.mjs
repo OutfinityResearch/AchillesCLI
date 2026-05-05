@@ -5,12 +5,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export async function action(recursiveSkilledAgent, prompt) {
-    const skillsDir = recursiveSkilledAgent?.getSkillsDir?.();
-
-    if (!skillsDir) {
-        return 'Error: skillsDir not available (agent.getSkillsDir() returned null)';
+export async function action(mainAgent, prompt) {
+    // Derive skills directory from startDir
+    const startDir = mainAgent?.startDir;
+    if (!startDir) {
+        return 'Error: startDir not available';
     }
+
+    const skillsDir = path.join(startDir, 'skills');
 
     // Parse skill name
     let skillName = null;

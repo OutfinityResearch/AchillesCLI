@@ -21,14 +21,14 @@ function hasGeneratedCode(skillDir) {
 /**
  * Trigger code regeneration for the skill
  */
-async function triggerCodeRegeneration(skillName, recursiveSkilledAgent) {
+async function triggerCodeRegeneration(skillName, mainAgent) {
     try {
         // Dynamically import generate-code to avoid circular dependencies
         const generateCodeModule = await import('../generate-code/generate-code.mjs');
         const generateAction = generateCodeModule.action || generateCodeModule.default;
 
         if (typeof generateAction === 'function') {
-            const result = await generateAction(recursiveSkilledAgent, skillName);
+            const result = await generateAction(mainAgent, skillName);
             return { success: true, result };
         }
         return { success: false, error: 'generate-code action not found' };
@@ -37,7 +37,7 @@ async function triggerCodeRegeneration(skillName, recursiveSkilledAgent) {
     }
 }
 
-export async function action(recursiveSkilledAgent, prompt) {
+export async function action(mainAgent, prompt) {
     // Parse arguments
     let args;
     if (typeof prompt === 'string') {
@@ -62,15 +62,15 @@ export async function action(recursiveSkilledAgent, prompt) {
         return 'Error: content is required';
     }
 
-    // Use findSkillFile to locate the skill
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
+    // Use getSkillRecord to locate the skill
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
 
-    if (!skillInfo) {
+    if (!skillRecord) {
         return `Error: Skill "${skillName}" not found`;
     }
 
-    const filePath = skillInfo.filePath;
-    const skillDir = skillInfo.record?.skillDir || path.dirname(filePath);
+    const filePath = skillRecord.filePath;
+    const skillDir = skillRecord.skillDir || path.dirname(filePath);
 
     let currentContent;
     try {
@@ -92,7 +92,7 @@ export async function action(recursiveSkilledAgent, prompt) {
             messages.push('');
             messages.push('Detected existing generated code. Triggering regeneration...');
 
-            const regenResult = await triggerCodeRegeneration(skillName, recursiveSkilledAgent);
+            const regenResult = await triggerCodeRegeneration(skillName, mainAgent);
 
             if (regenResult.success) {
                 messages.push(`Code regenerated successfully.`);

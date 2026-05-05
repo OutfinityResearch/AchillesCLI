@@ -39,9 +39,6 @@ export const BUILT_IN_SKILLS = {
 
   // Documentation scaffolding
   SCAFFOLD_DOC: 'scaffold-doc-skill',
-
-  // Orchestrators
-  ORCHESTRATOR: 'skills-orchestrator',
 };
 
 /**
@@ -84,6 +81,18 @@ export const FILE_NAMES = {
   HISTORY: '.achilles-cli-history',
   TSKILL_GENERATED: 'tskill.generated.mjs',
 };
+
+/**
+ * Valid skill file names recognized by the system
+ */
+export const SKILL_FILE_NAMES = [
+  'SKILL.md',
+  'dcgskill.md',
+  'cskill.md',
+  'mskill.md',
+  'oskill.md',
+  'tskill.md',
+];
 
 /**
  * Generated file extensions

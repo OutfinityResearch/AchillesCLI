@@ -19,15 +19,11 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Get the tests directory path from agent context
- * @param {Object} agent - RecursiveSkilledAgent instance
+ * @param {Object} agent - MainAgent instance
  * @returns {string|null} Path to tests directory or null
  */
 function getTestsDir(agent) {
-    // Try to get working directory from agent context
-    const workingDir = agent?.context?.workingDir
-        || agent?.options?.startDir
-        || agent?.startDir
-        || process.cwd();
+    const workingDir = agent?.startDir || process.cwd();
 
     const testsDir = path.join(workingDir, 'tests');
     return fs.existsSync(testsDir) ? testsDir : null;
@@ -36,13 +32,13 @@ function getTestsDir(agent) {
 /**
  * Discover all skill tests across registered skills
  * Looks for {skillShortName}.tests.mjs files in the tests/ folder
- * @param {Object} agent - RecursiveSkilledAgent instance
+ * @param {Object} agent - MainAgent instance
  * @returns {Array} Array of test info objects
  */
 export function discoverSkillTests(agent) {
     const tests = [];
 
-    if (!agent?.skillCatalog) {
+    if (!agent || typeof agent.getSkills !== 'function') {
         return tests;
     }
 
@@ -51,13 +47,14 @@ export function discoverSkillTests(agent) {
         return tests;
     }
 
-    for (const [name, record] of agent.skillCatalog.entries()) {
-        const shortName = record.shortName || name;
+    const skills = agent.getSkills();
+    for (const record of skills) {
+        const shortName = record.shortName || record.name;
         const testFile = path.join(testsDir, `${shortName}.tests.mjs`);
 
         if (fs.existsSync(testFile)) {
             tests.push({
-                skillName: name,
+                skillName: record.name,
                 shortName: shortName,
                 skillType: record.type || 'unknown',
                 testFile: testFile,
@@ -72,27 +69,27 @@ export function discoverSkillTests(agent) {
 /**
  * Discover tests for a specific skill
  * Looks for {skillShortName}.tests.mjs in the tests/ folder
- * @param {Object} agent - RecursiveSkilledAgent instance
+ * @param {Object} agent - MainAgent instance
  * @param {string} skillName - Name of the skill
  * @returns {Object|null} Test info or null if no tests
  */
 export function discoverSkillTest(agent, skillName) {
-    const skillInfo = agent?.findSkillFile?.(skillName);
-    if (!skillInfo) return null;
+    const skillRecord = agent?.getSkillRecord?.(skillName);
+    if (!skillRecord) return null;
 
     const testsDir = getTestsDir(agent);
     if (!testsDir) return null;
 
-    const shortName = skillInfo.record?.shortName || skillName;
+    const shortName = skillRecord.shortName || skillName;
     const testFile = path.join(testsDir, `${shortName}.tests.mjs`);
 
     if (fs.existsSync(testFile)) {
         return {
             skillName: skillName,
             shortName: shortName,
-            skillType: skillInfo.record?.type || 'unknown',
+            skillType: skillRecord.type || 'unknown',
             testFile: testFile,
-            skillDir: skillInfo.record?.skillDir || path.dirname(skillInfo.filePath),
+            skillDir: skillRecord.skillDir,
         };
     }
 

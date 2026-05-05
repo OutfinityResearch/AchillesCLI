@@ -13,7 +13,7 @@ This module reads and returns the content of a skill definition file (.md).
 Main entry point for reading skills.
 
 Accepts:
-- recursiveSkilledAgent: The RecursiveSkilledAgent instance
+- mainAgent: The MainAgent instance
 - prompt: Skill name as string or object
 
 ## Input Parsing
@@ -25,7 +25,7 @@ Accepts:
 ## Read Process
 
 1. Parse skill name from input
-2. Find skill file using agent's findSkillFile method
+2. Find skill record using agent.getSkillRecord() to get the skill's filePath and skillDir
 3. Read file content
 4. Format and return with metadata
 

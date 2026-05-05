@@ -2,9 +2,9 @@
  * Execute Skill - Executes a user skill and returns its output
  */
 
-export async function action(recursiveSkilledAgent, prompt) {
-    if (!recursiveSkilledAgent) {
-        return 'Error: No recursiveSkilledAgent available';
+export async function action(mainAgent, prompt) {
+    if (!mainAgent) {
+        return 'Error: No mainAgent available';
     }
 
     // Parse input - can be:
@@ -44,27 +44,26 @@ export async function action(recursiveSkilledAgent, prompt) {
     const normalizedName = skillName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     // Find the skill record
-    const skillRecord = recursiveSkilledAgent.getSkillRecord?.(normalizedName)
-        || recursiveSkilledAgent.getSkillRecord?.(skillName);
+    const skillRecord = mainAgent.getSkillRecord?.(normalizedName)
+        || mainAgent.getSkillRecord?.(skillName);
 
     if (!skillRecord) {
         // List available user skills
-        const userSkills = recursiveSkilledAgent.getUserSkills?.() || [];
+        const userSkills = mainAgent.getSkills?.().filter(s => !s.isInternal) || [];
         const skillNames = userSkills.map(s => s.shortName || s.name).join(', ');
         return `Error: Skill "${skillName}" not found.\nAvailable user skills: ${skillNames || 'none'}`;
     }
 
-    // Check if it's a built-in skill (we only want to execute user skills)
-    if (recursiveSkilledAgent.isBuiltInSkill?.(skillRecord)) {
+    // Check if it's an internal skill (we only want to execute user skills)
+    if (skillRecord.isInternal) {
         return `Error: "${skillName}" is a built-in management skill, not a user skill.\nUse the skill directly (e.g., "read-skill joker") instead of execute-skill.`;
     }
 
     // Execute the skill
     try {
-        const result = await recursiveSkilledAgent.executeWithReviewMode(
-            skillInput || `Execute ${skillName}`,
-            { skillName: skillRecord.name },
-            'none'
+        const result = await mainAgent.executeSkill(
+            skillRecord.name,
+            skillInput || `Execute ${skillName}`
         );
 
         // Format the result

@@ -14,10 +14,26 @@ import {
 } from './codeGeneration.prompts.mjs';
 import { runTestFile } from '../../lib/testDiscovery.mjs';
 import { formatTestResult } from '../../ui/TestResultFormatter.mjs';
-import { parseSkillName } from '../../lib/InputParser.mjs';
 import { SKILL_TYPE_NAMES, FILE_NAMES, FILE_EXTENSIONS, TIERS, RESPONSE_SHAPES } from '../../lib/constants.mjs';
 
 const SUPPORTED_TYPES = [SKILL_TYPE_NAMES.TSKILL, SKILL_TYPE_NAMES.OSKILL, SKILL_TYPE_NAMES.CSKILL];
+
+/**
+ * Parse skill name from prompt (handles string and object inputs)
+ */
+function parseSkillName(prompt) {
+    if (typeof prompt === 'string') {
+        try {
+            const parsed = JSON.parse(prompt);
+            return parsed.skillName || parsed.name || null;
+        } catch (e) {
+            return prompt.trim() || null;
+        }
+    } else if (prompt && typeof prompt === 'object') {
+        return prompt.skillName || prompt.name || null;
+    }
+    return null;
+}
 
 /**
  * Check if regeneration is needed by comparing file modification times.
@@ -60,9 +76,9 @@ function checkNeedsRegeneration(generatedPath, sourcePaths) {
     return { needsRegen: false, reason: 'generated file is up to date' };
 }
 
-export async function action(recursiveSkilledAgent, prompt) {
-    // Get llmAgent from the recursiveSkilledAgent
-    const llmAgent = recursiveSkilledAgent?.llmAgent;
+export async function action(mainAgent, prompt) {
+    // Get llmAgent from the mainAgent
+    const llmAgent = mainAgent?.llmAgent;
 
     const skillName = parseSkillName(prompt);
 
@@ -70,15 +86,15 @@ export async function action(recursiveSkilledAgent, prompt) {
         return 'Error: skillName is required. Usage: generate-code <skillName>';
     }
 
-    // Use findSkillFile to locate the skill
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
+    // Use getSkillRecord to locate the skill
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
 
-    if (!skillInfo) {
+    if (!skillRecord) {
         return `Error: Skill "${skillName}" not found`;
     }
 
-    const filePath = skillInfo.filePath;
-    const skillDir = skillInfo.record?.skillDir || path.dirname(filePath);
+    const filePath = skillRecord.filePath;
+    const skillDir = skillRecord.skillDir || path.dirname(filePath);
 
     let content;
     try {
@@ -166,7 +182,7 @@ export async function action(recursiveSkilledAgent, prompt) {
         ];
 
         // Auto-run tests from the tests folder in the working directory
-        const workingDir = recursiveSkilledAgent?.startDir || process.cwd();
+        const workingDir = mainAgent?.startDir || process.cwd();
         const testsDir = path.join(workingDir, 'tests');
 
         // Look for test files matching the skill name

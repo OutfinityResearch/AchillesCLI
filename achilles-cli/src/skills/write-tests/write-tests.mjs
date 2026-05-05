@@ -304,8 +304,8 @@ Generate the complete test file with actual tests based on the skill definition.
 /**
  * Main action function
  */
-export async function action(recursiveSkilledAgent, prompt) {
-    const llmAgent = recursiveSkilledAgent?.llmAgent;
+export async function action(mainAgent, prompt) {
+    const llmAgent = mainAgent?.llmAgent;
     const { skillName, options } = parseInput(prompt);
     const force = options.force || false;
 
@@ -314,13 +314,13 @@ export async function action(recursiveSkilledAgent, prompt) {
     }
 
     // Find the skill
-    const skillInfo = recursiveSkilledAgent?.findSkillFile?.(skillName);
-    if (!skillInfo) {
+    const skillRecord = mainAgent?.getSkillRecord?.(skillName);
+    if (!skillRecord) {
         return `Error: Skill "${skillName}" not found`;
     }
 
-    const filePath = skillInfo.filePath;
-    const skillDir = skillInfo.record?.skillDir || path.dirname(filePath);
+    const filePath = skillRecord.filePath;
+    const skillDir = skillRecord.skillDir || path.dirname(filePath);
 
     // Read skill definition
     let definition;
@@ -337,12 +337,10 @@ export async function action(recursiveSkilledAgent, prompt) {
     }
 
     // Determine tests directory and output path
-    const workingDir = recursiveSkilledAgent?.context?.workingDir
-        || recursiveSkilledAgent?.options?.startDir
-        || process.cwd();
+    const workingDir = mainAgent?.startDir || process.cwd();
 
     const testsDir = path.join(workingDir, 'tests');
-    const shortName = skillInfo.record?.shortName || skillName;
+    const shortName = skillRecord.shortName || skillName;
     const outPath = path.join(testsDir, `${shortName}.tests.mjs`);
 
     // Check if test file already exists

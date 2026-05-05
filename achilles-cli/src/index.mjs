@@ -5,8 +5,9 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { realpathSync } from 'node:fs';
-import { RecursiveSkilledAgent } from 'achillesAgentLib/RecursiveSkilledAgents';
+import { MainAgent, discoverSkillsFromRoot } from 'achillesAgentLib/MainAgent';
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
+import { IOServices } from 'achillesAgentLib';
 import { HistoryManager } from './repl/HistoryManager.mjs';
 import { CommandSelector, showCommandSelector, showSkillSelector, buildCommandList } from './ui/CommandSelector.mjs';
 import { SlashCommandHandler } from './repl/SlashCommandHandler.mjs';
@@ -16,6 +17,7 @@ import { printHelp as printREPLHelp, showHistory, searchHistory } from './ui/Hel
 import { UIContext } from './ui/UIContext.mjs';
 import { createProvider, getProviderNames } from './ui/providers/index.mjs';
 import { BUILT_IN_SKILLS } from './lib/constants.mjs';
+import { buildOrchestratorSystemPrompt } from './prompts/orchestrator-prompt.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +31,7 @@ const bashSkillsDir = path.join(__dirname, '../../bash-skills/skills');
 // Re-export classes and functions for library usage
 export {
     // Core agent (from achillesAgentLib)
-    RecursiveSkilledAgent,
+    MainAgent,
     LLMAgent,
     // REPL components
     REPLSession,
@@ -119,8 +121,14 @@ async function main() {
     }
 
     // Configure logger based on verbose flag
+    const noop = () => {};
+    const achillesDebug = /^(1|true|yes|on)$/i.test(process.env.ACHILLES_DEBUG || '');
+    const debugLog = achillesDebug ? (msg) => console.log(`[DEBUG] ${msg}`) : noop;
+    const infoLog = verbose ? (msg) => console.log(`[INFO] ${msg}`) : noop;
     const logger = {
-        log: verbose ? (msg) => console.log(`[LOG] ${msg}`) : () => {},
+        debug: debugLog,
+        info: infoLog,
+        log: infoLog,
         warn: (msg) => console.warn(`[WARN] ${msg}`),
         error: (msg) => console.error(`[ERROR] ${msg}`),
     };
@@ -132,31 +140,41 @@ async function main() {
 
     // Merge all skill roots: built-in + bash-skills + CLI flags + node_modules skills
     const allSkillRoots = [
-        builtInSkillsDir,
+        { path: builtInSkillsDir, isInternal: true },
         // Add bash-skills if the directory exists
-        ...(fs.existsSync(bashSkillsDir) ? [bashSkillsDir] : []),
-        ...cliSkillRoots,
-        ...nodeModulesSkillRoots,
+        ...(fs.existsSync(bashSkillsDir) ? [{ path: bashSkillsDir, isInternal: true }] : []),
+        ...cliSkillRoots.map((skillRoot) => ({ path: skillRoot, isInternal: false })),
+        ...nodeModulesSkillRoots.map((skillRoot) => ({ path: skillRoot, isInternal: false })),
     ];
 
     if (verbose && (cliSkillRoots.length > 0 || nodeModulesSkillRoots.length > 0)) {
         logger.log(`Additional skill roots: ${[...cliSkillRoots, ...nodeModulesSkillRoots].join(', ')}`);
     }
 
-    // Initialize LLM Agent
-    const llmAgent = new LLMAgent({
-        name: 'achilles-cli-agent',
-    });
-    llmAgent.setInputReader(createCliInputReader());
-    llmAgent.setOutputWriter(createCliOutputWriter());
-
-    // Initialize RecursiveSkilledAgent with all skill roots
-    const agent = new RecursiveSkilledAgent({
-        llmAgent,
+    // Initialize MainAgent with all skill roots
+    const agent = new MainAgent({
         startDir: workingDir,
-        additionalSkillRoots: allSkillRoots,
+        llmAgentOptions: {
+            name: 'achilles-cli-agent',
+        },
         logger,
     });
+
+    registerSkillRoots(agent, allSkillRoots, logger);
+
+    // Set up I/O (LLMAgent API fallback to global IOServices)
+    const inputReader = createCliInputReader();
+    const outputWriter = createCliOutputWriter();
+    if (typeof agent.llmAgent?.setInputReader === 'function') {
+        agent.llmAgent.setInputReader(inputReader);
+    } else {
+        IOServices.setInputReader(inputReader);
+    }
+    if (typeof agent.llmAgent?.setOutputWriter === 'function') {
+        agent.llmAgent.setOutputWriter(outputWriter);
+    } else {
+        IOServices.setOutputWriter(outputWriter);
+    }
 
     // Initialize UI provider based on selected style
     try {
@@ -181,18 +199,15 @@ async function main() {
                 workingDir,
                 skillsDir,
                 skilledAgent: agent,
-                llmAgent,
+                llmAgent: agent.llmAgent,
                 logger,
                 skipBashPermissions,
             };
 
-            // Attach context directly to agent for skills that access agent.context
-            agent.context = context;
-
             let result = await agent.executePrompt(prompt, {
-                skillName: BUILT_IN_SKILLS.ORCHESTRATOR,
                 context,
                 mode,
+                systemPrompt: buildOrchestratorSystemPrompt(),
             });
 
             // Format result
@@ -220,14 +235,11 @@ async function main() {
             process.exit(1);
         }
     } else {
-        // REPL mode - wait for all pending skill preparations to settle
-        if (agent.pendingPreparations && agent.pendingPreparations.length > 0) {
-            const pendingCount = agent.pendingPreparations.length;
-            if (verbose) {
-                console.log(`Waiting for ${pendingCount} skill preparation(s) to complete...`);
-            }
-            await agent.awaitPreparations();
+        // REPL mode - wait for skill preparations to complete
+        if (verbose) {
+            console.log('Building skills...');
         }
+        await agent.buildSkills();
 
         const session = new REPLSession(agent, {
             workingDir,
@@ -327,7 +339,6 @@ BUILT-IN SKILLS:
   preview-changes    Show diff before applying
   generate-code      Generate .mjs from tskill
   test-code          Test generated code
-  skills-orchestrator  Orchestrator for routing requests
   skill-refiner      Iterative improvement loop
 
 SKILL TYPES:
@@ -420,6 +431,38 @@ function collectNodeModulesSkillRoots(baseDir, logger) {
     }
 
     return roots;
+}
+
+function registerSkillRoots(agent, skillRoots, logger) {
+    if (!agent || !Array.isArray(skillRoots) || skillRoots.length === 0) {
+        return;
+    }
+
+    const seen = new Set();
+    for (const root of skillRoots) {
+        const skillRoot = root?.path;
+        if (!skillRoot || seen.has(skillRoot)) {
+            continue;
+        }
+        seen.add(skillRoot);
+
+        if (!fs.existsSync(skillRoot)) {
+            continue;
+        }
+
+        let discovered = [];
+        try {
+            discovered = discoverSkillsFromRoot(skillRoot, { logger });
+        } catch (error) {
+            logger?.warn?.(`Failed to discover skills from ${skillRoot}: ${error.message}`);
+            continue;
+        }
+
+        for (const skillRecord of discovered) {
+            skillRecord.isInternal = Boolean(root.isInternal);
+            agent._registerSkill(skillRecord);
+        }
+    }
 }
 
 // Run if executed directly

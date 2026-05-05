@@ -16,6 +16,14 @@ export function summarizeResult(result) {
         return String(result);
     }
 
+    if (typeof result.result === 'string') {
+        return result.result;
+    }
+
+    if (typeof result.output === 'string') {
+        return result.output;
+    }
+
     const lines = [];
 
     // Unwrap nested result if present (orchestrator returns { result: { executions, ... } })

@@ -19,7 +19,7 @@ This module generates JavaScript code from skill definitions (tskill, oskill, cs
 Main entry point for code generation.
 
 Accepts:
-- recursiveSkilledAgent: The RecursiveSkilledAgent instance
+- mainAgent: The MainAgent instance
 - prompt: Skill name as string or object
 
 ## Input Parsing
@@ -45,7 +45,7 @@ Skipped when generated file is up to date with all sources.
 ## Code Generation Flow
 
 1. Parse skill name from input
-2. Find skill file using agent's findSkillFile method
+2. Find skill record using agent.getSkillRecord() to get filePath and skillDir
 3. Read skill definition content
 4. Verify skill type is supported
 5. Check if regeneration is needed
