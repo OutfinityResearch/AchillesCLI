@@ -76,6 +76,11 @@ async function main() {
         if (arg === '--dir' || arg === '-d') {
             workingDir = path.resolve(args[i + 1] || process.cwd());
             i += 1;
+        } else if (arg.startsWith('--dir=')) {
+            const resolvedDir = arg.slice('--dir='.length);
+            if (resolvedDir) {
+                workingDir = path.resolve(resolvedDir);
+            }
         } else if (arg === '--skill-root' || arg === '-r') {
             const rootPath = args[i + 1];
             if (rootPath && !rootPath.startsWith('-')) {
@@ -135,10 +140,16 @@ async function main() {
     };
 
     // User skills directory (do not create automatically)
-    const skillsDir = path.join(workingDir, 'skills');
-
     const nodeModulesSkillRoots = collectNodeModulesSkillRoots(__dirname, logger);
     const webchatRuntime = !prompt && isWebchatRuntime();
+    const skillsDir = path.join(workingDir, 'skills');
+
+    try {
+        process.chdir(workingDir);
+    } catch (error) {
+        console.error(`Error: Unable to change working directory to '${workingDir}': ${error.message}`);
+        process.exit(1);
+    }
 
     // Merge all skill roots: built-in + bash-skills + CLI flags + node_modules skills
     const allSkillRoots = [
