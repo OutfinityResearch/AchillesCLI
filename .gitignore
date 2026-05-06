@@ -11,5 +11,4 @@ temp_*
 .idea
 # >>> ploinky default-skills >>>
 .claude/skills/
-.agents/skills/
 # <<< ploinky default-skills <<<
