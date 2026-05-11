@@ -163,7 +163,7 @@ export const spinnerConfig = {
 export const promptConfig = {
     symbol: '>',
     color: 'cyan',
-    hint: '↵ send',
+    hint: '[model]',
     hintColor: 'dim',
 };
 

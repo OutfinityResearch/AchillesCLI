@@ -29,8 +29,9 @@ Primary REPL components and responsibilities:
    - Enforces argument validation for slash-command entry points.
    - Supports hierarchical commands with sub-options (e.g., `/list skills`, `/add repo`).
 4. `NaturalLanguageProcessor.mjs`
-   - Routes free-text prompts into orchestrated LLM execution.
-   - Applies runtime execution options and context shaping.
+    - Routes free-text prompts into orchestrated LLM execution.
+    - Applies runtime execution options and context shaping.
+    - Captures ESC interruptions and propagates cancellation to MainAgent session runtime.
 5. `HistoryManager.mjs`
    - Persists and rehydrates command history.
    - Stores history in `.achilles-cli/history` within the working directory.
@@ -51,13 +52,16 @@ Hierarchical command structure:
 Session control behavior:
 1. REPL session stores and applies current tier/model preferences.
 2. Cancellation/interruption paths must preserve terminal recoverability.
-3. Context-sensitive help and command selection remain available in interactive mode.
+3. ESC interruption is supported for both natural-language processing and slash-command execution paths.
+4. Slash-command execution forwards AbortSignal and interruption intent to skill runtime calls.
+5. Context-sensitive help and command selection remain available in interactive mode.
 
 Operational invariants:
 1. Deterministic slash flows must avoid unnecessary LLM routing.
 2. Natural-language flows must remain explicit about orchestrated execution.
 3. REPL errors must be user-readable and must not silently terminate the loop.
 4. All commands use slash syntax; there are no quick commands without `/`.
+5. Interrupted turns must not be appended to command history.
 
 ## Conclusion
 The REPL subsystem is the primary interactive contract for AchillesCLI and must keep deterministic commands, orchestrated prompting, and session-state controls coherent. The hierarchical command model provides uniform discovery and execution through the `/` menu.

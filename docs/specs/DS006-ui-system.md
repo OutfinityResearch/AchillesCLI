@@ -24,7 +24,8 @@ UI component contracts:
 4. `MarkdownRenderer.mjs`
    - Converts markdown-like responses into terminal-friendly formatted output.
 5. `spinner.mjs`
-   - Provides progress indication and operation feedback for longer tasks.
+    - Provides progress indication and operation feedback for longer tasks.
+    - Displays interruption hints for cancel-capable flows.
 6. `ResultFormatter.mjs`
    - Normalizes execution results into user-facing terminal output.
 7. `themes/`
@@ -46,6 +47,7 @@ Interaction invariants:
 1. UI rendering concerns remain separated from business logic and skill execution.
 2. Provider swapping must not require command-handler rewrites.
 3. Output formatting must remain safe for normal terminal and scripted consumption.
+4. Interrupt-capable operations must keep terminal mode and cursor state consistent after ESC cancellation.
 
 ## Conclusion
 The UI subsystem is a layered terminal interaction framework with provider pluggability, reusable rendering components, and explicit boundaries from core execution logic.

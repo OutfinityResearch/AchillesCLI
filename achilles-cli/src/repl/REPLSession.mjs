@@ -117,6 +117,7 @@ export class REPLSession {
             commandList: this.commandList,
             getUserSkills: () => this.getUserSkills(),
             getAllSkills: () => agent.getSkills(),
+            getModelName: () => this.pinnedModel || this._getCurrentTierModel(),
         });
 
         this.nlProcessor = new NaturalLanguageProcessor({
@@ -309,6 +310,21 @@ export class REPLSession {
     }
 
     /**
+     * Get the current model name (pinned or tier default).
+     * @private
+     */
+    _getCurrentTierModel() {
+        if (this.pinnedModel) return this.pinnedModel;
+        try {
+            const tierModels = _listTiersFromCache?.();
+            const tierModelList = tierModels?.[this.activeTier];
+            return tierModelList?.[0] || null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
      * Show the startup banner.
      * @private
      */
@@ -479,13 +495,39 @@ export class REPLSession {
         const spinner = createSpinner(`Running /${commandLabel}...`);
         this._setActiveSpinner(spinner);
 
+        const abortController = new AbortController();
+        let wasInterrupted = false;
+        const handleKeypress = (key) => {
+            const keyStr = key?.toString?.() || '';
+            if (keyStr === '\x1b' || keyStr === '\u001b') {
+                wasInterrupted = true;
+                abortController.abort('esc');
+                if (typeof this.agent?.cancelCurrentSession === 'function') {
+                    this.agent.cancelCurrentSession('esc');
+                }
+            }
+        };
+
+        if (process.stdin.isTTY) {
+            process.stdin.setRawMode(true);
+            process.stdin.resume();
+            process.stdin.on('data', handleKeypress);
+        }
+
         try {
             const fullArgs = parsed.subOption
                 ? `${parsed.subOption} ${parsed.args}`.trim()
                 : parsed.args;
             const result = await this.slashHandler.executeSlashCommand(parsed.command, fullArgs, {
                 context: this.context,
+                signal: abortController.signal,
             });
+
+            if (wasInterrupted || abortController.signal.aborted) {
+                spinner.stop();
+                console.log('\nOperation cancelled.\n');
+                return false;
+            }
 
             if (result.handled) {
                 if (result.exitRepl) {
@@ -547,14 +589,24 @@ export class REPLSession {
                 } else {
                     spinner.stop();
                 }
-                if (!result.error) {
+                if (!result.error && !wasInterrupted) {
                     this.historyManager.add(input);
                 }
             } else {
                 spinner.fail(result.error || `Unknown command: /${parsed.command}`);
             }
         } catch (error) {
-            spinner.fail(error.message);
+            if (wasInterrupted || error?.name === 'AbortError') {
+                spinner.stop();
+                console.log('\nOperation cancelled.\n');
+            } else {
+                spinner.fail(error.message);
+            }
+        } finally {
+            if (process.stdin.isTTY) {
+                process.stdin.setRawMode(false);
+                process.stdin.removeListener('data', handleKeypress);
+            }
         }
 
         this._setActiveSpinner(null);

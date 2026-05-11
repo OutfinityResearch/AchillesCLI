@@ -27,11 +27,18 @@ Operational controls:
 1. Debug mode enables deeper internal diagnostics.
 2. Normal mode must keep outputs user-safe and concise.
 3. Runtime command handlers (`/help`, `/debug`, `/tier`, `/model`, `/reload`, `/version`, `/status`) provide explicit operational control points.
+4. ESC interruption is an operational control for long-running LLM and skill-execution flows.
 
 Reliability invariants:
 1. Runtime failures should surface explicit diagnostics without leaking sensitive internals in non-debug output.
 2. Long-running or multi-step flows should emit progress feedback through UI/ActionReporter paths.
 3. Test and generation helpers must not silently pass when preconditions are missing.
+4. Cancellation paths must leave the runtime in a recoverable state and avoid recording interrupted commands as successful history.
+
+Cancellation test coverage requirements:
+1. Natural-language interruption paths verify AbortSignal propagation and history suppression.
+2. Agentic session interruption paths verify transition to `interrupted` and recovery on the next user prompt.
+3. Slash-command execution paths verify cancellation propagation to runtime options.
 
 ## Conclusion
 Testing and observability contracts ensure AchillesCLI remains maintainable, diagnosable, and operationally predictable as the runtime evolves.

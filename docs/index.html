@@ -32,6 +32,13 @@
     <a href="./specsLoader.html?spec=DS010-ecosystem-integration.md">DS010</a>.
   </div>
 
+  <h2>Interruption Model</h2>
+  <div class="card">
+    AchillesCLI supports ESC cancellation for long-running prompt and slash-command executions.
+    Cancellation is propagated as an abort signal to runtime calls, interrupted turns are not persisted to command history,
+    and the next user input resumes normal interactive flow.
+  </div>
+
   <h2>Specification Entry Points</h2>
   <ul>
     <li><a href="./specsLoader.html?spec=matrix.md">Specification Matrix</a></li>

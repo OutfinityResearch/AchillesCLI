@@ -31,6 +31,7 @@ export class InteractivePrompt {
         this.commandList = options.commandList;
         this.getUserSkills = options.getUserSkills;
         this.getAllSkills = options.getAllSkills || options.getUserSkills;
+        this.getModelName = options.getModelName || (() => null);
 
         // Get colors from theme
         const theme = UIContext.getTheme();
@@ -38,8 +39,6 @@ export class InteractivePrompt {
 
         // Styled prompt like Claude Code: "> " with cyan color
         this.promptString = `${this.colors.cyan}${this.colors.bold}>${this.colors.reset} `;
-        // Right side hint
-        this.rightHint = `${this.colors.dim}↵ send${this.colors.reset}`;
 
         // Track current hint for cleanup
         this.currentHintLines = 0;
@@ -81,9 +80,13 @@ export class InteractivePrompt {
             }
 
             // LineEditor handles buffer and cursor position
+            const modelName = self.getModelName();
+            const rightHint = modelName
+                ? `${self.colors.dim}${modelName}${self.colors.reset}`
+                : `${self.colors.dim}↵ send${self.colors.reset}`;
             const editor = new LineEditor({
                 prompt: self.promptString,
-                rightHint: self.rightHint,
+                rightHint,
                 boxed: true,
             });
             let showingSelector = false;

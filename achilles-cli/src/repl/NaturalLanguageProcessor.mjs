@@ -48,9 +48,13 @@ export class NaturalLanguageProcessor {
 
         // Set up ESC key listener
         const handleKeypress = (key) => {
-            if (key === '\x1b' || key === '\u001b') {
+            const keyStr = key?.toString?.() || '';
+            if (keyStr === '\x1b' || keyStr === '\u001b') {
                 wasInterrupted = true;
-                abortController.abort();
+                abortController.abort('esc');
+                if (typeof this.agent?.cancelCurrentSession === 'function') {
+                    this.agent.cancelCurrentSession('esc');
+                }
             }
         };
 
@@ -115,17 +119,8 @@ export class NaturalLanguageProcessor {
                 signal: abortController.signal,
             });
 
-            // Show actual model used
-            const lastInvocation = this.agent.llmAgent.invokerStrategy?.getLastInvocationDetails?.();
-            const modelInfo = lastInvocation?.model ? ` [${lastInvocation.model}]` : '';
-
-            // Complete any remaining actions and show final status
+            // Complete any remaining actions
             actionReporter.reset();
-            const elapsed = actionReporter.history.length > 0
-                ? actionReporter.history[actionReporter.history.length - 1]?.duration
-                : null;
-            const durationInfo = elapsed ? ` (${(elapsed / 1000).toFixed(1)}s)` : '';
-            console.log(`${style(icons.check, colors.green)} Done${style(modelInfo, colors.dim)}${style(durationInfo, colors.dim)}`);
 
             console.log(style(line(60, box.horizontal), colors.dim));
             console.log(this.isMarkdownEnabled() ? renderMarkdown(result) : result);
@@ -135,8 +130,6 @@ export class NaturalLanguageProcessor {
                 actionReporter.interrupted('Operation cancelled');
                 console.log('');
             } else {
-                const lastInvocation = this.agent.llmAgent.invokerStrategy?.getLastInvocationDetails?.();
-                const modelInfo = lastInvocation?.model ? ` [${lastInvocation.model}]` : '';
                 actionReporter.failAction(error);
                 console.error(`\n${error.message}\n`);
             }
