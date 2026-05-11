@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const DEFAULT_HISTORY_FILE = '.achilles-cli-history';
+const ACHILLES_CLI_DIR = '.achilles-cli';
+const HISTORY_FILENAME = 'history';
 const DEFAULT_MAX_ENTRIES = 1000;
 
 /**
@@ -13,14 +14,14 @@ const DEFAULT_MAX_ENTRIES = 1000;
 export class HistoryManager {
     constructor({
         workingDir = process.cwd(),
-        historyFile = DEFAULT_HISTORY_FILE,
         maxEntries = DEFAULT_MAX_ENTRIES,
     } = {}) {
         this.workingDir = path.resolve(workingDir);
-        this.historyPath = path.join(this.workingDir, historyFile);
+        this.achillesCliDir = path.join(this.workingDir, ACHILLES_CLI_DIR);
+        this.historyPath = path.join(this.achillesCliDir, HISTORY_FILENAME);
         this.maxEntries = maxEntries;
         this.history = [];
-        this.currentIndex = -1; // For navigation: -1 means at the end (new input)
+        this.currentIndex = -1;
 
         this._load();
     }
@@ -53,6 +54,9 @@ export class HistoryManager {
      */
     _save() {
         try {
+            if (!fs.existsSync(this.achillesCliDir)) {
+                fs.mkdirSync(this.achillesCliDir, { recursive: true });
+            }
             fs.writeFileSync(this.historyPath, this.history.join('\n') + '\n', 'utf-8');
         } catch (error) {
             // Silently ignore write errors

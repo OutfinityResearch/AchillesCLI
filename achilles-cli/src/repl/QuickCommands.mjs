@@ -156,7 +156,7 @@ export class QuickCommands {
         } else if (arg.match(/^\d+$/)) {
             showHistory(this.historyManager, parseInt(arg, 10));
         } else {
-            // Search history
+        // Search history
             searchHistory(this.historyManager, arg);
         }
 

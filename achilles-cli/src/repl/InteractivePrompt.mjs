@@ -7,7 +7,7 @@
 import readline from 'node:readline';
 import { LineEditor } from '../ui/LineEditor.mjs';
 import { showCommandSelector, showSkillSelector } from '../ui/CommandSelector.mjs';
-import { SlashCommandHandler } from './SlashCommandHandler.mjs';
+import { SlashCommandHandler, SUB_OPTIONS } from './SlashCommandHandler.mjs';
 import { UIContext } from '../ui/UIContext.mjs';
 
 /**
@@ -174,64 +174,81 @@ export class InteractivePrompt {
                     return;
                 }
 
-                // Disabled: slash menu on leading "/" interferes with input.
-                /*
                 // Handle "/" - show interactive selector (only when buffer is empty)
                 if (keyStr === '/' && editor.getBuffer() === '') {
                     if (showingSelector) return;
                     showingSelector = true;
 
-                    // Clear the boxed input before showing selector
                     if (editor.boxed) {
                         editor.clearBox();
                     }
 
-                    // Remove the raw mode listener temporarily
                     process.stdin.removeListener('data', handleKey);
                     process.stdin.setRawMode(false);
 
-                    // Show interactive command selector (Claude Code style)
+                    // Show main command selector
                     const selected = await showCommandSelector(self.commandList, {
                         initialFilter: '',
                     });
 
                     if (selected) {
-                        // Check if selected command needs a skill argument
-                        if (selected.needsSkillArg) {
-                            // Show skill selector
-                            process.stdout.write(`${selected.name} `);
+                        // Check if command has sub-options
+                        if (selected.hasSubOptions && selected.subOptions) {
+                            // Build sub-option list
+                            const subOptionItems = selected.subOptions.map(opt => {
+                                const subDefs = SUB_OPTIONS[selected.name.slice(1)] || {};
+                                const subDef = subDefs[opt] || {};
+                                return {
+                                    name: `/${selected.name.slice(1)} ${opt}`,
+                                    description: subDef.description || opt,
+                                    usage: subDef.usage || `/${selected.name.slice(1)} ${opt}`,
+                                    skill: subDef.skill || null,
+                                    needsSkillArg: subDef.needsSkillArg || false,
+                                };
+                            });
 
-                            // Get list of skills - use user skills only for skill-operating commands
-                            const userSkills = self.getUserSkills();
-                            if (userSkills.length === 0) {
-                                cleanup();
-                                process.stdout.write('\n');
-                                console.log(`${self.colors.yellow}No user skills found. Create one first.${self.colors.reset}`);
-                                resolve(''); // Return empty to re-prompt
-                                return;
-                            }
-
-                            const selectedSkill = await showSkillSelector(userSkills, {
-                                prompt: `${selected.name} `,
+                            // Show sub-option selector
+                            const selectedSub = await showCommandSelector(subOptionItems, {
                                 initialFilter: '',
                             });
 
-                            if (selectedSkill) {
-                                // Commands that should wait for additional input after skill selection
-                                const commandsNeedingInput = ['/exec', '/refine', '/update'];
-                                const commandName = selected.name;
-
-                                if (commandsNeedingInput.includes(commandName)) {
-                                    await self._handleSkillInputFlow(commandName, selectedSkill, userSkills, resolve, cleanup);
+                            if (selectedSub) {
+                                // Sub-option selected - check if it needs skill arg
+                                if (selectedSub.needsSkillArg) {
+                                    process.stdout.write(`${selectedSub.name} `);
+                                    const userSkills = self.getUserSkills();
+                                    if (userSkills.length === 0) {
+                                        cleanup();
+                                        process.stdout.write('\n');
+                                        console.log(`${self.colors.yellow}No user skills found.${self.colors.reset}`);
+                                        resolve('');
+                                        return;
+                                    }
+                                    const selectedSkill = await showSkillSelector(userSkills, {
+                                        prompt: `${selectedSub.name} `,
+                                        initialFilter: '',
+                                    });
+                                    if (selectedSkill) {
+                                        cleanup();
+                                        const fullCommand = `${selectedSub.name} ${selectedSkill.name}`;
+                                        process.stdout.write(`${selectedSkill.name}\n`);
+                                        resolve(fullCommand);
+                                    } else {
+                                        showingSelector = false;
+                                        editor.clear();
+                                        editor.boxDrawn = false;
+                                        editor.render();
+                                        process.stdin.setRawMode(true);
+                                        process.stdin.on('data', handleKey);
+                                    }
                                 } else {
-                                    // Other commands - execute immediately with skill name
+                                    // Sub-option doesn't need skill arg - complete command
                                     cleanup();
-                                    const fullCommand = `${selected.name} ${selectedSkill.name}`;
-                                    process.stdout.write(`${selectedSkill.name}\n`);
-                                    resolve(fullCommand);
+                                    process.stdout.write(`${selectedSub.name}\n`);
+                                    resolve(selectedSub.name);
                                 }
                             } else {
-                                // User cancelled skill selection - return to boxed input
+                                // User cancelled sub-option selection
                                 showingSelector = false;
                                 editor.clear();
                                 editor.boxDrawn = false;
@@ -239,31 +256,32 @@ export class InteractivePrompt {
                                 process.stdin.setRawMode(true);
                                 process.stdin.on('data', handleKey);
                             }
-                        } else if (selected.needsRepoArg) {
-                            // Show repo selector
+                        } else if (selected.needsSkillArg) {
+                            // Command needs skill argument
                             process.stdout.write(`${selected.name} `);
-
-                            const repos = self.getRepositories();
-                            if (repos.length === 0) {
+                            const userSkills = self.getUserSkills();
+                            if (userSkills.length === 0) {
                                 cleanup();
                                 process.stdout.write('\n');
-                                resolve(''); // Return empty to re-prompt
+                                console.log(`${self.colors.yellow}No user skills found. Create one first.${self.colors.reset}`);
+                                resolve('');
                                 return;
                             }
-
-                            const selectedRepo = await showRepoSelector(repos, {
+                            const selectedSkill = await showSkillSelector(userSkills, {
                                 prompt: `${selected.name} `,
                                 initialFilter: '',
                             });
-
-                            if (selectedRepo) {
-                                // Execute immediately with repo name
-                                cleanup();
-                                const fullCommand = `${selected.name} ${selectedRepo.name}`;
-                                process.stdout.write(`${selectedRepo.name}\n`);
-                                resolve(fullCommand);
+                            if (selectedSkill) {
+                                const commandsNeedingInput = ['/exec', '/refine', '/update'];
+                                if (commandsNeedingInput.includes(selected.name)) {
+                                    await self._handleSkillInputFlow(selected.name, selectedSkill, userSkills, resolve, cleanup);
+                                } else {
+                                    cleanup();
+                                    const fullCommand = `${selected.name} ${selectedSkill.name}`;
+                                    process.stdout.write(`${selectedSkill.name}\n`);
+                                    resolve(fullCommand);
+                                }
                             } else {
-                                // User cancelled repo selection - return to boxed input
                                 showingSelector = false;
                                 editor.clear();
                                 editor.boxDrawn = false;
@@ -272,13 +290,11 @@ export class InteractivePrompt {
                                 process.stdin.on('data', handleKey);
                             }
                         } else {
-                            // Check if command requires text arguments
-                            const cmdDef = SlashCommandHandler.COMMANDS[selected.name.slice(1)]; // Remove leading /
+                            // Command doesn't need skill arg - check if it needs text args
+                            const cmdDef = SlashCommandHandler.COMMANDS[selected.name.slice(1)];
                             if (cmdDef && cmdDef.args === 'required') {
-                                // Command needs arguments - prompt for them
                                 await self._handleArgInputFlow(selected.name, cmdDef, resolve, cleanup);
                             } else {
-                                // Command doesn't need args - execute directly
                                 cleanup();
                                 process.stdout.write(`${selected.name}\n`);
                                 resolve(selected.name);
@@ -288,14 +304,13 @@ export class InteractivePrompt {
                         // User cancelled - return to boxed input
                         showingSelector = false;
                         editor.clear();
-                        editor.boxDrawn = false; // Reset so box is redrawn
+                        editor.boxDrawn = false;
                         editor.render();
                         process.stdin.setRawMode(true);
                         process.stdin.on('data', handleKey);
                     }
                     return;
                 }
-                */
 
                 // Handle Escape
                 if (keyStr === '\x1b') {

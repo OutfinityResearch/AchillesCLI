@@ -1,7 +1,9 @@
 /**
  * SlashCommandHandler - Manages slash command definitions and execution.
  *
- * Extracted from AchillesCli to reduce file size and improve modularity.
+ * All commands start with /. Commands with subOptions show a sub-menu
+ * when selected (e.g., /list → skills, repos). Commands without
+ * subOptions complete directly.
  */
 
 import { formatSlashResult } from '../ui/ResultFormatter.mjs';
@@ -20,151 +22,256 @@ try {
 }
 
 /**
- * SlashCommandHandler class for managing slash commands in the CLI.
+ * Slash command definitions.
+ *
+ * Commands with `subOptions` show a sub-menu when selected.
+ * Commands with `skill` execute that skill directly.
+ * Commands with neither are handled specially in executeSlashCommand.
  */
-export class SlashCommandHandler {
-    /**
-     * Slash command definitions.
-     * Maps command names to skill names and provides help text.
-     */
-    static COMMANDS = {
-        'ls': {
+export const COMMAND_DEFINITIONS = {
+    // Hierarchical commands with sub-options
+    'list': {
+        subOptions: ['skills', 'repos'],
+        description: 'List items',
+    },
+    'add': {
+        subOptions: ['repo'],
+        description: 'Add items',
+    },
+    'remove': {
+        subOptions: ['repo', 'skill'],
+        description: 'Remove items',
+    },
+
+    // Direct skill commands
+    'read': {
+        skill: BUILT_IN_SKILLS.READ,
+        usage: '/read <skill-name>',
+        description: 'Read a skill definition file',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'write': {
+        skill: BUILT_IN_SKILLS.WRITE,
+        usage: '/write <skill-name> [type]',
+        description: 'Create or update a skill file',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'delete': {
+        skill: BUILT_IN_SKILLS.DELETE,
+        usage: '/delete <skill-name>',
+        description: 'Delete a skill directory',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'validate': {
+        skill: BUILT_IN_SKILLS.VALIDATE,
+        usage: '/validate <skill-name>',
+        description: 'Validate skill against schema',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'template': {
+        skill: BUILT_IN_SKILLS.GET_TEMPLATE,
+        usage: '/template <type>',
+        description: 'Get blank template (tskill, cskill, dcgskill, claude, etc.)',
+        args: 'required',
+        needsSkillArg: false,
+    },
+    'generate': {
+        skill: BUILT_IN_SKILLS.GENERATE_CODE,
+        usage: '/generate <skill-name>',
+        description: 'Generate .mjs code from tskill',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'build': {
+        skill: null,
+        usage: '/build',
+        description: 'Build pending skills from specs',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'test': {
+        skill: null,
+        usage: '/test [skill-name]',
+        description: 'Test skill code (shows picker if no skill specified)',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'run-tests': {
+        skill: BUILT_IN_SKILLS.RUN_TESTS,
+        usage: '/run-tests [skill-name|all]',
+        description: 'Run .tests.mjs files (all = run all tests)',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'refine': {
+        skill: BUILT_IN_SKILLS.SKILL_REFINER,
+        usage: '/refine <skill-name>',
+        description: 'Iteratively improve skill until tests pass',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'update': {
+        skill: BUILT_IN_SKILLS.UPDATE_SECTION,
+        usage: '/update <skill-name> <section>',
+        description: 'Update a specific section of a skill',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'exec': {
+        skill: null,
+        usage: '/exec <skill-name> [input]',
+        description: 'Execute any skill directly',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'specs': {
+        skill: BUILT_IN_SKILLS.READ_SPECS,
+        usage: '/specs <skill-name>',
+        description: "Read a skill's .specs.md file",
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'specs-write': {
+        skill: BUILT_IN_SKILLS.WRITE_SPECS,
+        usage: '/specs-write <skill-name> [content]',
+        description: "Create/update a skill's .specs.md file",
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'write-tests': {
+        skill: BUILT_IN_SKILLS.WRITE_TESTS,
+        usage: '/write-tests <skill-name>',
+        description: 'Generate test file for a skill',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'gen-tests': {
+        skill: BUILT_IN_SKILLS.GENERATE_TESTS,
+        usage: '/gen-tests <skill-name>',
+        description: 'Generate tests from cskill specs (spec-driven)',
+        args: 'required',
+        needsSkillArg: true,
+    },
+    'scaffold': {
+        skill: BUILT_IN_SKILLS.SCAFFOLD_DOC,
+        usage: '/scaffold <doc-type> <skill-name>',
+        description: 'Create a documentation skill with full structure (SKILL.md + resources/ + scripts/)',
+        args: 'required',
+        needsSkillArg: false,
+    },
+
+    // Session commands
+    'tier': {
+        usage: '/tier [name]',
+        description: 'Show or switch LLM tier',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'model': {
+        usage: '/model [name|clear]',
+        description: 'Pin a specific model or clear pin',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'raw': {
+        usage: '/raw',
+        description: 'Toggle markdown rendering',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'help': {
+        usage: '/help [topic]',
+        description: 'Show help',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'reload': {
+        usage: '/reload',
+        description: 'Refresh skills from disk',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'history': {
+        usage: '/history [clear|<n>|<query>]',
+        description: 'Show command history',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'exit': {
+        usage: '/exit',
+        description: 'Exit the REPL',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+    'quit': {
+        usage: '/quit',
+        description: 'Exit the REPL',
+        args: 'optional',
+        needsSkillArg: false,
+    },
+};
+
+/**
+ * Sub-option definitions for hierarchical commands.
+ * Each sub-option maps to a handler or skill execution.
+ */
+export const SUB_OPTIONS = {
+    'list': {
+        'skills': {
             skill: BUILT_IN_SKILLS.LIST,
-            usage: '/ls [all]',
-            description: 'List skills (all=include built-in)',
+            defaultInput: 'list',
+            usage: '/list skills [all]',
+            description: 'List skills',
             args: 'optional',
             needsSkillArg: false,
         },
-        'list': {
-            skill: BUILT_IN_SKILLS.LIST,
-            usage: '/list [all]',
-            description: 'List skills (all=include built-in)',
+        'repos': {
+            skill: null,
+            usage: '/list repos',
+            description: 'List cloned repositories',
             args: 'optional',
             needsSkillArg: false,
         },
-        'read': {
-            skill: BUILT_IN_SKILLS.READ,
-            usage: '/read <skill-name>',
-            description: 'Read a skill definition file',
+    },
+    'add': {
+        'repo': {
+            skill: null,
+            usage: '/add repo <URL> [name]',
+            description: 'Clone a repository',
             args: 'required',
-            needsSkillArg: true,
+            needsSkillArg: false,
         },
-        'write': {
-            skill: BUILT_IN_SKILLS.WRITE,
-            usage: '/write <skill-name> [type]',
-            description: 'Create or update a skill file',
+    },
+    'remove': {
+        'repo': {
+            skill: null,
+            usage: '/remove repo <name>',
+            description: 'Remove a cloned repository',
             args: 'required',
-            needsSkillArg: true,
+            needsSkillArg: false,
         },
-        'delete': {
+        'skill': {
             skill: BUILT_IN_SKILLS.DELETE,
-            usage: '/delete <skill-name>',
+            usage: '/remove skill <skill-name>',
             description: 'Delete a skill directory',
             args: 'required',
             needsSkillArg: true,
         },
-        'validate': {
-            skill: BUILT_IN_SKILLS.VALIDATE,
-            usage: '/validate <skill-name>',
-            description: 'Validate skill against schema',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'template': {
-            skill: BUILT_IN_SKILLS.GET_TEMPLATE,
-            usage: '/template <type>',
-            description: 'Get blank template (tskill, cskill, dcgskill, claude, etc.)',
-            args: 'required',
-            needsSkillArg: false, // Takes type, not skill name
-        },
-        'generate': {
-            skill: BUILT_IN_SKILLS.GENERATE_CODE,
-            usage: '/generate <skill-name>',
-            description: 'Generate .mjs code from tskill',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'build': {
-            skill: null,
-            usage: '/build',
-            description: 'Build pending skills from specs',
-            args: 'optional',
-            needsSkillArg: false,
-        },
-        'test': {
-            skill: null, // Special handling - shows picker if no args, runs test-code if skill specified
-            usage: '/test [skill-name]',
-            description: 'Test skill code (shows picker if no skill specified)',
-            args: 'optional',
-            needsSkillArg: false,
-        },
-        'run-tests': {
-            skill: BUILT_IN_SKILLS.RUN_TESTS,
-            usage: '/run-tests [skill-name|all]',
-            description: 'Run .tests.mjs files (all = run all tests)',
-            args: 'optional',
-            needsSkillArg: false,
-        },
-        'refine': {
-            skill: BUILT_IN_SKILLS.SKILL_REFINER,
-            usage: '/refine <skill-name>',
-            description: 'Iteratively improve skill until tests pass',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'update': {
-            skill: BUILT_IN_SKILLS.UPDATE_SECTION,
-            usage: '/update <skill-name> <section>',
-            description: 'Update a specific section of a skill',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        // Note: 'preview-changes' skill exists but requires programmatic input
-        // (skillName, fileName, newContent as JSON). It's called by other skills,
-        // not directly via slash command.
-        'exec': {
-            skill: null, // Dynamic - uses the argument as skill name
-            usage: '/exec <skill-name> [input]',
-            description: 'Execute any skill directly',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'specs': {
-            skill: BUILT_IN_SKILLS.READ_SPECS,
-            usage: '/specs <skill-name>',
-            description: 'Read a skill\'s .specs.md file',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'specs-write': {
-            skill: BUILT_IN_SKILLS.WRITE_SPECS,
-            usage: '/specs-write <skill-name> [content]',
-            description: 'Create/update a skill\'s .specs.md file',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'write-tests': {
-            skill: BUILT_IN_SKILLS.WRITE_TESTS,
-            usage: '/write-tests <skill-name>',
-            description: 'Generate test file for a skill',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'gen-tests': {
-            skill: BUILT_IN_SKILLS.GENERATE_TESTS,
-            usage: '/gen-tests <skill-name>',
-            description: 'Generate tests from cskill specs (spec-driven)',
-            args: 'required',
-            needsSkillArg: true,
-        },
-        'scaffold': {
-            skill: BUILT_IN_SKILLS.SCAFFOLD_DOC,
-            usage: '/scaffold <doc-type> <skill-name>',
-            description: 'Create a documentation skill with full structure (SKILL.md + resources/ + scripts/)',
-            args: 'required',
-            needsSkillArg: false,
-        },
-    };
+    },
+};
+
+/**
+ * SlashCommandHandler class for managing slash commands in the CLI.
+ */
+export class SlashCommandHandler {
+    /**
+     * Backwards-compatible COMMANDS alias (points to COMMAND_DEFINITIONS).
+     */
+    static COMMANDS = COMMAND_DEFINITIONS;
 
     /**
      * Create a new SlashCommandHandler.
@@ -174,12 +281,14 @@ export class SlashCommandHandler {
      * @param {Function} [options.buildSkills] - Function to build pending skills: () => Promise<void>
      * @param {Function} options.getUserSkills - Function to get user skills: () => Array
      * @param {Function} options.getSkills - Function to get all skills: () => Array
+     * @param {HistoryManager} [options.historyManager] - Command history manager
      */
-    constructor({ executeSkill, buildSkills, getUserSkills, getSkills }) {
+    constructor({ executeSkill, buildSkills, getUserSkills, getSkills, historyManager }) {
         this.executeSkill = executeSkill;
         this.buildSkills = buildSkills;
         this.getUserSkills = getUserSkills;
         this.getSkills = getSkills;
+        this.historyManager = historyManager;
     }
 
     /**
@@ -192,17 +301,62 @@ export class SlashCommandHandler {
     }
 
     /**
-     * Parse a slash command into command name and arguments.
+     * Parse a slash command into parts.
+     * Returns { command, subOption, args, rawArgs }
+     * - command: the top-level command (e.g., 'list')
+     * - subOption: the sub-option if any (e.g., 'skills')
+     * - args: remaining arguments after command and sub-option
+     * - rawArgs: everything after the command name
      * @param {string} input - User input starting with /
-     * @returns {{command: string, args: string}|null}
+     * @returns {{command: string, subOption: string|null, args: string, rawArgs: string}|null}
      */
     parseSlashCommand(input) {
         const match = input.match(/^\/(\S+)(?:\s+(.*))?$/);
         if (!match) return null;
+
+        const command = match[1].toLowerCase();
+        const rawArgs = match[2]?.trim() || '';
+
+        const cmdDef = COMMAND_DEFINITIONS[command];
+        if (cmdDef && cmdDef.subOptions && rawArgs) {
+            const parts = rawArgs.split(/\s+/);
+            const firstWord = parts[0].toLowerCase();
+            if (cmdDef.subOptions.includes(firstWord)) {
+                return {
+                    command,
+                    subOption: firstWord,
+                    args: parts.slice(1).join(' ').trim(),
+                    rawArgs,
+                };
+            }
+        }
+
         return {
-            command: match[1].toLowerCase(),
-            args: match[2]?.trim() || '',
+            command,
+            subOption: null,
+            args: rawArgs,
+            rawArgs,
         };
+    }
+
+    /**
+     * Get sub-options for a command.
+     * @param {string} command - Command name
+     * @returns {string[]|null}
+     */
+    getSubOptions(command) {
+        const cmdDef = COMMAND_DEFINITIONS[command];
+        return cmdDef?.subOptions || null;
+    }
+
+    /**
+     * Get the definition for a sub-option.
+     * @param {string} command - Command name
+     * @param {string} subOption - Sub-option name
+     * @returns {Object|null}
+     */
+    getSubOptionDef(command, subOption) {
+        return SUB_OPTIONS[command]?.[subOption] || null;
     }
 
     /**
@@ -213,49 +367,51 @@ export class SlashCommandHandler {
      * @returns {Promise<{handled: boolean, result?: string, error?: string}>}
      */
     async executeSlashCommand(command, args, options = {}) {
-        // Handle /help [topic] - show topic-based help or picker
+        // Parse to check for sub-options
+        const parsed = this.parseSlashCommand(`/${command} ${args}`.trim());
+        const subOption = parsed?.subOption;
+
+        // Handle sub-option commands
+        if (subOption) {
+            return this._executeSubOption(command, subOption, parsed.args, options);
+        }
+
+        // Handle built-in commands
         if (command === 'help' || command === '?') {
             if (!args) {
-                // No args - show interactive help picker
-                return {
-                    handled: true,
-                    showHelpPicker: true,
-                };
+                return { handled: true, showHelpPicker: true };
             }
-            // Args provided - show help for specific topic
             const helpText = showHelp(args);
             console.log(helpText);
             return { handled: true };
         }
 
-        // Handle /commands to list all available commands
-        if (command === 'commands') {
-            const helpText = showHelp('commands');
-            console.log(helpText);
-            return { handled: true };
-        }
-
-        // Handle /raw - toggle markdown rendering (handled by REPLSession)
         if (command === 'raw') {
             return { handled: true, toggleMarkdown: true };
         }
 
-        // Handle /tier [name] - show or switch LLM tier
         if (command === 'tier') {
             return this._handleTierCommand(args);
         }
 
-        // Handle /model [name|clear] - pin a specific model
         if (command === 'model') {
             return this._handleModelCommand(args);
         }
 
-        // Handle /quit and /exit - exit the REPL (handled by REPLSession)
         if (command === 'quit' || command === 'exit' || command === 'q') {
             return { handled: true, exitRepl: true };
         }
 
-        const cmdDef = SlashCommandHandler.COMMANDS[command];
+        if (command === 'reload') {
+            return this._handleReload();
+        }
+
+        if (command === 'history') {
+            return this._handleHistory(args);
+        }
+
+        // Handle direct skill commands
+        const cmdDef = COMMAND_DEFINITIONS[command];
         if (!cmdDef) {
             return {
                 handled: false,
@@ -271,118 +427,193 @@ export class SlashCommandHandler {
             };
         }
 
-        // Handle /test specially - shows picker if no args, runs test-code if skill specified
+        // Handle /test specially
         if (command === 'test') {
             if (!args) {
-                // No args - show interactive test picker
-                // Return special signal for REPLSession to handle the picker
-                return {
-                    handled: true,
-                    showTestPicker: true,
-                };
+                return { handled: true, showTestPicker: true };
             }
-
-            // Args provided - run test-code for the specified skill
             try {
                 const result = await this.executeSkill(BUILT_IN_SKILLS.TEST_CODE, args, options);
-                return {
-                    handled: true,
-                    result: formatSlashResult(result),
-                };
+                return { handled: true, result: formatSlashResult(result) };
             } catch (error) {
-                return {
-                    handled: true,
-                    error: error.message,
-                };
+                return { handled: true, error: error.message };
             }
         }
 
-        // Handle /exec specially - it executes any skill
+        // Handle /exec specially
         if (command === 'exec') {
             const parts = args.split(/\s+/);
             const skillName = parts[0];
             const skillInput = parts.slice(1).join(' ') || skillName;
-
             try {
                 const result = await this.executeSkill(skillName, skillInput, options);
-                return {
-                    handled: true,
-                    result: formatSlashResult(result),
-                };
+                return { handled: true, result: formatSlashResult(result) };
             } catch (error) {
-                return {
-                    handled: true,
-                    error: error.message,
-                };
+                return { handled: true, error: error.message };
             }
         }
 
-        // Handle /run-tests specially - shows picker if no args
+        // Handle /run-tests specially
         if (command === 'run-tests') {
             if (!args) {
-                // No args - show interactive test picker
-                return {
-                    handled: true,
-                    showRunTestsPicker: true,
-                };
+                return { handled: true, showRunTestsPicker: true };
             }
-
-            // Args provided - run tests for the specified skill or "all"
             try {
                 const result = await this.executeSkill(BUILT_IN_SKILLS.RUN_TESTS, args, options);
-                return {
-                    handled: true,
-                    result: formatSlashResult(result),
-                };
+                return { handled: true, result: formatSlashResult(result) };
             } catch (error) {
-                return {
-                    handled: true,
-                    error: error.message,
-                };
+                return { handled: true, error: error.message };
             }
         }
 
-        // Handle /build specially - manual build trigger
+        // Handle /build specially
         if (command === 'build') {
             if (typeof this.buildSkills !== 'function') {
-                return {
-                    handled: true,
-                    error: 'Build is unavailable in this session.',
-                };
+                return { handled: true, error: 'Build is unavailable in this session.' };
             }
             try {
                 await this.buildSkills();
-                return {
-                    handled: true,
-                    result: 'Skills build complete.',
-                };
+                return { handled: true, result: 'Skills build complete.' };
             } catch (error) {
-                return {
-                    handled: true,
-                    error: error.message,
-                };
+                return { handled: true, error: error.message };
             }
         }
-
 
         // Execute the mapped skill
-        try {
-            // For list-skills, use 'list' as default input since the skill requires non-empty input
-            let input = args || '';
-            if (!input && (command === 'ls' || command === 'list')) {
-                input = 'list';
+        if (cmdDef.skill) {
+            try {
+                let input = args || '';
+                if (!input && command === 'list') {
+                    input = 'list';
+                }
+                const result = await this.executeSkill(cmdDef.skill, input, options);
+                return { handled: true, result: formatSlashResult(result) };
+            } catch (error) {
+                return { handled: true, error: error.message };
             }
-            const result = await this.executeSkill(cmdDef.skill, input, options);
+        }
+
+        return { handled: false, error: `Unknown command: /${command}` };
+    }
+
+    /**
+     * Execute a sub-option command (e.g., /list repos, /add repo).
+     * @private
+     */
+    async _executeSubOption(command, subOption, args, options) {
+        const subDef = this.getSubOptionDef(command, subOption);
+        if (!subDef) {
+            return { handled: false, error: `Unknown sub-command: /${command} ${subOption}` };
+        }
+
+        // Check required args
+        if (subDef.args === 'required' && !args) {
             return {
                 handled: true,
-                result: formatSlashResult(result),
-            };
-        } catch (error) {
-            return {
-                handled: true,
-                error: error.message,
+                error: `Usage: ${subDef.usage}\n  ${subDef.description}`,
             };
         }
+
+        // /list repos
+        if (command === 'list' && subOption === 'repos') {
+            const { listRepos } = await import('../lib/repoManager.mjs');
+            try {
+                const repos = listRepos();
+                if (repos.length === 0) {
+                    return { handled: true, result: 'No repositories in .achilles-cli/repos/.' };
+                }
+                const lines = [`Repositories (${repos.length}):`, ''];
+                for (const repo of repos) {
+                    const url = repo.url || '(no remote)';
+                    lines.push(`  ${repo.name}`);
+                    lines.push(`    URL: ${url}`);
+                    lines.push(`    Path: ${repo.path}`);
+                    lines.push('');
+                }
+                return { handled: true, result: lines.join('\n') };
+            } catch (error) {
+                return { handled: true, error: error.message };
+            }
+        }
+
+        // /add repo
+        if (command === 'add' && subOption === 'repo') {
+            const { addRepo } = await import('../lib/repoManager.mjs');
+            const parts = args.split(/\s+/);
+            const url = parts[0];
+            const name = parts[1];
+            if (!url) {
+                return { handled: true, error: `Usage: /add repo <URL> [name]\n  Clone a repository into .achilles-cli/repos/` };
+            }
+            try {
+                const result = addRepo(url, name);
+                return { handled: true, result: `Repository '${result.name}' ${result.status}.\n  Path: ${result.path}` };
+            } catch (error) {
+                return { handled: true, error: error.message };
+            }
+        }
+
+        // /remove repo
+        if (command === 'remove' && subOption === 'repo') {
+            const { removeRepo } = await import('../lib/repoManager.mjs');
+            const name = args.trim();
+            if (!name) {
+                return { handled: true, error: `Usage: /remove repo <name>\n  Remove a cloned repository from .achilles-cli/repos/` };
+            }
+            try {
+                removeRepo(name);
+                return { handled: true, result: `Repository '${name}' removed.` };
+            } catch (error) {
+                return { handled: true, error: error.message };
+            }
+        }
+
+        // Any sub-option mapped to a skill should execute that skill directly.
+        if (subDef.skill) {
+            try {
+                const input = args || subDef.defaultInput || '';
+                const result = await this.executeSkill(subDef.skill, input, options);
+                return { handled: true, result: formatSlashResult(result) };
+            } catch (error) {
+                return { handled: true, error: error.message };
+            }
+        }
+
+        return { handled: false, error: `Unhandled sub-command: /${command} ${subOption}` };
+    }
+
+    /**
+     * Handle /reload command.
+     * @private
+     */
+    _handleReload() {
+        // Reload is handled by REPLSession
+        return { handled: true, reloadSkills: true };
+    }
+
+    /**
+     * Handle /history command.
+     * @private
+     */
+    _handleHistory(args) {
+        if (!this.historyManager) {
+            return { handled: true, error: 'History manager not available.' };
+        }
+
+        if (!args) {
+            return { handled: true, showHistory: true };
+        }
+
+        if (args === 'clear') {
+            this.historyManager.clear();
+            return { handled: true, result: 'History cleared.' };
+        }
+
+        if (/^\d+$/.test(args)) {
+            return { handled: true, showHistoryCount: parseInt(args, 10) };
+        }
+
+        return { handled: true, searchHistory: args };
     }
 
     /**
@@ -417,9 +648,7 @@ export class SlashCommandHandler {
     }
 
     /**
-     * Handle /tier command - show available tiers or switch tier.
-     * @param {string} args - Tier name or empty
-     * @returns {{handled: boolean, tierChange?: string, tierInfo?: string, error?: string}}
+     * Handle /tier command.
      * @private
      */
     _handleTierCommand(args) {
@@ -427,25 +656,19 @@ export class SlashCommandHandler {
         if (!tiers) {
             return { handled: true, error: 'Could not load tiers — achillesAgentLib not available' };
         }
-
         const tierNames = Object.keys(tiers);
         if (!args) {
-            // No args — show interactive tier picker
             return { handled: true, showTierPicker: true };
         }
-
         const requested = args.trim().toLowerCase();
         if (!tierNames.includes(requested)) {
             return { handled: true, error: `Unknown tier "${requested}". Available: ${tierNames.join(', ')}` };
         }
-
         return { handled: true, tierChange: requested };
     }
 
     /**
-     * Handle /model command - pin a specific model or show picker.
-     * @param {string} args - Model name, 'clear', or empty
-     * @returns {{handled: boolean, showModelPicker?: boolean, modelChange?: string|null, error?: string}}
+     * Handle /model command.
      * @private
      */
     _handleModelCommand(args) {
@@ -453,29 +676,20 @@ export class SlashCommandHandler {
         if (!tiers) {
             return { handled: true, error: 'Could not load models — achillesAgentLib not available' };
         }
-
         if (!args) {
-            // No args — show interactive model picker
             return { handled: true, showModelPicker: true };
         }
-
         const requested = args.trim();
-
-        // /model clear — unpin
         if (requested.toLowerCase() === 'clear') {
             return { handled: true, modelChange: null };
         }
-
-        // Validate model exists in any tier
         const allModels = new Set();
         for (const models of Object.values(tiers)) {
             for (const m of models) allModels.add(m);
         }
-
         if (!allModels.has(requested)) {
             return { handled: true, error: `Unknown model "${requested}". Use /model to see available models.` };
         }
-
         return { handled: true, modelChange: requested };
     }
 
@@ -485,145 +699,141 @@ export class SlashCommandHandler {
      * @returns {[string[], string]} - [completions, original line]
      */
     getCompletions(line) {
-        const completions = [];
+        if (!line.startsWith('/')) {
+            return [[], line];
+        }
 
-        // If line starts with /, provide slash command completions
-        if (line.startsWith('/')) {
-            const parsed = this.parseSlashCommand(line);
-            if (!parsed) {
-                // Just "/" typed - show all commands
-                const allCmds = Object.keys(SlashCommandHandler.COMMANDS)
-                    .filter((cmd, idx, arr) => arr.indexOf(cmd) === idx) // unique
-                    .map(cmd => `/${cmd}`);
-                allCmds.push('/help', '/commands', '/tier', '/model');
-                return [allCmds, line];
-            }
+        const parsed = this.parseSlashCommand(line);
+        if (!parsed) {
+            const allCmds = Object.keys(COMMAND_DEFINITIONS).map(cmd => `/${cmd}`);
+            return [allCmds, line];
+        }
 
-            const { command, args } = parsed;
+        const { command, subOption, args } = parsed;
 
-            // Check if we're completing the command name or arguments
-            if (!args && !line.includes(' ')) {
-                // Completing command name
-                const cmdPrefix = command.toLowerCase();
-                const matchingCmds = Object.keys(SlashCommandHandler.COMMANDS)
-                    .filter(cmd => cmd.startsWith(cmdPrefix))
-                    .map(cmd => `/${cmd}`);
-
-                // Add built-in commands
-                if ('help'.startsWith(cmdPrefix)) matchingCmds.push('/help');
-                if ('commands'.startsWith(cmdPrefix)) matchingCmds.push('/commands');
-                if ('raw'.startsWith(cmdPrefix)) matchingCmds.push('/raw');
-                if ('tier'.startsWith(cmdPrefix)) matchingCmds.push('/tier');
-                if ('model'.startsWith(cmdPrefix)) matchingCmds.push('/model');
-                if ('quit'.startsWith(cmdPrefix)) matchingCmds.push('/quit');
-                if ('exit'.startsWith(cmdPrefix)) matchingCmds.push('/exit');
-
-                return [matchingCmds, line];
-            }
-
-            // /tier argument completions (tier names from achillesAgentLib)
-            if (command === 'tier') {
-                const argPrefix = (args || '').toLowerCase();
-                const tierNames = this.getAvailableTiers();
-                const matching = tierNames
-                    .filter(t => t.startsWith(argPrefix))
-                    .map(t => `/tier ${t}`);
-                return [matching, line];
-            }
-
-            // /model argument completions (model names + 'clear')
-            if (command === 'model') {
-                const argPrefix = (args || '').toLowerCase();
-                const modelNames = this.getAvailableModels();
-                const options = ['clear', ...modelNames];
-                const matching = options
-                    .filter(m => m.toLowerCase().startsWith(argPrefix))
-                    .map(m => `/model ${m}`);
-                return [matching, line];
-            }
-
-            // Completing arguments - suggest skill names for relevant commands
-            const cmdDef = SlashCommandHandler.COMMANDS[command];
-            if (cmdDef) {
-                const argPrefix = args.toLowerCase();
-
-                // For commands that take skill names, suggest user skills
-                if (['read', 'delete', 'validate', 'generate', 'test', 'refine', 'update', 'specs', 'specs-write', 'write-tests', 'gen-tests'].includes(command)) {
-                    const skills = this.getUserSkills();
-                    const matchingSkills = skills
-                        .map(s => s.shortName || s.name)
-                        .filter(name => name.toLowerCase().startsWith(argPrefix))
-                        .map(name => `/${command} ${name}`);
-                    return [matchingSkills, line];
-                }
-
-                // For /template, suggest skill types and doc scaffold types
-                if (command === 'template') {
-                    const types = [...getAllSkillTypeNames(), ...DOC_SCAFFOLD_TYPES];
-                    const matchingTypes = types
-                        .filter(t => t.startsWith(argPrefix))
-                        .map(t => `/${command} ${t}`);
-                    return [matchingTypes, line];
-                }
-
-                // For /scaffold, suggest doc scaffold types (first arg only)
-                if (command === 'scaffold') {
-                    const argParts = (args || '').split(/\s+/);
-                    if (argParts.length <= 1) {
-                        const types = DOC_SCAFFOLD_TYPES;
-                        const matchingTypes = types
-                            .filter(t => t.startsWith(argParts[0] || ''))
-                            .map(t => `/${command} ${t}`);
-                        return [matchingTypes, line];
-                    }
-                    // Second arg (skill name) — no completion
-                    return [[], line];
-                }
-
-                // For /exec, suggest all skills including built-in
-                if (command === 'exec') {
-                    const skills = this.getSkills();
-                    const matchingSkills = skills
-                        .map(s => s.shortName || s.name)
-                        .filter(name => name.toLowerCase().startsWith(argPrefix))
-                        .map(name => `/${command} ${name}`);
-                    return [matchingSkills, line];
-                }
-
-                // For /write, suggest skill types as second argument
-                if (command === 'write' && args.includes(' ')) {
-                    const parts = args.split(/\s+/);
-                    const typePrefix = parts[1]?.toLowerCase() || '';
-                    const types = getAllSkillTypeNames();
-                    const matchingTypes = types
-                        .filter(t => t.startsWith(typePrefix))
-                        .map(t => `/${command} ${parts[0]} ${t}`);
-                    return [matchingTypes, line];
-                }
-
-                // For /ls and /list, suggest "all"
-                if (command === 'ls' || command === 'list') {
-                    const suggestions = [];
-                    if ('all'.startsWith(argPrefix)) {
-                        suggestions.push(`/${command} all`);
-                    }
-                    if (suggestions.length > 0) {
-                        return [suggestions, line];
-                    }
-                }
+        // If just the command name (no sub-option yet), suggest sub-options
+        if (subOption === null && !args && line.endsWith(' ')) {
+            const subOpts = this.getSubOptions(command);
+            if (subOpts) {
+                return [subOpts.map(s => `/${command} ${s}`), line];
             }
         }
 
-        // For non-slash commands, provide basic command completions
-        const basicCmds = ['help', 'reload', 'list', 'list all', 'history', 'exit'];
-        const matches = basicCmds.filter(cmd => cmd.startsWith(line.toLowerCase()));
-        return [matches, line];
+        // Completing command name
+        if (!args && !line.includes(' ')) {
+            const cmdPrefix = command.toLowerCase();
+            const matchingCmds = Object.keys(COMMAND_DEFINITIONS)
+                .filter(cmd => cmd.startsWith(cmdPrefix))
+                .map(cmd => `/${cmd}`);
+            return [matchingCmds, line];
+        }
+
+        // Completing sub-option
+        const subOpts = this.getSubOptions(command);
+        if (subOpts && !subOption && args) {
+            const prefix = args.toLowerCase();
+            const matching = subOpts
+                .filter(s => s.startsWith(prefix))
+                .map(s => `/${command} ${s}`);
+            return [matching, line];
+        }
+
+        // Command-specific completions
+        if (subOption) {
+            // /list skills - suggest skill names
+            if (command === 'list' && subOption === 'skills') {
+                const skills = this.getUserSkills();
+                const matching = skills
+                    .map(s => s.shortName || s.name)
+                    .filter(name => name.toLowerCase().startsWith(args.toLowerCase()))
+                    .map(name => `/${command} ${subOption} ${name}`);
+                if (matching.length > 0) return [matching, line];
+            }
+            // /remove skill - suggest skill names
+            if (command === 'remove' && subOption === 'skill') {
+                const skills = this.getUserSkills();
+                const matching = skills
+                    .map(s => s.shortName || s.name)
+                    .filter(name => name.toLowerCase().startsWith(args.toLowerCase()))
+                    .map(name => `/${command} ${subOption} ${name}`);
+                return [matching, line];
+            }
+        }
+
+        // Direct command completions
+        const cmdDef = COMMAND_DEFINITIONS[command];
+        if (cmdDef) {
+            const argPrefix = (args || '').toLowerCase();
+
+            if (['read', 'delete', 'validate', 'generate', 'test', 'refine', 'update', 'specs', 'specs-write', 'write-tests', 'gen-tests'].includes(command)) {
+                const skills = this.getUserSkills();
+                const matching = skills
+                    .map(s => s.shortName || s.name)
+                    .filter(name => name.toLowerCase().startsWith(argPrefix))
+                    .map(name => `/${command} ${name}`);
+                return [matching, line];
+            }
+
+            if (command === 'template') {
+                const types = [...getAllSkillTypeNames(), ...DOC_SCAFFOLD_TYPES];
+                const matching = types
+                    .filter(t => t.startsWith(argPrefix))
+                    .map(t => `/${command} ${t}`);
+                return [matching, line];
+            }
+
+            if (command === 'scaffold') {
+                const parts = (args || '').split(/\s+/);
+                if (parts.length <= 1) {
+                    const matching = DOC_SCAFFOLD_TYPES
+                        .filter(t => t.startsWith(parts[0] || ''))
+                        .map(t => `/${command} ${t}`);
+                    return [matching, line];
+                }
+                return [[], line];
+            }
+
+            if (command === 'exec') {
+                const skills = this.getSkills();
+                const matching = skills
+                    .map(s => s.shortName || s.name)
+                    .filter(name => name.toLowerCase().startsWith(argPrefix))
+                    .map(name => `/${command} ${name}`);
+                return [matching, line];
+            }
+
+            if (command === 'write' && args.includes(' ')) {
+                const parts = args.split(/\s+/);
+                const typePrefix = parts[1]?.toLowerCase() || '';
+                const matching = getAllSkillTypeNames()
+                    .filter(t => t.startsWith(typePrefix))
+                    .map(t => `/${command} ${parts[0]} ${t}`);
+                return [matching, line];
+            }
+
+            if (command === 'tier') {
+                const matching = this.getAvailableTiers()
+                    .filter(t => t.startsWith(argPrefix))
+                    .map(t => `/${command} ${t}`);
+                return [matching, line];
+            }
+
+            if (command === 'model') {
+                const options = ['clear', ...this.getAvailableModels()];
+                const matching = options
+                    .filter(m => m.toLowerCase().startsWith(argPrefix))
+                    .map(m => `/${command} ${m}`);
+                return [matching, line];
+            }
+        }
+
+        return [[], line];
     }
 
     /**
      * Get hint text for current input.
      * @param {string} line - Current input line
-     * @returns {string|null} - Hint text or null
+     * @returns {string|null}
      */
     getInputHint(line) {
         if (!line.startsWith('/')) return null;
@@ -633,40 +843,19 @@ export class SlashCommandHandler {
             return 'Type a command name (Tab to complete)';
         }
 
-        const { command, args } = parsed;
+        const { command, subOption, args } = parsed;
 
-        // Check for built-in help commands
-        if (command === 'help' || command === '?' || command === 'commands') {
-            return 'Show available slash commands';
+        // Show sub-option hint
+        if (!subOption && !args && line.endsWith(' ')) {
+            const subOpts = this.getSubOptions(command);
+            if (subOpts) {
+                return `Select: ${subOpts.join(', ')}`;
+            }
         }
 
-        // Check for /raw command
-        if (command === 'raw') {
-            return 'Toggle raw output (disable markdown rendering)';
-        }
-
-        // Check for /tier command
-        if (command === 'tier') {
-            if (!args) return 'Show or switch LLM tier — /tier <name>';
-            return `Switch LLM tier to "${args}"`;
-        }
-
-        // Check for /model command
-        if (command === 'model') {
-            if (!args) return 'Pin a specific model — /model <name> or /model clear';
-            if (args.toLowerCase() === 'clear') return 'Clear pinned model, return to tier-based selection';
-            return `Pin model "${args}" for this session`;
-        }
-
-        // Check for /quit and /exit commands
-        if (command === 'quit' || command === 'exit' || command === 'q') {
-            return 'Exit the REPL';
-        }
-
-        const cmdDef = SlashCommandHandler.COMMANDS[command];
+        const cmdDef = COMMAND_DEFINITIONS[command];
         if (!cmdDef) {
-            // Check for partial matches
-            const partialMatches = Object.keys(SlashCommandHandler.COMMANDS)
+            const partialMatches = Object.keys(COMMAND_DEFINITIONS)
                 .filter(cmd => cmd.startsWith(command));
             if (partialMatches.length > 0) {
                 return `Did you mean: ${partialMatches.map(c => '/' + c).join(', ')}?`;
@@ -674,18 +863,23 @@ export class SlashCommandHandler {
             return 'Unknown command. Type /help for available commands.';
         }
 
-        // Show usage hint if no args provided for required args command
+        if (subOption) {
+            const subDef = this.getSubOptionDef(command, subOption);
+            if (subDef && subDef.args === 'required' && !args) {
+                return `${subDef.description} — ${subDef.usage}`;
+            }
+            if (subDef) return subDef.description;
+        }
+
         if (cmdDef.args === 'required' && !args) {
             return `${cmdDef.description} — ${cmdDef.usage}`;
         }
 
-        // Show description when args are provided
         return cmdDef.description;
     }
 
     /**
      * Print slash command help.
-     * Delegates to HelpSystem for comprehensive help.
      */
     printHelp() {
         const helpText = showHelp('commands');

@@ -1,3 +1,4 @@
+.agents
 node_modules
 !node_modules/achillesAgentLib/
 !node_modules/GAMPSkills/

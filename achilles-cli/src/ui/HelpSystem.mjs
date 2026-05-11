@@ -125,6 +125,9 @@ ${C.bold}${C.yellow}Slash Commands${C.reset} ${C.dim}(direct skill execution)${C
   ${C.cyan}/tier${C.reset} [name]             Show/switch LLM tier
   ${C.cyan}/model${C.reset} [name|clear]      Pin a model or clear pin
   ${C.cyan}/help${C.reset} [topic]            Show help
+  ${C.cyan}/add-repo${C.reset} <URL> [name]   Clone a repository
+  ${C.cyan}/list-repos${C.reset}              List cloned repositories
+  ${C.cyan}/remove-repo${C.reset} <name>      Remove a repository
 
 ${C.dim}Type /help <command> for detailed help on any command.${C.reset}
 `,
@@ -464,6 +467,8 @@ ${C.bold}${C.cyan}Available Help Topics${C.reset}
   ${C.green}/help natural-language${C.reset}  Using natural language
   ${C.green}/help shortcuts${C.reset}         Keyboard shortcuts
   ${C.green}/help workflows${C.reset}         Common workflows and patterns
+  ${C.green}/help repos${C.reset}             Managing repositories
+  ${C.green}/help repos${C.reset}             Managing repositories
 
 ${C.bold}${C.yellow}Command-Specific Help:${C.reset}
   ${C.green}/help read${C.reset}              Help for /read command
@@ -472,6 +477,43 @@ ${C.bold}${C.yellow}Command-Specific Help:${C.reset}
   ${C.dim}...and any other slash command${C.reset}
 
 ${C.dim}Type /help or just "help" for quick reference.${C.reset}
+`,
+    },
+
+    // Repository management
+    repos: {
+        title: 'Repository Management',
+        aliases: ['repo', 'repositories', 'git'],
+        content: `
+${C.bold}${C.cyan}Repository Management${C.reset}
+
+Achilles CLI stores cloned repositories in ${C.cyan}.achilles-cli/repos/${C.reset}.
+Skills inside these repos are automatically discovered by MainAgent
+after a ${C.green}reload${C.reset} command.
+
+${C.bold}${C.yellow}Adding a Repository:${C.reset}
+  ${C.green}>${C.reset} /add-repo <URL> [name]
+
+  The name is optional — derived from the URL if omitted.
+
+  ${C.green}>${C.reset} /add-repo https://github.com/foo/bar.git
+  ${C.dim}Clones into .achilles-cli/repos/bar/${C.reset}
+
+  ${C.green}>${C.reset} /add-repo https://github.com/foo/bar.git my-repo
+  ${C.dim}Clones into .achilles-cli/repos/my-repo/${C.reset}
+
+${C.bold}${C.yellow}Listing Repositories:${C.reset}
+  ${C.green}>${C.reset} /list-repos
+  ${C.dim}Shows all cloned repos with URLs and paths${C.reset}
+
+${C.bold}${C.yellow}Removing a Repository:${C.reset}
+  ${C.green}>${C.reset} /remove-repo <name>
+  ${C.dim}Deletes .achilles-cli/repos/<name>/${C.reset}
+
+${C.bold}${C.yellow}After Cloning:${C.reset}
+  Run ${C.green}reload${C.reset} to re-scan skills from the new repository.
+
+${C.dim}Repositories are stored locally in .achilles-cli/repos/.${C.reset}
 `,
     },
 };
@@ -978,6 +1020,76 @@ ${C.dim}Available models depend on Soul Gateway configuration.${C.reset}
 `,
     },
 
+    'add-repo': {
+        title: '/add-repo - Clone a Repository',
+        content: `
+${C.bold}${C.cyan}/add-repo - Clone a Repository${C.reset}
+
+${C.bold}${C.yellow}Usage:${C.reset}
+  ${C.green}/add-repo <URL>${C.reset}           Clone with name from URL
+  ${C.green}/add-repo <URL> <name>${C.reset}    Clone with custom name
+
+${C.bold}${C.yellow}Description:${C.reset}
+  Clones a git repository into .achilles-cli/repos/.
+  If no name is provided, it is derived from the URL.
+
+${C.bold}${C.yellow}Examples:${C.reset}
+  ${C.green}>${C.reset} /add-repo https://github.com/foo/bar.git
+  ${C.dim}Clones into .achilles-cli/repos/bar/${C.reset}
+
+  ${C.green}>${C.reset} /add-repo https://github.com/foo/bar.git my-repo
+  ${C.dim}Clones into .achilles-cli/repos/my-repo/${C.reset}
+
+${C.bold}${C.yellow}After Cloning:${C.reset}
+  Run ${C.cyan}reload${C.reset} to re-scan skills from the new repository.
+`,
+    },
+
+    'list-repos': {
+        title: '/list-repos - List Repositories',
+        content: `
+${C.bold}${C.cyan}/list-repos - List Cloned Repositories${C.reset}
+
+${C.bold}${C.yellow}Usage:${C.reset}
+  ${C.green}/list-repos${C.reset}
+
+${C.bold}${C.yellow}Description:${C.reset}
+  Shows all repositories cloned into .achilles-cli/repos/,
+  including their git remote URLs and local paths.
+
+${C.bold}${C.yellow}Example Output:${C.reset}
+  ${C.dim}Repositories (2):
+
+    my-skill-repo
+      URL: https://github.com/foo/skills.git
+      Path: /path/to/.achilles-cli/repos/my-skill-repo
+
+    utils
+      URL: https://github.com/bar/utils.git
+      Path: /path/to/.achilles-cli/repos/utils${C.reset}
+`,
+    },
+
+    'remove-repo': {
+        title: '/remove-repo - Remove a Repository',
+        content: `
+${C.bold}${C.cyan}/remove-repo - Remove a Repository${C.reset}
+
+${C.bold}${C.yellow}Usage:${C.reset}
+  ${C.green}/remove-repo <name>${C.reset}
+
+${C.bold}${C.yellow}Description:${C.reset}
+  Removes a cloned repository from .achilles-cli/repos/.
+  This permanently deletes the repository directory.
+
+${C.bold}${C.yellow}Examples:${C.reset}
+  ${C.green}>${C.reset} /remove-repo my-repo
+  ${C.dim}Deletes .achilles-cli/repos/my-repo/${C.reset}
+
+${C.bold}${C.red}Warning:${C.reset} This permanently deletes the repository!
+`,
+    },
+
 };
 
 /**
@@ -1058,6 +1170,9 @@ ${C.bold}${C.yellow}Common Slash Commands${C.reset}
   ${C.cyan}/generate${C.reset} <skill> Generate code from tskill
   ${C.cyan}/test${C.reset} <skill>     Test generated code
   ${C.cyan}/refine${C.reset} <skill>   Improve until tests pass
+  ${C.cyan}/add-repo${C.reset} <URL>   Clone a repository
+  ${C.cyan}/list-repos${C.reset}       List cloned repositories
+  ${C.cyan}/remove-repo${C.reset}      Remove a repository
   ${C.cyan}/help${C.reset} [topic]     Detailed help
 
 ${C.bold}${C.yellow}Tips${C.reset}

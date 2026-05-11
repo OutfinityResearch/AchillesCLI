@@ -1,12 +1,14 @@
 /**
  * REPLSession - Manages the interactive REPL session for MainAgent.
  *
- * Coordinates between InteractivePrompt, QuickCommands, and NaturalLanguageProcessor
+ * Coordinates between InteractivePrompt and NaturalLanguageProcessor
  * to provide a complete interactive CLI experience.
+ * All input starting with / is a command; everything else goes to the LLM.
  */
 
 import path from 'node:path';
 import readline from 'node:readline';
+import { pathToFileURL } from 'node:url';
 import { LineEditor } from '../ui/LineEditor.mjs';
 import { createSpinner } from '../ui/spinner.mjs';
 import { buildCommandList, showTestSelector, showHelpSelector, showTierSelector, showModelSelector } from '../ui/CommandSelector.mjs';
@@ -15,7 +17,6 @@ import { summarizeResult } from '../ui/ResultFormatter.mjs';
 import { HistoryManager } from './HistoryManager.mjs';
 import { renderMarkdown } from '../ui/MarkdownRenderer.mjs';
 import { InteractivePrompt } from './InteractivePrompt.mjs';
-import { QuickCommands } from './QuickCommands.mjs';
 import { NaturalLanguageProcessor } from './NaturalLanguageProcessor.mjs';
 import { discoverSkillTests, runTestFile, runTestSuite } from '../lib/testDiscovery.mjs';
 import { TIERS } from '../lib/constants.mjs';
@@ -24,6 +25,8 @@ import { showHelp, getHelpTopics, getCommandHelp } from '../ui/HelpSystem.mjs';
 import { UIContext } from '../ui/UIContext.mjs';
 import { buildOrchestratorSystemPrompt } from '../prompts/orchestrator-prompt.mjs';
 import { IOServices } from 'achillesAgentLib';
+import { ensureAchillesCliDir } from '../lib/repoManager.mjs';
+import { showHistory, searchHistory } from '../ui/HelpPrinter.mjs';
 
 // Import tier/model utilities from achillesAgentLib (direct path — not re-exported from index)
 let _listTiersFromCache = null;
@@ -62,6 +65,9 @@ export class REPLSession {
         this.builtInSkillsDir = options.builtInSkillsDir || null;
         this.debug = options.debug || false;
 
+        // Ensure .achilles-cli directory structure exists
+        ensureAchillesCliDir(this.workingDir);
+
         // Active LLM tier for all prompt executions
         this.activeTier = options.tier || TIERS.FAST;
 
@@ -94,6 +100,8 @@ export class REPLSession {
             executeSkill: (skillName, input, opts) => this._executeSkill(skillName, input, opts),
             getUserSkills: () => this.getUserSkills(),
             getSkills: () => agent.getSkills(),
+            buildSkills: () => this.reloadSkills(),
+            historyManager: this.historyManager,
         });
 
         // Build command list for interactive selector
@@ -109,14 +117,6 @@ export class REPLSession {
             commandList: this.commandList,
             getUserSkills: () => this.getUserSkills(),
             getAllSkills: () => agent.getSkills(),
-        });
-
-        this.quickCommands = new QuickCommands({
-            getUserSkills: () => this.getUserSkills(),
-            getAllSkills: () => agent.getSkills(),
-            reloadSkills: () => this.reloadSkills(),
-            historyManager: this.historyManager,
-            builtInSkillsDir: this.builtInSkillsDir,
         });
 
         this.nlProcessor = new NaturalLanguageProcessor({
@@ -206,7 +206,35 @@ export class REPLSession {
         if (this.pinnedModel) {
             execOpts.model = this.pinnedModel;
         }
-        return this.agent.executeSkill(skillName, input, execOpts);
+        try {
+            return await this.agent.executeSkill(skillName, input, execOpts);
+        } catch (error) {
+            if (!this._isSkillNotFoundError(error)) {
+                throw error;
+            }
+            return this._executeBuiltInSkillModule(skillName, input);
+        }
+    }
+
+    _isSkillNotFoundError(error) {
+        return Boolean(error && typeof error.message === 'string' && error.message.includes('not found'));
+    }
+
+    async _executeBuiltInSkillModule(skillName, input) {
+        if (!this.builtInSkillsDir || !skillName) {
+            throw new Error(`Skill "${skillName}" not found.`);
+        }
+
+        const modulePath = path.join(this.builtInSkillsDir, skillName, `${skillName}.mjs`);
+        try {
+            const loaded = await import(pathToFileURL(modulePath).href);
+            if (typeof loaded?.action !== 'function') {
+                throw new Error(`Built-in module "${skillName}" has no action() export.`);
+            }
+            return loaded.action(this.agent, input);
+        } catch {
+            throw new Error(`Skill "${skillName}" not found.`);
+        }
     }
 
     /**
@@ -425,19 +453,7 @@ export class REPLSession {
 
             if (!input) continue;
 
-            // Exit commands
-            if (['exit', 'quit', 'q'].includes(input.toLowerCase())) {
-                console.log('\nGoodbye!\n');
-                break;
-            }
-
-            // Quick commands (no LLM needed)
-            if (this.quickCommands.isQuickCommand(input)) {
-                this.quickCommands.execute(input);
-                continue;
-            }
-
-            // Slash commands (direct skill execution)
+            // Slash commands (direct execution)
             if (this.slashHandler.isSlashCommand(input)) {
                 const shouldExit = await this._handleSlashCommand(input);
                 if (shouldExit) break;
@@ -459,26 +475,39 @@ export class REPLSession {
         const parsed = this.slashHandler.parseSlashCommand(input);
         if (!parsed) return false;
 
-        // Create spinner for slash command execution
-        const spinner = createSpinner(`Running /${parsed.command}...`);
+        const commandLabel = parsed.subOption ? `${parsed.command} ${parsed.subOption}` : parsed.command;
+        const spinner = createSpinner(`Running /${commandLabel}...`);
         this._setActiveSpinner(spinner);
 
         try {
-            const result = await this.slashHandler.executeSlashCommand(parsed.command, parsed.args, {
+            const fullArgs = parsed.subOption
+                ? `${parsed.subOption} ${parsed.args}`.trim()
+                : parsed.args;
+            const result = await this.slashHandler.executeSlashCommand(parsed.command, fullArgs, {
                 context: this.context,
             });
 
             if (result.handled) {
-                // Handle /quit and /exit commands
                 if (result.exitRepl) {
                     spinner.stop();
                     console.log('\nGoodbye!\n');
-                    return true; // Signal to exit the REPL
+                    return true;
                 }
-                // Handle /tier command
-                if (result.tierChange) {
+                if (result.reloadSkills) {
+                    const count = this.reloadSkills();
+                    spinner.succeed(`Indexed ${count} skill(s). Use /build to generate pending code.`);
+                } else if (result.showHistory) {
+                    spinner.stop();
+                    showHistory(this.historyManager);
+                } else if (result.showHistoryCount) {
+                    spinner.stop();
+                    showHistory(this.historyManager, result.showHistoryCount);
+                } else if (result.searchHistory) {
+                    spinner.stop();
+                    searchHistory(this.historyManager, result.searchHistory);
+                } else if (result.tierChange) {
                     this.activeTier = result.tierChange;
-                    this.pinnedModel = null; // Clear model pin on tier switch
+                    this.pinnedModel = null;
                     const tierModels = _listTiersFromCache?.() || {};
                     const models = tierModels[this.activeTier] || [];
                     const primaryModel = models[0] || 'unknown';
@@ -486,7 +515,6 @@ export class REPLSession {
                 } else if (result.showTierPicker) {
                     spinner.stop();
                     await this._handleTierPicker();
-                // Handle /model command
                 } else if (result.showModelPicker) {
                     spinner.stop();
                     await this._handleModelPicker();
@@ -497,33 +525,28 @@ export class REPLSession {
                     } else {
                         spinner.succeed('Model pin cleared — using tier-based selection');
                     }
-                // Handle /raw toggle command
                 } else if (result.toggleMarkdown) {
                     this.markdownEnabled = !this.markdownEnabled;
                     spinner.succeed(`Markdown rendering ${this.markdownEnabled ? 'enabled' : 'disabled'}`);
-                // Handle /test with no args - show interactive picker
                 } else if (result.showTestPicker) {
                     spinner.stop();
                     await this._handleTestPicker();
-                // Handle /run-tests with no args - show interactive picker
                 } else if (result.showRunTestsPicker) {
                     spinner.stop();
                     await this._handleRunTestsPicker();
-                // Handle /help with no args - show interactive help picker
                 } else if (result.showHelpPicker) {
                     spinner.stop();
                     await this._handleHelpPicker();
                 } else if (result.error) {
                     spinner.fail(result.error);
                 } else if (result.result) {
-                    spinner.succeed(`/${parsed.command} complete`);
+                    spinner.succeed(`/${commandLabel} complete`);
                     console.log('-'.repeat(60));
                     console.log(this.markdownEnabled ? renderMarkdown(result.result) : result.result);
                     console.log('-'.repeat(60) + '\n');
                 } else {
                     spinner.stop();
                 }
-                // Save successful slash commands to history
                 if (!result.error) {
                     this.historyManager.add(input);
                 }

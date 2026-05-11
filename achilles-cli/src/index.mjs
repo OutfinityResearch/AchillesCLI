@@ -19,6 +19,7 @@ import { UIContext } from './ui/UIContext.mjs';
 import { createProvider, getProviderNames } from './ui/providers/index.mjs';
 import { BUILT_IN_SKILLS } from './lib/constants.mjs';
 import { buildOrchestratorSystemPrompt } from './prompts/orchestrator-prompt.mjs';
+import { ensureAchillesCliDir } from './lib/repoManager.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,6 +151,9 @@ async function main() {
         console.error(`Error: Unable to change working directory to '${workingDir}': ${error.message}`);
         process.exit(1);
     }
+
+    // Ensure .achilles-cli directory structure exists
+    ensureAchillesCliDir(workingDir);
 
     // Merge all skill roots: built-in + bash-skills + CLI flags + node_modules skills
     const allSkillRoots = [
@@ -606,11 +610,86 @@ function registerSkillRoots(agent, skillRoots, logger) {
             continue;
         }
 
+        // Backward compatibility: achillesAgentLib discovery currently skips cgskill.md.
+        // Built-in Achilles CLI skills still use cgskill.md, so register them explicitly.
+        discovered = mergeCgskillRecords(skillRoot, discovered);
+
         for (const skillRecord of discovered) {
             skillRecord.isInternal = Boolean(root.isInternal);
             agent._registerSkill(skillRecord);
         }
     }
+}
+
+function mergeCgskillRecords(skillRoot, discovered) {
+    const discoveredByFile = new Set(
+        discovered
+            .map((record) => record?.filePath)
+            .filter(Boolean)
+    );
+    const legacyCgskills = discoverLegacyCgskills(skillRoot, discoveredByFile);
+    return [...discovered, ...legacyCgskills];
+}
+
+function discoverLegacyCgskills(rootDir, discoveredByFile = new Set()) {
+    if (!rootDir || !fs.existsSync(rootDir)) {
+        return [];
+    }
+
+    const results = [];
+    const queue = [rootDir];
+    const visited = new Set();
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current || visited.has(current)) {
+            continue;
+        }
+        visited.add(current);
+
+        let entries = [];
+        try {
+            entries = fs.readdirSync(current, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+
+        for (const entry of entries) {
+            if (!entry.isDirectory()) {
+                continue;
+            }
+
+            const skillDir = path.join(current, entry.name);
+            const cgskillPath = path.join(skillDir, 'cgskill.md');
+            if (fs.existsSync(cgskillPath) && !discoveredByFile.has(cgskillPath)) {
+                const shortName = path.basename(skillDir);
+                const canonical = sanitiseSkillName(`${shortName}-dynamic-code-generation`);
+                results.push({
+                    name: canonical,
+                    type: 'dynamic-code-generation',
+                    descriptor: null,
+                    filePath: cgskillPath,
+                    skillDir,
+                    shortName,
+                    preparedConfig: null,
+                });
+                discoveredByFile.add(cgskillPath);
+            }
+
+            queue.push(skillDir);
+        }
+    }
+
+    return results;
+}
+
+function sanitiseSkillName(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
 }
 
 // Run if executed directly

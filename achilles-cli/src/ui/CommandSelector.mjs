@@ -275,7 +275,7 @@ export async function showCommandSelector(commands, options = {}) {
                 const selected = selector.getSelected();
                 cleanup();
                 if (selected) {
-                    resolve({ name: selected.name, args: '', needsSkillArg: selected.needsSkillArg, needsRepoArg: selected.needsRepoArg });
+                    resolve({ name: selected.name, args: '', needsSkillArg: selected.needsSkillArg, needsRepoArg: selected.needsRepoArg, hasSubOptions: selected.hasSubOptions, subOptions: selected.subOptions });
                 } else {
                     resolve(null);
                 }
@@ -308,7 +308,7 @@ export async function showCommandSelector(commands, options = {}) {
                 const selected = selector.getSelected();
                 if (selected) {
                     cleanup();
-                    resolve({ name: selected.name, args: '', needsSkillArg: selected.needsSkillArg, needsRepoArg: selected.needsRepoArg });
+                    resolve({ name: selected.name, args: '', needsSkillArg: selected.needsSkillArg, needsRepoArg: selected.needsRepoArg, hasSubOptions: selected.hasSubOptions, subOptions: selected.subOptions });
                 }
                 return;
             }
@@ -332,40 +332,46 @@ export async function showCommandSelector(commands, options = {}) {
 }
 
 /**
- * Build command list from SLASH_COMMANDS definition
+ * Build command list from COMMAND_DEFINITIONS
  */
-export function buildCommandList(slashCommands) {
+export function buildCommandList(commandDefs) {
     const commands = [];
-    const seen = new Set();
 
-    // Add unique commands (skip aliases like 'ls' and 'list' being duplicates)
-    for (const [name, def] of Object.entries(slashCommands)) {
-        if (!seen.has(def.skill)) {
-            commands.push({
-                name: `/${name}`,
-                description: def.description,
-                usage: def.usage,
-                skill: def.skill,
-                needsSkillArg: def.needsSkillArg || false,
-                needsRepoArg: def.needsRepoArg || false,
-            });
-            if (def.skill) seen.add(def.skill);
-        }
+    for (const [name, def] of Object.entries(commandDefs)) {
+        commands.push({
+            name: `/${name}`,
+            description: def.description,
+            usage: def.usage || `/${name}`,
+            skill: def.skill || null,
+            needsSkillArg: def.needsSkillArg || false,
+            needsRepoArg: def.needsRepoArg || false,
+            hasSubOptions: Array.isArray(def.subOptions) && def.subOptions.length > 0,
+            subOptions: def.subOptions || null,
+        });
     }
-
-    // Add built-in help commands
-    commands.push({
-        name: '/help',
-        description: 'Show all slash commands',
-        usage: '/help',
-        skill: null,
-        needsSkillArg: false,
-    });
 
     // Sort alphabetically
     commands.sort((a, b) => a.name.localeCompare(b.name));
 
     return commands;
+}
+
+/**
+ * Build sub-option list for a command
+ */
+export async function buildSubOptionList(command, subOptions) {
+    if (!subOptions || subOptions.length === 0) return [];
+
+    const { SUB_OPTIONS } = await import('../repl/SlashCommandHandler.mjs');
+    const subDefs = SUB_OPTIONS[command] || {};
+
+    return subOptions.map(opt => ({
+        name: `/${command} ${opt}`,
+        description: subDefs[opt]?.description || opt,
+        usage: subDefs[opt]?.usage || `/${command} ${opt}`,
+        skill: subDefs[opt]?.skill || null,
+        needsSkillArg: subDefs[opt]?.needsSkillArg || false,
+    }));
 }
 
 /**
