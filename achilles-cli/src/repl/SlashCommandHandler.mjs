@@ -265,6 +265,44 @@ export const SUB_OPTIONS = {
 };
 
 /**
+ * Build a structured slash-command catalog that can be consumed by remote UIs.
+ * @returns {Array<Object>}
+ */
+export function buildSlashCommandCatalog() {
+    const catalog = [];
+
+    for (const [name, def] of Object.entries(COMMAND_DEFINITIONS)) {
+        const subDefs = SUB_OPTIONS[name] || {};
+        const subCommands = Array.isArray(def.subOptions)
+            ? def.subOptions.map((subName) => {
+                const subDef = subDefs[subName] || {};
+                return {
+                    name: subName,
+                    usage: subDef.usage || `/${name} ${subName}`,
+                    description: subDef.description || '',
+                    args: subDef.args || 'optional',
+                    skill: subDef.skill || null,
+                    needsSkillArg: Boolean(subDef.needsSkillArg),
+                };
+            })
+            : [];
+
+        catalog.push({
+            name: `/${name}`,
+            usage: def.usage || `/${name}`,
+            description: def.description || '',
+            args: def.args || 'optional',
+            skill: def.skill || null,
+            needsSkillArg: Boolean(def.needsSkillArg),
+            subCommands,
+        });
+    }
+
+    catalog.sort((a, b) => a.name.localeCompare(b.name));
+    return catalog;
+}
+
+/**
  * SlashCommandHandler class for managing slash commands in the CLI.
  */
 export class SlashCommandHandler {
@@ -272,6 +310,14 @@ export class SlashCommandHandler {
      * Backwards-compatible COMMANDS alias (points to COMMAND_DEFINITIONS).
      */
     static COMMANDS = COMMAND_DEFINITIONS;
+
+    /**
+     * Static helper for callers that only need command metadata.
+     * @returns {Array<Object>}
+     */
+    static getCommandCatalog() {
+        return buildSlashCommandCatalog();
+    }
 
     /**
      * Create a new SlashCommandHandler.

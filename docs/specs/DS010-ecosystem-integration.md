@@ -32,6 +32,8 @@ Ploinky integration boundary:
 1. AchillesCLI should remain compatible with workspace-managed runtime contexts.
 2. Startup assumptions must avoid hardcoded machine-specific paths in core runtime logic.
 3. Session/webchat runtime paths should keep durable-state assumptions aligned with orchestrated process lifecycles.
+4. AchillesCLI exposes its skill catalog as MCP tools via the AgentServer mechanism. Each user skill is exposed as `execute_<sanitised_skill_name>` with an input schema derived from the skill's argument expectations. WebChat clients query this catalog at session start to populate slash-command autocomplete menus. AchillesCLI slash commands are provided through a dedicated MCP catalog tool that returns a structured command/sub-command payload and does not execute chat prompts.
+5. The webchat interactive mode (`runWebchatInteractive`) accepts ESC (`\x1b`) as a standalone input line to cancel the current prompt execution. This enables remote cancel from browser-based WebChat sessions.
 
 AchillesIDE interoperability boundary:
 1. AchillesIDE documents a broader agent ecosystem with MCP and workspace routing expectations.

@@ -1,0 +1,12 @@
+{
+    "tools": [
+        {
+            "name": "list_achilles_cli_commands",
+            "title": "List Achilles CLI Commands",
+            "description": "Return Achilles CLI slash commands and subcommands for webchat autocomplete.",
+            "command": "/code/src/mcp/list-slash-commands.mjs",
+            "cwd": "/code",
+            "inputSchema": {}
+        }
+    ]
+}

@@ -55,6 +55,7 @@ Session control behavior:
 3. ESC interruption is supported for both natural-language processing and slash-command execution paths.
 4. Slash-command execution forwards AbortSignal and interruption intent to skill runtime calls.
 5. Context-sensitive help and command selection remain available in interactive mode.
+6. Webchat runtime mode (non-TTY stdin) accepts ESC as a standalone line (`\x1b`) to abort the current prompt execution. The agent must respond with `[cancelled]` and resume accepting input.
 
 Operational invariants:
 1. Deterministic slash flows must avoid unnecessary LLM routing.

@@ -3,8 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import { Writable } from 'node:stream';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { realpathSync } from 'node:fs';
 import { MainAgent, discoverSkillsFromRoot } from 'achillesAgentLib/MainAgent';
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
@@ -15,11 +14,13 @@ import { SlashCommandHandler } from './repl/SlashCommandHandler.mjs';
 import { REPLSession } from './repl/REPLSession.mjs';
 import { summarizeResult, formatSlashResult } from './ui/ResultFormatter.mjs';
 import { printHelp as printREPLHelp, showHistory, searchHistory } from './ui/HelpPrinter.mjs';
+import { getQuickReference } from './ui/HelpSystem.mjs';
 import { UIContext } from './ui/UIContext.mjs';
 import { createProvider, getProviderNames } from './ui/providers/index.mjs';
-import { BUILT_IN_SKILLS } from './lib/constants.mjs';
+import { BUILT_IN_SKILLS, TIERS } from './lib/constants.mjs';
 import { buildOrchestratorSystemPrompt } from './prompts/orchestrator-prompt.mjs';
 import { ensureAchillesCliDir } from './lib/repoManager.mjs';
+import { isWebchatEscapeControlChunk, handleWebchatControlChunk } from './lib/webchatControl.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,6 +50,8 @@ export {
     // Utilities
     summarizeResult,
     formatSlashResult,
+    isWebchatEscapeControlChunk,
+    handleWebchatControlChunk,
     printREPLHelp,
     showHistory,
     searchHistory,
@@ -304,18 +307,61 @@ function hasSsoEnvironment() {
 
 async function runWebchatInteractive(agent, options) {
     const { workingDir, skillsDir, skipBashPermissions, debug, renderMarkdown } = options;
-
-    const rlOutput = new Writable({ write(_chunk, _encoding, callback) { callback(); } });
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: rlOutput,
-        terminal: false,
+    const controlLogger = createWebchatControlLogger(workingDir);
+    controlLogger.log('stdin-init', {
+        isTTY: Boolean(process.stdin?.isTTY),
+        hasSetRawMode: typeof process.stdin?.setRawMode === 'function',
+    });
+    const historyManager = new HistoryManager({ workingDir });
+    const slashState = {
+        activeTier: TIERS.FAST,
+        pinnedModel: null,
+        markdownEnabled: renderMarkdown !== false,
+    };
+    const context = {
+        workingDir,
+        skillsDir,
+        skilledAgent: agent,
+        llmAgent: agent.llmAgent,
+        skipBashPermissions,
+    };
+    agent.context = context;
+    const slashHandler = new SlashCommandHandler({
+        executeSkill: (skillName, input, opts) => executeWebchatSkill({
+            agent,
+            skillName,
+            input,
+            opts,
+            slashState,
+        }),
+        getUserSkills: () => agent.getSkills().filter((skill) => !skill.isInternal),
+        getSkills: () => agent.getSkills(),
+        buildSkills: async () => {
+            await agent.buildSkills();
+        },
+        historyManager,
     });
 
     let isClosing = false;
+    let isProcessing = false;
+    let activeAbortController = null;
     let pendingLines = [];
+    let partialLine = '';
     let flushTimer = null;
     let processingChain = Promise.resolve();
+    const stdinIsTTY = Boolean(process.stdin?.isTTY);
+    const handleControlData = (chunk) => {
+        controlLogger.log('stdin-control-chunk', {
+            isProcessing,
+            escaped: isWebchatEscapeControlChunk(chunk),
+            chunk: previewControlChunk(chunk),
+        });
+        handleWebchatControlChunk(chunk, {
+            agent,
+            isProcessing,
+            abortController: activeAbortController
+        });
+    };
 
     const flushPendingLines = () => {
         if (flushTimer) {
@@ -333,44 +379,80 @@ async function runWebchatInteractive(agent, options) {
             return;
         }
         if (message === 'exit' || message === 'quit' || message === ':q') {
-            isClosing = true;
-            rl.close();
+            process.stdout.write('Use /exit only in terminal REPL mode.\n');
             return;
         }
 
         processingChain = processingChain.then(async () => {
+            isProcessing = true;
+            activeAbortController = new AbortController();
+            const isSlash = slashHandler.isSlashCommand(message);
+            controlLogger.log(isSlash ? 'slash-start' : 'prompt-start', {
+                messagePreview: message.slice(0, 160),
+            });
             try {
-                const context = {
-                    workingDir,
-                    skillsDir,
-                    skilledAgent: agent,
-                    llmAgent: agent.llmAgent,
-                    skipBashPermissions,
-                };
-
-                let result = await agent.executePrompt(message, {
-                    context,
-                    systemPrompt: buildOrchestratorSystemPrompt(),
-                });
-
-                if (typeof result === 'string') {
-                    try {
-                        const parsed = JSON.parse(result);
-                        if (parsed && (parsed.executions || parsed.type === 'orchestrator')) {
-                            result = debug ? JSON.stringify(parsed, null, 2) : summarizeResult(parsed);
-                        }
-                    } catch {
-                        // Not JSON, use as-is
+                if (isSlash) {
+                    const slashOutput = await executeWebchatSlashCommand({
+                        input: message,
+                        slashHandler,
+                        historyManager,
+                        slashState,
+                        context,
+                        signal: activeAbortController.signal,
+                    });
+                    if (slashOutput?.exit) {
+                        process.stdout.write(`${slashOutput.output || 'Exit is not supported in webchat.'}\n`);
+                    } else if (slashOutput?.output) {
+                        process.stdout.write(`${slashOutput.output}\n`);
                     }
-                } else if (!debug) {
-                    result = summarizeResult(result);
                 } else {
-                    result = JSON.stringify(result, null, 2);
+                    let result = await agent.executePrompt(message, {
+                        context,
+                        systemPrompt: buildOrchestratorSystemPrompt(),
+                        signal: activeAbortController.signal,
+                        model: slashState.pinnedModel || undefined,
+                        tier: slashState.activeTier,
+                    });
+
+                    if (typeof result === 'string') {
+                        try {
+                            const parsed = JSON.parse(result);
+                            if (parsed && (parsed.executions || parsed.type === 'orchestrator')) {
+                                result = debug ? JSON.stringify(parsed, null, 2) : summarizeResult(parsed);
+                            }
+                        } catch {
+                            // Not JSON, use as-is
+                        }
+                    } else if (!debug) {
+                        result = summarizeResult(result);
+                    } else {
+                        result = JSON.stringify(result, null, 2);
+                    }
+
+                    process.stdout.write(`${result}\n`);
+                    historyManager.add(message);
                 }
 
-                process.stdout.write(`${result}\n`);
+                controlLogger.log(isSlash ? 'slash-finish' : 'prompt-finish', {
+                    status: 'ok',
+                });
             } catch (error) {
-                process.stdout.write(`[error] ${error.message}\n`);
+                if (activeAbortController?.signal?.aborted || error?.name === 'AbortError') {
+                    process.stdout.write('[cancelled]\n');
+                    controlLogger.log(isSlash ? 'slash-finish' : 'prompt-finish', {
+                        status: 'cancelled',
+                        reason: activeAbortController?.signal?.reason || error?.message || 'abort',
+                    });
+                } else {
+                    process.stdout.write(`[error] ${error.message}\n`);
+                    controlLogger.log(isSlash ? 'slash-finish' : 'prompt-finish', {
+                        status: 'error',
+                        error: error?.message || String(error),
+                    });
+                }
+            } finally {
+                isProcessing = false;
+                activeAbortController = null;
             }
         });
     };
@@ -384,18 +466,265 @@ async function runWebchatInteractive(agent, options) {
         }, 150);
     };
 
-    rl.on('line', (line) => {
-        pendingLines.push(line);
-        scheduleFlush();
+    try {
+        if (stdinIsTTY && typeof process.stdin.setRawMode === 'function') {
+            process.stdin.setRawMode(true);
+        }
+        process.stdin.resume();
+
+        await new Promise((resolve) => {
+            const handleData = (chunk) => {
+                handleControlData(chunk);
+
+                const text = Buffer.isBuffer(chunk)
+                    ? chunk.toString('utf8')
+                    : String(chunk ?? '');
+
+                if (!text) {
+                    return;
+                }
+
+                const normalized = text.replace(/\r\n/g, '\n');
+                const segments = normalized.split('\n');
+                segments[0] = partialLine + segments[0];
+
+                if (normalized.endsWith('\n')) {
+                    partialLine = '';
+                } else {
+                    partialLine = segments.pop() ?? '';
+                    if (partialLine.includes('\x1b') || partialLine.includes('\u001b')) {
+                        controlLogger.log('clear-control-partial-line', {
+                            partialLine: previewText(partialLine),
+                        });
+                        partialLine = '';
+                    }
+                }
+
+                for (const segment of segments) {
+                    if (segment.includes('\x1b') || segment.includes('\u001b')) {
+                        controlLogger.log('skip-control-segment', {
+                            segment: previewText(segment),
+                        });
+                        continue;
+                    }
+                    pendingLines.push(segment);
+                    controlLogger.log('queue-line', {
+                        line: previewText(segment),
+                        pendingCount: pendingLines.length,
+                    });
+                    scheduleFlush();
+                }
+            };
+
+            const handleEnd = () => {
+                if (partialLine.length > 0) {
+                    pendingLines.push(partialLine);
+                    partialLine = '';
+                }
+                isClosing = true;
+                flushPendingLines();
+                resolve();
+            };
+
+            process.stdin.on('data', handleData);
+            process.stdin.once('end', handleEnd);
+            process.stdin.once('close', handleEnd);
+
+            handleControlData.cleanup = () => {
+                process.stdin.removeListener('data', handleData);
+                process.stdin.removeListener('end', handleEnd);
+                process.stdin.removeListener('close', handleEnd);
+            };
+        });
+        await processingChain;
+    } finally {
+        try {
+            handleControlData.cleanup?.();
+        } catch (_) {}
+        if (stdinIsTTY && typeof process.stdin.setRawMode === 'function') {
+            try {
+                process.stdin.setRawMode(false);
+            } catch (_) {}
+        }
+    }
+}
+
+function createWebchatControlLogger(workingDir) {
+    const logDir = path.join(workingDir, '.achilles-cli', 'logs');
+    const logFile = path.join(logDir, 'webchat-control.log');
+
+    const append = (line) => {
+        try {
+            fs.mkdirSync(logDir, { recursive: true });
+            fs.appendFileSync(logFile, `${line}\n`, 'utf8');
+        } catch (_) {
+            // Ignore logging failures during webchat runtime.
+        }
+    };
+
+    return {
+        path: logFile,
+        log(event, payload = null) {
+            const timestamp = new Date().toISOString();
+            const suffix = payload ? ` ${safeJsonStringify(payload)}` : '';
+            append(`${timestamp} ${event}${suffix}`);
+        }
+    };
+}
+
+async function executeWebchatSkill({ agent, skillName, input, opts = {}, slashState }) {
+    const execOpts = {
+        tier: slashState.activeTier,
+        ...opts,
+    };
+    if (slashState.pinnedModel) {
+        execOpts.model = slashState.pinnedModel;
+    }
+
+    try {
+        return await agent.executeSkill(skillName, input, execOpts);
+    } catch (error) {
+        if (!isSkillNotFoundError(error)) {
+            throw error;
+        }
+        return executeBuiltInSkillModule(skillName, agent, input);
+    }
+}
+
+function isSkillNotFoundError(error) {
+    return Boolean(error && typeof error.message === 'string' && error.message.includes('not found'));
+}
+
+async function executeBuiltInSkillModule(skillName, agent, input) {
+    if (!skillName) {
+        throw new Error('Skill name is required.');
+    }
+
+    const modulePath = path.join(builtInSkillsDir, skillName, `${skillName}.mjs`);
+    try {
+        const loaded = await import(pathToFileURL(modulePath).href);
+        if (typeof loaded?.action !== 'function') {
+            throw new Error(`Built-in module "${skillName}" has no action() export.`);
+        }
+        return loaded.action(agent, input);
+    } catch {
+        throw new Error(`Skill "${skillName}" not found.`);
+    }
+}
+
+async function executeWebchatSlashCommand({
+    input,
+    slashHandler,
+    historyManager,
+    slashState,
+    context,
+    signal,
+}) {
+    const parsed = slashHandler.parseSlashCommand(input);
+    if (!parsed) {
+        return { output: `Unknown command: ${input}` };
+    }
+
+    const fullArgs = parsed.subOption
+        ? `${parsed.subOption} ${parsed.args}`.trim()
+        : parsed.args;
+    const result = await slashHandler.executeSlashCommand(parsed.command, fullArgs, {
+        context,
+        signal,
     });
 
-    rl.on('close', () => {
-        isClosing = true;
-        flushPendingLines();
-    });
+    if (!result?.handled) {
+        return { output: result?.error || `Unknown command: ${input}` };
+    }
 
-    await new Promise((resolve) => rl.once('close', resolve));
-    await processingChain;
+    historyManager.add(input);
+
+    if (result.exitRepl) {
+        return { exit: true, output: 'Exit is not supported in webchat. Close the tab to end the session.' };
+    }
+    if (result.reloadSkills) {
+        return { output: `Indexed ${context.skilledAgent.getSkills().length} skill(s).` };
+    }
+    if (result.showHistory) {
+        return { output: formatHistoryEntries(historyManager.getRecent(10)) };
+    }
+    if (result.showHistoryCount) {
+        return { output: formatHistoryEntries(historyManager.getRecent(result.showHistoryCount)) };
+    }
+    if (result.searchHistory) {
+        return { output: formatHistoryEntries(historyManager.search(result.searchHistory)) };
+    }
+    if (result.tierChange) {
+        slashState.activeTier = result.tierChange;
+        slashState.pinnedModel = null;
+        return { output: `Tier set to ${slashState.activeTier}.` };
+    }
+    if (result.modelChange !== undefined) {
+        slashState.pinnedModel = result.modelChange;
+        return { output: slashState.pinnedModel ? `Model pinned: ${slashState.pinnedModel}` : 'Model pin cleared.' };
+    }
+    if (result.toggleMarkdown) {
+        slashState.markdownEnabled = !slashState.markdownEnabled;
+        return { output: `Markdown rendering ${slashState.markdownEnabled ? 'enabled' : 'disabled'}.` };
+    }
+    if (result.showHelpPicker) {
+        return { output: getQuickReference() };
+    }
+    if (result.showTierPicker) {
+        const tiers = slashHandler.getAvailableTiers();
+        return { output: `Current tier: ${slashState.activeTier}\nAvailable tiers: ${tiers.join(', ')}` };
+    }
+    if (result.showModelPicker) {
+        const models = slashHandler.getAvailableModels();
+        const current = slashState.pinnedModel || '(none)';
+        return { output: `Pinned model: ${current}\nAvailable models:\n${models.map((model) => `- ${model}`).join('\n')}` };
+    }
+    if (result.showTestPicker) {
+        return { output: 'Usage: /test <skill-name>' };
+    }
+    if (result.showRunTestsPicker) {
+        return { output: 'Usage: /run-tests <skill-name|all>' };
+    }
+    if (result.result) {
+        return { output: result.result };
+    }
+    if (result.error) {
+        return { output: result.error };
+    }
+
+    return { output: '' };
+}
+
+function formatHistoryEntries(entries = []) {
+    if (!Array.isArray(entries) || entries.length === 0) {
+        return 'No history entries.';
+    }
+    return entries.map((entry) => `${entry.index}. ${entry.command}`).join('\n');
+}
+
+function safeJsonStringify(value) {
+    try {
+        return JSON.stringify(value);
+    } catch (_) {
+        return JSON.stringify({ error: 'stringify_failed' });
+    }
+}
+
+function previewControlChunk(chunk) {
+    const raw = Buffer.isBuffer(chunk)
+        ? chunk.toString('utf8')
+        : String(chunk ?? '');
+    return raw
+        .replace(/\x1b/g, '<ESC>')
+        .replace(/\r/g, '<CR>')
+        .replace(/\n/g, '<LF>');
+}
+
+function previewText(value) {
+    return String(value ?? '')
+        .replace(/\r/g, '<CR>')
+        .replace(/\n/g, '<LF>')
+        .slice(0, 160);
 }
 
 function createCliInputReader() {

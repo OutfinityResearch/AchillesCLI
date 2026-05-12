@@ -44,9 +44,21 @@ This file defines repository-level guidance for contributors and agents working 
 - Achilles integration contract is defined in `docs/specs/DS010-ecosystem-integration.md`.
 - Model-tier and session model controls are defined in `docs/specs/DS002-llm-model-strategy.md`.
 
+## Runtime and Access Modes
+- AchillesCLI can run standalone from terminal (`achilles-cli`) with REPL or single-shot prompt mode.
+- AchillesCLI is integrated in Ploinky (`<workspace-root>/ploinky`) and can be accessed via the WebChat browser interface.
+- The CLI provides slash-command menus/autocomplete and skill-aware selectors in interactive mode.
+- Skills are first-class runtime units; command and menu behavior should remain consistent between standalone CLI and WebChat integrations.
+
 ## Key Paths
 - HTML docs: `docs/index.html`
 - Specs loader: `docs/specsLoader.html?spec=matrix.md`
 - Specs directory: `docs/specs/`
 - Coding style authority: `docs/specs/DS001-coding-style.md`
 - Global architecture: `docs/specs/DS003-global-architecture.md`
+
+## General Working Practices
+- Keep integration behavior deterministic between REPL, single-shot CLI, and webchat/MCP execution paths.
+- Prefer structured JSON contracts for cross-repository integrations (for example webchat autocomplete payloads).
+- Reuse command metadata from `SlashCommandHandler` as the canonical source for slash command names, descriptions, and sub-options.
+- When changing integration behavior, update both DS specs and `docs/index.html` in the same change set.

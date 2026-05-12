@@ -37,6 +37,17 @@
     AchillesCLI supports ESC cancellation for long-running prompt and slash-command executions.
     Cancellation is propagated as an abort signal to runtime calls, interrupted turns are not persisted to command history,
     and the next user input resumes normal interactive flow.
+    In webchat runtime mode (non-TTY stdin), ESC is accepted as a standalone input line to abort the current prompt.
+  </div>
+
+  <h2>MCP Tool Exposure</h2>
+  <div class="card">
+    AchillesCLI exposes its skill catalog as MCP tools via the AgentServer mechanism.
+    Each user skill is exposed as <code>execute_&lt;sanitised_skill_name&gt;</code> with an input schema.
+    WebChat clients query this catalog at session start to populate slash-command autocomplete menus.
+    For AchillesCLI slash commands, WebChat calls the dedicated command-catalog MCP tool
+    (<code>list_achilles_cli_commands</code>) and receives a structured command+subcommand catalog.
+    If no tools are available, clients silently fall back to an empty command list.
   </div>
 
   <h2>Specification Entry Points</h2>
