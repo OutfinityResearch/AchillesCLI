@@ -307,11 +307,6 @@ function hasSsoEnvironment() {
 
 async function runWebchatInteractive(agent, options) {
     const { workingDir, skillsDir, skipBashPermissions, debug, renderMarkdown } = options;
-    const controlLogger = createWebchatControlLogger(workingDir);
-    controlLogger.log('stdin-init', {
-        isTTY: Boolean(process.stdin?.isTTY),
-        hasSetRawMode: typeof process.stdin?.setRawMode === 'function',
-    });
     const historyManager = new HistoryManager({ workingDir });
     const slashState = {
         activeTier: TIERS.FAST,
@@ -351,11 +346,6 @@ async function runWebchatInteractive(agent, options) {
     let processingChain = Promise.resolve();
     const stdinIsTTY = Boolean(process.stdin?.isTTY);
     const handleControlData = (chunk) => {
-        controlLogger.log('stdin-control-chunk', {
-            isProcessing,
-            escaped: isWebchatEscapeControlChunk(chunk),
-            chunk: previewControlChunk(chunk),
-        });
         handleWebchatControlChunk(chunk, {
             agent,
             isProcessing,
@@ -387,9 +377,6 @@ async function runWebchatInteractive(agent, options) {
             isProcessing = true;
             activeAbortController = new AbortController();
             const isSlash = slashHandler.isSlashCommand(message);
-            controlLogger.log(isSlash ? 'slash-start' : 'prompt-start', {
-                messagePreview: message.slice(0, 160),
-            });
             try {
                 if (isSlash) {
                     const slashOutput = await executeWebchatSlashCommand({
@@ -432,23 +419,11 @@ async function runWebchatInteractive(agent, options) {
                     process.stdout.write(`${result}\n`);
                     historyManager.add(message);
                 }
-
-                controlLogger.log(isSlash ? 'slash-finish' : 'prompt-finish', {
-                    status: 'ok',
-                });
             } catch (error) {
                 if (activeAbortController?.signal?.aborted || error?.name === 'AbortError') {
                     process.stdout.write('[cancelled]\n');
-                    controlLogger.log(isSlash ? 'slash-finish' : 'prompt-finish', {
-                        status: 'cancelled',
-                        reason: activeAbortController?.signal?.reason || error?.message || 'abort',
-                    });
                 } else {
                     process.stdout.write(`[error] ${error.message}\n`);
-                    controlLogger.log(isSlash ? 'slash-finish' : 'prompt-finish', {
-                        status: 'error',
-                        error: error?.message || String(error),
-                    });
                 }
             } finally {
                 isProcessing = false;
@@ -493,25 +468,15 @@ async function runWebchatInteractive(agent, options) {
                 } else {
                     partialLine = segments.pop() ?? '';
                     if (partialLine.includes('\x1b') || partialLine.includes('\u001b')) {
-                        controlLogger.log('clear-control-partial-line', {
-                            partialLine: previewText(partialLine),
-                        });
                         partialLine = '';
                     }
                 }
 
                 for (const segment of segments) {
                     if (segment.includes('\x1b') || segment.includes('\u001b')) {
-                        controlLogger.log('skip-control-segment', {
-                            segment: previewText(segment),
-                        });
                         continue;
                     }
                     pendingLines.push(segment);
-                    controlLogger.log('queue-line', {
-                        line: previewText(segment),
-                        pendingCount: pendingLines.length,
-                    });
                     scheduleFlush();
                 }
             };
@@ -547,29 +512,6 @@ async function runWebchatInteractive(agent, options) {
             } catch (_) {}
         }
     }
-}
-
-function createWebchatControlLogger(workingDir) {
-    const logDir = path.join(workingDir, '.achilles-cli', 'logs');
-    const logFile = path.join(logDir, 'webchat-control.log');
-
-    const append = (line) => {
-        try {
-            fs.mkdirSync(logDir, { recursive: true });
-            fs.appendFileSync(logFile, `${line}\n`, 'utf8');
-        } catch (_) {
-            // Ignore logging failures during webchat runtime.
-        }
-    };
-
-    return {
-        path: logFile,
-        log(event, payload = null) {
-            const timestamp = new Date().toISOString();
-            const suffix = payload ? ` ${safeJsonStringify(payload)}` : '';
-            append(`${timestamp} ${event}${suffix}`);
-        }
-    };
 }
 
 async function executeWebchatSkill({ agent, skillName, input, opts = {}, slashState }) {
@@ -700,31 +642,6 @@ function formatHistoryEntries(entries = []) {
         return 'No history entries.';
     }
     return entries.map((entry) => `${entry.index}. ${entry.command}`).join('\n');
-}
-
-function safeJsonStringify(value) {
-    try {
-        return JSON.stringify(value);
-    } catch (_) {
-        return JSON.stringify({ error: 'stringify_failed' });
-    }
-}
-
-function previewControlChunk(chunk) {
-    const raw = Buffer.isBuffer(chunk)
-        ? chunk.toString('utf8')
-        : String(chunk ?? '');
-    return raw
-        .replace(/\x1b/g, '<ESC>')
-        .replace(/\r/g, '<CR>')
-        .replace(/\n/g, '<LF>');
-}
-
-function previewText(value) {
-    return String(value ?? '')
-        .replace(/\r/g, '<CR>')
-        .replace(/\n/g, '<LF>')
-        .slice(0, 160);
 }
 
 function createCliInputReader() {
