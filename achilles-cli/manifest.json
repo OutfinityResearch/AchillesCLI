@@ -1,6 +1,7 @@
 {
     "container": "docker.io/library/node:22.20-alpine",
     "install": "",
+    "lite-sandbox": true,
     "env": [
         "SOUL_GATEWAY_API_KEY",
         "WORKSPACE_PATH",
