@@ -21,6 +21,7 @@ import { BUILT_IN_SKILLS, TIERS } from './lib/constants.mjs';
 import { buildOrchestratorSystemPrompt } from './prompts/orchestrator-prompt.mjs';
 import { ensureAchillesCliDir } from './lib/repoManager.mjs';
 import { isWebchatEscapeControlChunk, handleWebchatControlChunk } from './lib/webchatControl.mjs';
+import { createWebchatTagRelay, isTruthyRelayFlag, normalizeWebchatMessage } from './lib/webchatTagRelay.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,6 +75,15 @@ async function main() {
     let uiStyle = process.env.ACHILLES_CLI_UI || 'claude-code'; // Default UI style
     let skipBashPermissions = false; // Skip bash command permission prompts
     const cliSkillRoots = []; // Skill roots from --skill-root flags
+    const tagRelayConfig = {
+        enabled: false,
+        agent: '',
+        submitTool: '',
+        listTool: '',
+        tags: '',
+        timeoutMs: 450000,
+        kind: 'tag-relay',
+    };
 
     for (let i = 0; i < args.length; i++) {
         const arg = args[i];
@@ -96,6 +106,55 @@ async function main() {
             if (rootPath) {
                 cliSkillRoots.push(path.resolve(rootPath));
             }
+        } else if (arg === '--research-tags' || arg === '--tag-relay') {
+            tagRelayConfig.enabled = true;
+            tagRelayConfig.kind = arg === '--research-tags' ? 'research' : tagRelayConfig.kind;
+        } else if (arg.startsWith('--research-tags=')) {
+            tagRelayConfig.enabled = isTruthyRelayFlag(arg.slice('--research-tags='.length));
+            tagRelayConfig.kind = 'research';
+        } else if (arg.startsWith('--tag-relay=')) {
+            tagRelayConfig.enabled = isTruthyRelayFlag(arg.slice('--tag-relay='.length));
+        } else if (arg === '--tag-relay-agent' || arg === '--research-relay-agent') {
+            tagRelayConfig.agent = args[i + 1] || '';
+            tagRelayConfig.kind = arg === '--research-relay-agent' ? 'research' : tagRelayConfig.kind;
+            i += 1;
+        } else if (arg.startsWith('--tag-relay-agent=')) {
+            tagRelayConfig.agent = arg.slice('--tag-relay-agent='.length);
+        } else if (arg.startsWith('--research-relay-agent=')) {
+            tagRelayConfig.agent = arg.slice('--research-relay-agent='.length);
+            tagRelayConfig.kind = 'research';
+        } else if (arg === '--tag-relay-submit-tool' || arg === '--research-relay-tool') {
+            tagRelayConfig.submitTool = args[i + 1] || '';
+            tagRelayConfig.kind = arg === '--research-relay-tool' ? 'research' : tagRelayConfig.kind;
+            i += 1;
+        } else if (arg.startsWith('--tag-relay-submit-tool=')) {
+            tagRelayConfig.submitTool = arg.slice('--tag-relay-submit-tool='.length);
+        } else if (arg.startsWith('--research-relay-tool=')) {
+            tagRelayConfig.submitTool = arg.slice('--research-relay-tool='.length);
+            tagRelayConfig.kind = 'research';
+        } else if (arg === '--tag-relay-list-tool' || arg === '--research-relay-list-tool') {
+            tagRelayConfig.listTool = args[i + 1] || '';
+            tagRelayConfig.kind = arg === '--research-relay-list-tool' ? 'research' : tagRelayConfig.kind;
+            i += 1;
+        } else if (arg.startsWith('--tag-relay-list-tool=')) {
+            tagRelayConfig.listTool = arg.slice('--tag-relay-list-tool='.length);
+        } else if (arg.startsWith('--research-relay-list-tool=')) {
+            tagRelayConfig.listTool = arg.slice('--research-relay-list-tool='.length);
+            tagRelayConfig.kind = 'research';
+        } else if (arg === '--tag-relay-tags' || arg === '--research-relay-tags') {
+            tagRelayConfig.tags = args[i + 1] || '';
+            tagRelayConfig.kind = arg === '--research-relay-tags' ? 'research' : tagRelayConfig.kind;
+            i += 1;
+        } else if (arg.startsWith('--tag-relay-tags=')) {
+            tagRelayConfig.tags = arg.slice('--tag-relay-tags='.length);
+        } else if (arg.startsWith('--research-relay-tags=')) {
+            tagRelayConfig.tags = arg.slice('--research-relay-tags='.length);
+            tagRelayConfig.kind = 'research';
+        } else if (arg === '--tag-relay-timeout-ms') {
+            tagRelayConfig.timeoutMs = Number(args[i + 1]) || tagRelayConfig.timeoutMs;
+            i += 1;
+        } else if (arg.startsWith('--tag-relay-timeout-ms=')) {
+            tagRelayConfig.timeoutMs = Number(arg.slice('--tag-relay-timeout-ms='.length)) || tagRelayConfig.timeoutMs;
         } else if (arg === '--help' || arg === '-h') {
             printHelp();
             process.exit(0);
@@ -264,6 +323,7 @@ async function main() {
             skipBashPermissions,
             debug,
             renderMarkdown,
+            tagRelayConfig,
         });
     } else {
         // REPL mode
@@ -306,8 +366,9 @@ function hasSsoEnvironment() {
 }
 
 async function runWebchatInteractive(agent, options) {
-    const { workingDir, skillsDir, skipBashPermissions, debug, renderMarkdown } = options;
+    const { workingDir, skillsDir, skipBashPermissions, debug, renderMarkdown, tagRelayConfig } = options;
     const historyManager = new HistoryManager({ workingDir });
+    const tagRelay = createWebchatTagRelay(tagRelayConfig);
     const slashState = {
         activeTier: TIERS.FAST,
         pinnedModel: null,
@@ -362,9 +423,10 @@ async function runWebchatInteractive(agent, options) {
             return;
         }
 
-        const message = pendingLines.join('\n').trim();
+        const normalizedMessage = normalizeWebchatMessage(pendingLines.join('\n'));
         pendingLines = [];
 
+        const message = normalizedMessage.text.trim();
         if (!message) {
             return;
         }
@@ -393,6 +455,19 @@ async function runWebchatInteractive(agent, options) {
                         process.stdout.write(`${slashOutput.output}\n`);
                     }
                 } else {
+                    const tagRelayResult = await tagRelay.handle(normalizedMessage, {
+                        agentName: 'achilles-cli',
+                        workingDir,
+                        signal: activeAbortController.signal,
+                    });
+                    if (tagRelayResult?.handled) {
+                        if (tagRelayResult.output) {
+                            process.stdout.write(`${tagRelayResult.output}\n`);
+                        }
+                        historyManager.add(message);
+                        return;
+                    }
+
                     let result = await agent.executePrompt(message, {
                         context,
                         systemPrompt: buildOrchestratorSystemPrompt(),

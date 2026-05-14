@@ -50,6 +50,15 @@
     If no tools are available, clients silently fall back to an empty command list.
   </div>
 
+  <h2>WebChat Tag Relay</h2>
+  <div class="card">
+    AchillesCLI can opt into generic tagged-message relay only when launched with explicit
+    <code>--tag-relay-*</code> parameters. Ploinky WebChat supplies the envelope and selected-agent
+    invocation token; AchillesCLI owns tag detection for that configured session and does not assume
+    a concrete downstream relay unless the launch URL names one. Launchers may pass
+    <code>--tag-relay-tags</code> to preserve unknown-mention fallthrough without a catalog preflight.
+  </div>
+
   <h2>Specification Entry Points</h2>
   <ul>
     <li><a href="./specsLoader.html?spec=matrix.md">Specification Matrix</a></li>

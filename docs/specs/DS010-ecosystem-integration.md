@@ -34,6 +34,7 @@ Ploinky integration boundary:
 3. Session/webchat runtime paths should keep durable-state assumptions aligned with orchestrated process lifecycles.
 4. AchillesCLI exposes its skill catalog as MCP tools via the AgentServer mechanism. Each user skill is exposed as `execute_<sanitised_skill_name>` with an input schema derived from the skill's argument expectations. WebChat clients query this catalog at session start to populate slash-command autocomplete menus. AchillesCLI slash commands are provided through a dedicated MCP catalog tool that returns a structured command/sub-command payload and does not execute chat prompts.
 5. The webchat interactive mode (`runWebchatInteractive`) accepts ESC (`\x1b`) as a standalone input line to cancel the current prompt execution. This enables remote cancel from browser-based WebChat sessions.
+6. The webchat interactive mode may enable generic tag relay only through explicit launch parameters such as `--tag-relay-agent`, `--tag-relay-submit-tool`, `--tag-relay-tags`, and `--tag-relay-list-tool`. AchillesCLI must not assume a concrete downstream relay agent unless the launch context names it, and Ploinky WebChat remains only the envelope and invocation-token transport. When `--tag-relay-tags` is present, AchillesCLI uses that explicit allowlist to preserve unknown-mention fallthrough without a catalog preflight.
 
 AchillesIDE interoperability boundary:
 1. AchillesIDE documents a broader agent ecosystem with MCP and workspace routing expectations.

@@ -16,6 +16,7 @@ This file is the coding-style authority for AchillesCLI. It defines implementati
    - Use ESM imports/exports in runtime modules.
    - Keep directory-local naming conventions consistent with current files.
    - Prefer focused modules with explicit responsibilities over large multipurpose files.
+   - Follow SOLID and DRY principles: keep transport, parsing, relay dispatch, and domain-specific policy in separate focused modules, and reuse shared helpers instead of duplicating integration logic.
 2. Structural conventions:
    - CLI bootstrap logic remains in `src/index.mjs`.
    - REPL lifecycle and interactive behavior remain in `src/repl/`.
