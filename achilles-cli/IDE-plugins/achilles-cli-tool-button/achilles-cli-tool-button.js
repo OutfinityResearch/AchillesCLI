@@ -1,3 +1,5 @@
+import { buildCopilotUrl } from './copilot-launch.js';
+
 export class AchillesCliToolButton {
     constructor(element, invalidate) {
         this.element = element;
@@ -58,6 +60,6 @@ export class AchillesCliToolButton {
     }
 
     handleClick() {
-        window.open('/webchat?agent=achilles-cli', '_blank', 'noopener');
+        window.open(buildCopilotUrl(this.hostContext), '_blank', 'noopener,noreferrer');
     }
 }

@@ -1,21 +1,7 @@
+import { buildCopilotUrl } from './copilot-launch.js';
+
 function normalizePath(value) {
     return String(value || '').trim();
-}
-
-function buildCopilotUrl(context) {
-    const selectedFsPath = normalizePath(context?.selectedFsPath);
-    if (!selectedFsPath) {
-        return '';
-    }
-    const workingDir = context?.isDirectory ? selectedFsPath : '';
-    if (!workingDir) {
-        return '';
-    }
-    const params = new URLSearchParams({
-        agent: 'achilles-cli',
-        dir: workingDir
-    });
-    return `/webchat?${params.toString()}`;
 }
 
 export async function getMenuItems({ context, plugin }) {
