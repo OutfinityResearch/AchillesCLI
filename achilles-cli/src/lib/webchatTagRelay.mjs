@@ -6,6 +6,7 @@ const DEFAULT_TIMEOUT_MS = 450000;
 const MAX_RESOURCE_BYTES = 128 * 1024;
 const MAX_RESOURCE_TOTAL_BYTES = 384 * 1024;
 const TEXT_LIKE_EXT_RE = /\.(txt|md|markdown|json|yaml|yml|csv|tsv|xml|js|mjs|ts|tsx|jsx|py|rb|go|rs|java|c|cc|cpp|h|hpp)$/i;
+const REFERENCE_SECRET_RE = /(^|\/)\.secrets$|\.secrets$/i;
 
 function boolFromFlag(value) {
     return /^(1|true|yes|on)$/i.test(String(value || '').trim());
@@ -20,25 +21,52 @@ function normalizeTagList(value) {
     return new Set(tags);
 }
 
+export function normalizeWebchatReferences(rawReferences) {
+    if (!Array.isArray(rawReferences)) return [];
+    const out = [];
+    const seen = new Set();
+    for (const entry of rawReferences) {
+        if (!entry || typeof entry !== 'object') continue;
+        const kind = typeof entry.kind === 'string' ? entry.kind.trim() : '';
+        const refPath = typeof entry.path === 'string' ? entry.path.trim() : '';
+        if (!kind || !refPath) continue;
+        if (refPath.includes('\0')) continue;
+        if (kind === 'workspace-path') {
+            const normalizedPath = refPath.replace(/\\+/g, '/');
+            if (normalizedPath.startsWith('/')) continue;
+            if (normalizedPath.split('/').some((segment) => segment === '..')) continue;
+            if (REFERENCE_SECRET_RE.test(normalizedPath)) continue;
+            const key = `${kind}:${normalizedPath}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({
+                kind,
+                path: normalizedPath,
+                type: entry.type ? String(entry.type).trim() || null : null,
+                label: entry.label ? String(entry.label).trim() || null : null,
+            });
+        }
+    }
+    return out;
+}
+
 export function normalizeWebchatMessage(raw) {
     const text = String(raw || '').trim();
     if (!text) {
-        return { text: '', rawText: '', attachments: [], invocationToken: '' };
+        return { text: '', rawText: '', attachments: [], references: [], invocationToken: '' };
     }
     try {
         const parsed = JSON.parse(text);
         if (!parsed || typeof parsed !== 'object' || !parsed.__webchatMessage) {
-            return { text, rawText: text, attachments: [], invocationToken: '' };
+            return { text, rawText: text, attachments: [], references: [], invocationToken: '' };
         }
         const messageText = typeof parsed.text === 'string' ? parsed.text : '';
         const attachments = Array.isArray(parsed.attachments) ? parsed.attachments : [];
+        const references = normalizeWebchatReferences(parsed.references);
         const invocationToken = typeof parsed.invocation?.token === 'string'
             ? parsed.invocation.token
             : '';
-        if (!attachments.length) {
-            return { text: messageText, rawText: messageText, attachments: [], invocationToken };
-        }
-        const lines = attachments
+        const attachmentLines = attachments
             .filter((entry) => entry && typeof entry === 'object')
             .map((entry) => {
                 const name = entry.filename || entry.id || 'attachment';
@@ -46,16 +74,28 @@ export function normalizeWebchatMessage(raw) {
                 const mime = entry.mime ? ` mime=${entry.mime}` : '';
                 return `- ${name}${mime}${localPath}`;
             });
+        const referenceLines = references.map((entry) => {
+            const kind = entry.type || 'file';
+            return `- ${entry.label || entry.path} (${kind} path=${entry.path})`;
+        });
+        const sections = [];
+        if (attachmentLines.length) {
+            sections.push(`Attachments:\n${attachmentLines.join('\n')}`);
+        }
+        if (referenceLines.length) {
+            sections.push(`Referenced workspace paths:\n${referenceLines.join('\n')}`);
+        }
         return {
-            text: lines.length
-                ? `${messageText}\n\nAttachments:\n${lines.join('\n')}`
+            text: sections.length
+                ? `${messageText}\n\n${sections.join('\n\n')}`
                 : messageText,
             rawText: messageText,
             attachments,
+            references,
             invocationToken,
         };
     } catch {
-        return { text, rawText: text, attachments: [], invocationToken: '' };
+        return { text, rawText: text, attachments: [], references: [], invocationToken: '' };
     }
 }
 
@@ -110,6 +150,92 @@ function resolveSharedAttachmentPath(localPath, sharedRoot = '/shared') {
     } catch {
         return null;
     }
+}
+
+function resolveWorkspaceReferencePath(reference, options = {}) {
+    const baseDir = options.workingDir || options.workspaceRoot || process.env.PLOINKY_WORKSPACE_ROOT || '';
+    if (!baseDir) return { status: 'unsafe' };
+    const normalizedPath = String(reference?.path || '').replace(/\\+/g, '/').replace(/^\/+/, '');
+    if (!normalizedPath) return { status: 'unsafe' };
+    if (normalizedPath.split('/').some((segment) => segment === '..')) return { status: 'unsafe' };
+    if (REFERENCE_SECRET_RE.test(normalizedPath)) return { status: 'unsafe' };
+    const absoluteBase = path.resolve(baseDir);
+    const resolved = path.resolve(absoluteBase, normalizedPath);
+    const relative = path.relative(absoluteBase, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) return { status: 'unsafe' };
+    if (!fs.existsSync(resolved)) return { status: 'missing' };
+    try {
+        const real = fs.realpathSync(resolved);
+        const realBase = fs.realpathSync(absoluteBase);
+        const realRelative = path.relative(realBase, real);
+        if (realRelative.startsWith('..') || path.isAbsolute(realRelative)) return { status: 'unsafe' };
+        return { status: 'ok', absolutePath: real };
+    } catch {
+        return { status: 'missing' };
+    }
+}
+
+export function materializeWorkspaceReferences(references = [], options = {}) {
+    const resources = [];
+    const paths = [];
+    const warnings = [];
+    let totalBytes = 0;
+    for (const reference of Array.isArray(references) ? references : []) {
+        if (!reference || typeof reference !== 'object') continue;
+        if (reference.kind !== 'workspace-path') continue;
+        const resolution = resolveWorkspaceReferencePath(reference, options);
+        const label = reference.label || reference.path;
+        if (resolution.status === 'unsafe') {
+            warnings.push(`Reference '${label}' is not a safe workspace path and was not forwarded.`);
+            continue;
+        }
+        if (resolution.status === 'missing') {
+            warnings.push(`Reference '${label}' is no longer available on disk.`);
+            continue;
+        }
+        const filePath = resolution.absolutePath;
+        let stat;
+        try {
+            stat = fs.statSync(filePath);
+        } catch {
+            warnings.push(`Reference '${label}' is no longer available on disk.`);
+            continue;
+        }
+        if (stat.isDirectory()) {
+            paths.push({
+                path: reference.path,
+                type: 'directory',
+                label: reference.label || null,
+            });
+            continue;
+        }
+        if (!stat.isFile()) {
+            warnings.push(`Reference '${label}' is not a regular file.`);
+            continue;
+        }
+        if (stat.size > MAX_RESOURCE_BYTES) {
+            warnings.push(`Reference '${label}' exceeds ${MAX_RESOURCE_BYTES} bytes and was not forwarded.`);
+            continue;
+        }
+        if (totalBytes + stat.size > MAX_RESOURCE_TOTAL_BYTES) {
+            warnings.push('Reference forwarding reached the total byte cap; remaining files were skipped.');
+            break;
+        }
+        const buffer = fs.readFileSync(filePath);
+        totalBytes += buffer.length;
+        const textLike = isTextLikeAttachment('', filePath);
+        resources.push({
+            name: reference.path,
+            mime: textLike ? 'text/plain' : 'application/octet-stream',
+            size: buffer.length,
+            workspacePath: reference.path,
+            label: reference.label || null,
+            ...(textLike
+                ? { content: buffer.toString('utf8') }
+                : { base64: buffer.toString('base64') })
+        });
+    }
+    return { resources, paths, warnings };
 }
 
 export function materializeTagRelayAttachments(attachments = [], options = {}) {
@@ -341,22 +467,33 @@ export function createWebchatTagRelay(rawConfig = {}) {
         if (knownTags && !knownTags.has(mention.tag)) {
             return null;
         }
-        const { resources, warnings } = materializeTagRelayAttachments(message.attachments || []);
+        const { resources: attachmentResources, warnings: attachmentWarnings } = materializeTagRelayAttachments(message.attachments || []);
+        const referenceWorkingDir = context.workingDir || process.env.PLOINKY_WORKSPACE_ROOT || '';
+        const { resources: referenceResources, paths: referencePaths, warnings: referenceWarnings } = materializeWorkspaceReferences(
+            message.references || [],
+            { workingDir: referenceWorkingDir }
+        );
+        const warnings = [...attachmentWarnings, ...referenceWarnings];
+        const resources = [...attachmentResources, ...referenceResources];
         const prompt = warnings.length
-            ? `${mention.prompt}\n\nAttachment forwarding notes:\n${warnings.map((entry) => `- ${entry}`).join('\n')}`
+            ? `${mention.prompt}\n\nReference forwarding notes:\n${warnings.map((entry) => `- ${entry}`).join('\n')}`
             : mention.prompt;
+        const submitArguments = {
+            backend: mention.tag,
+            prompt,
+            resources,
+            origin: {
+                type: config.kind,
+                surface: 'webchat',
+                agent: context.agentName || 'achilles-cli',
+                working_directory: context.workingDir || '',
+            }
+        };
+        if (referencePaths.length) {
+            submitArguments.paths = referencePaths;
+        }
         try {
-            const response = await callAgentTool(config.agent, config.submitTool, {
-                backend: mention.tag,
-                prompt,
-                resources,
-                origin: {
-                    type: config.kind,
-                    surface: 'webchat',
-                    agent: context.agentName || 'achilles-cli',
-                    working_directory: context.workingDir || '',
-                }
-            }, {
+            const response = await callAgentTool(config.agent, config.submitTool, submitArguments, {
                 invocationToken,
                 timeoutMs: config.timeoutMs,
                 signal: context.signal,
