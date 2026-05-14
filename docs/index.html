@@ -40,6 +40,13 @@
     In webchat runtime mode (non-TTY stdin), ESC is accepted as a standalone input line to abort the current prompt.
   </div>
 
+  <h2>WebChat Progress</h2>
+  <div class="card">
+    In webchat runtime mode, AchillesCLI emits structured progress metadata before loop-session tool calls.
+    The metadata carries the planner reason for the selected tool and is intended for browser UI progress rendering,
+    not for transcript or final-answer text.
+  </div>
+
   <h2>Repository Maintenance</h2>
   <div class="card">
     Cloned skill repositories live under <code>.achilles-cli/repos/</code>.
