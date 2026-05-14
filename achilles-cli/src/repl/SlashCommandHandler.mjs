@@ -120,6 +120,7 @@ export const COMMAND_DEFINITIONS = {
         description: 'Update a specific section of a skill',
         args: 'required',
         needsSkillArg: true,
+        catalogSubOptions: ['repos'],
     },
     'exec': {
         skill: null,
@@ -262,6 +263,15 @@ export const SUB_OPTIONS = {
             needsSkillArg: true,
         },
     },
+    'update': {
+        'repos': {
+            skill: null,
+            usage: '/update repos',
+            description: 'Pull all cloned repositories',
+            args: 'optional',
+            needsSkillArg: false,
+        },
+    },
 };
 
 /**
@@ -273,8 +283,12 @@ export function buildSlashCommandCatalog() {
 
     for (const [name, def] of Object.entries(COMMAND_DEFINITIONS)) {
         const subDefs = SUB_OPTIONS[name] || {};
-        const subCommands = Array.isArray(def.subOptions)
-            ? def.subOptions.map((subName) => {
+        const catalogSubOptions = [
+            ...(Array.isArray(def.subOptions) ? def.subOptions : []),
+            ...(Array.isArray(def.catalogSubOptions) ? def.catalogSubOptions : []),
+        ];
+        const subCommands = catalogSubOptions.length > 0
+            ? catalogSubOptions.map((subName) => {
                 const subDef = subDefs[subName] || {};
                 return {
                     name: subName,
@@ -368,6 +382,18 @@ export class SlashCommandHandler {
             const parts = rawArgs.split(/\s+/);
             const firstWord = parts[0].toLowerCase();
             if (cmdDef.subOptions.includes(firstWord)) {
+                return {
+                    command,
+                    subOption: firstWord,
+                    args: parts.slice(1).join(' ').trim(),
+                    rawArgs,
+                };
+            }
+        }
+        if (cmdDef && cmdDef.catalogSubOptions && rawArgs) {
+            const parts = rawArgs.split(/\s+/);
+            const firstWord = parts[0].toLowerCase();
+            if (cmdDef.catalogSubOptions.includes(firstWord)) {
                 return {
                     command,
                     subOption: firstWord,
@@ -558,6 +584,24 @@ export class SlashCommandHandler {
                 handled: true,
                 error: `Usage: ${subDef.usage}\n  ${subDef.description}`,
             };
+        }
+
+        // /update repos
+        if (command === 'update' && subOption === 'repos') {
+            const { updateRepos } = await import('../lib/repoManager.mjs');
+            try {
+                const result = updateRepos();
+                if (result.updated.length === 0) {
+                    return { handled: true, result: 'No repositories in .achilles-cli/repos/.' };
+                }
+                const lines = [`Updated repositories (${result.updated.length}):`];
+                for (const repo of result.updated) {
+                    lines.push(`  ${repo.name}`);
+                }
+                return { handled: true, result: lines.join('\n') };
+            } catch (error) {
+                return { handled: true, error: error.message };
+            }
         }
 
         // /list repos

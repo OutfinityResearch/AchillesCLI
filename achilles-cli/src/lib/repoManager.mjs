@@ -8,7 +8,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
 const ACHILLES_CLI_DIR = '.achilles-cli';
@@ -248,6 +248,67 @@ export function removeRepo(name, baseDir = process.cwd()) {
     return { status: 'removed', path: repoPath };
 }
 
+function getGitErrorOutput(error) {
+    const stderr = error?.stderr ? String(error.stderr).trim() : '';
+    const stdout = error?.stdout ? String(error.stdout).trim() : '';
+    const message = String(error?.message || '').trim();
+    return stderr || stdout || message || 'git pull failed';
+}
+
+function formatUpdateRepoFailures(failures) {
+    const details = failures
+        .map((failure) => `${failure.name}: ${failure.error}`)
+        .join('\n');
+    return `failed to update repos:\n${details}`;
+}
+
+/**
+ * Update all cloned repositories in .achilles-cli/repos/ with git pull.
+ *
+ * @param {string} [baseDir=process.cwd()]
+ * @returns {{ status: string, updated: Array<{ name: string, path: string, output: string }> }}
+ */
+export function updateRepos(baseDir = process.cwd()) {
+    const { reposDir } = ensureAchillesCliDir(baseDir);
+    const entries = fs.readdirSync(reposDir, { withFileTypes: true });
+    const updated = [];
+    const failures = [];
+
+    for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name.startsWith('.')) {
+            continue;
+        }
+
+        const repoPath = path.join(reposDir, entry.name);
+        try {
+            const output = execFileSync('git', ['pull'], {
+                cwd: repoPath,
+                encoding: 'utf-8',
+                stdio: ['ignore', 'pipe', 'pipe'],
+            }).trim();
+            updated.push({
+                name: entry.name,
+                path: repoPath,
+                output,
+            });
+        } catch (error) {
+            failures.push({
+                name: entry.name,
+                error: getGitErrorOutput(error),
+            });
+        }
+    }
+
+    if (failures.length > 0) {
+        const error = new Error(formatUpdateRepoFailures(failures));
+        error.failures = failures;
+        error.updated = updated;
+        throw error;
+    }
+
+    return { status: 'updated', updated };
+}
+
 export default {
     ensureAchillesCliDir,
     getReposDir,
@@ -257,5 +318,6 @@ export default {
     addRepo,
     listRepos,
     removeRepo,
+    updateRepos,
     extractRepoNameFromUrl,
 };

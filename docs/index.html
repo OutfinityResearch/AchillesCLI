@@ -40,6 +40,13 @@
     In webchat runtime mode (non-TTY stdin), ESC is accepted as a standalone input line to abort the current prompt.
   </div>
 
+  <h2>Repository Maintenance</h2>
+  <div class="card">
+    Cloned skill repositories live under <code>.achilles-cli/repos/</code>.
+    The slash command <code>/update repos</code> runs <code>git pull</code> in each cloned repository and reports
+    aggregated per-repository failures with a <code>failed to update repos:</code> message.
+  </div>
+
   <h2>MCP Tool Exposure</h2>
   <div class="card">
     AchillesCLI exposes its skill catalog as MCP tools via the AgentServer mechanism.
