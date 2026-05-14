@@ -19,7 +19,7 @@ import { UIContext } from './ui/UIContext.mjs';
 import { createProvider, getProviderNames } from './ui/providers/index.mjs';
 import { BUILT_IN_SKILLS, TIERS } from './lib/constants.mjs';
 import { buildOrchestratorSystemPrompt } from './prompts/orchestrator-prompt.mjs';
-import { ensureAchillesCliDir } from './lib/repoManager.mjs';
+import { ensureAchillesCliDir, ensureAgentLibLinksForRepos } from './lib/repoManager.mjs';
 import { isWebchatEscapeControlChunk, handleWebchatControlChunk } from './lib/webchatControl.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -157,6 +157,7 @@ async function main() {
 
     // Ensure .achilles-cli directory structure exists
     ensureAchillesCliDir(workingDir);
+    ensureAgentLibLinksForRepos(workingDir);
 
     // Merge all skill roots: built-in + bash-skills + CLI flags + node_modules skills
     const allSkillRoots = [

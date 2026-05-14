@@ -25,7 +25,7 @@ import { showHelp, getHelpTopics, getCommandHelp } from '../ui/HelpSystem.mjs';
 import { UIContext } from '../ui/UIContext.mjs';
 import { buildOrchestratorSystemPrompt } from '../prompts/orchestrator-prompt.mjs';
 import { IOServices } from 'achillesAgentLib';
-import { ensureAchillesCliDir } from '../lib/repoManager.mjs';
+import { ensureAchillesCliDir, ensureAgentLibLinksForRepos } from '../lib/repoManager.mjs';
 import { showHistory, searchHistory } from '../ui/HelpPrinter.mjs';
 
 // Import tier/model utilities from achillesAgentLib (direct path — not re-exported from index)
@@ -67,6 +67,7 @@ export class REPLSession {
 
         // Ensure .achilles-cli directory structure exists
         ensureAchillesCliDir(this.workingDir);
+        ensureAgentLibLinksForRepos(this.workingDir);
 
         // Active LLM tier for all prompt executions
         this.activeTier = options.tier || TIERS.FAST;
