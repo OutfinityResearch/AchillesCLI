@@ -543,7 +543,7 @@ ${C.bold}${C.yellow}Description:${C.reset}
 
 ${C.bold}${C.yellow}Output:${C.reset}
   Each skill shows: [type] skill-name
-  Types: tskill, cskill, dcgskill, oskill, mskill, claude
+  Types: tskill, cskill, dcgskill, oskill, mskill, anthropic
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /ls
@@ -593,7 +593,7 @@ ${C.bold}${C.yellow}Skill Types:${C.reset}
   ${C.cyan}dcgskill${C.reset} - Dynamic code generation skill (module or runtime LLM)
   ${C.cyan}oskill${C.reset}  - Orchestrator skill
   ${C.cyan}mskill${C.reset}  - MCP tool skill
-  ${C.cyan}claude${C.reset} - Claude skill (LLM loop session with tools)
+  ${C.cyan}anthropic${C.reset} - Anthropic-style skill bundle
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /write inventory tskill    ${C.dim}Create new tskill${C.reset}
@@ -857,7 +857,7 @@ ${C.bold}${C.yellow}Types:${C.reset}
   ${C.cyan}dcgskill${C.reset} - Dynamic code generation skill template
   ${C.cyan}oskill${C.reset}  - Orchestrator skill template
   ${C.cyan}mskill${C.reset}  - MCP skill template
-  ${C.cyan}claude${C.reset} - Claude skill template
+  ${C.cyan}anthropic${C.reset} - Anthropic-style skill template
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /template tskill
@@ -947,8 +947,8 @@ ${C.bold}${C.yellow}Usage:${C.reset}
 
 ${C.bold}${C.yellow}Description:${C.reset}
   Creates a documentation skill with full directory structure including
-  SKILL.md, resources/, and scripts/ directories. Uses the Claude skill
-  type (loop session with tools like ask-user, read, write, bash, webfetch).
+  SKILL.md, resources/, and scripts/ directories. Uses the Anthropic-style
+  skill format.
 
 ${C.bold}${C.yellow}Available Doc Types:${C.reset}
   ${C.green}doc-scientific${C.reset}       Scientific article (IEEE, APA, ACM)

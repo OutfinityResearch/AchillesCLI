@@ -42,9 +42,7 @@ You are a Skill Refiner that iteratively improves skills. Follow this loop:
 - update-section
 
 ## Description
-- refine: Start iterative improvement on a skill
-- evaluate: Check if current state meets requirements
-- fix: Apply fixes based on failure analysis
+Call this when the user wants an existing skill improved iteratively until it satisfies explicit requirements. Pass the skill name plus the target behavior or quality criteria. It reads, validates, generates, tests, evaluates failures, updates focused sections, and repeats until success or max iterations.
 
 ## Help
 Input: skillName plus refinement requirements.

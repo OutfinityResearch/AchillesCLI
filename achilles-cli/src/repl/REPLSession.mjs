@@ -227,13 +227,13 @@ export class REPLSession {
             throw new Error(`Skill "${skillName}" not found.`);
         }
 
-        const modulePath = path.join(this.builtInSkillsDir, skillName, `${skillName}.mjs`);
+        const modulePath = path.join(this.builtInSkillsDir, skillName, 'src', 'index.mjs');
         try {
             const loaded = await import(pathToFileURL(modulePath).href);
             if (typeof loaded?.action !== 'function') {
                 throw new Error(`Built-in module "${skillName}" has no action() export.`);
             }
-            return loaded.action(this.agent, input);
+            return loaded.action({ mainAgent: this.agent, promptText: input });
         } catch {
             throw new Error(`Skill "${skillName}" not found.`);
         }

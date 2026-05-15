@@ -549,13 +549,13 @@ async function executeBuiltInSkillModule(skillName, agent, input) {
         throw new Error('Skill name is required.');
     }
 
-    const modulePath = path.join(builtInSkillsDir, skillName, `${skillName}.mjs`);
+    const modulePath = path.join(builtInSkillsDir, skillName, 'src', 'index.mjs');
     try {
         const loaded = await import(pathToFileURL(modulePath).href);
         if (typeof loaded?.action !== 'function') {
             throw new Error(`Built-in module "${skillName}" has no action() export.`);
         }
-        return loaded.action(agent, input);
+        return loaded.action({ mainAgent: agent, promptText: input });
     } catch {
         throw new Error(`Skill "${skillName}" not found.`);
     }
@@ -891,8 +891,7 @@ function registerSkillRoots(agent, skillRoots, logger) {
             continue;
         }
 
-        // Backward compatibility: achillesAgentLib discovery currently skips cgskill.md.
-        // Built-in Achilles CLI skills still use cgskill.md, so register them explicitly.
+        // Backward compatibility for legacy skill repos that still use cgskill.md.
         discovered = mergeCgskillRecords(skillRoot, discovered);
 
         for (const skillRecord of discovered) {
@@ -900,6 +899,8 @@ function registerSkillRoots(agent, skillRoots, logger) {
             agent._registerSkill(skillRecord);
         }
     }
+
+    agent._refreshOrchestratedSkillIndex?.();
 }
 
 function mergeCgskillRecords(skillRoot, discovered) {

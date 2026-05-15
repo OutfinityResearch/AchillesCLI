@@ -51,7 +51,7 @@ export const SKILL_TYPE_NAMES = {
   OSKILL: 'oskill',
   MSKILL: 'mskill',
   DCGSKILL: 'dcgskill',
-  CLAUDE: 'claude',
+  ANTHROPIC: 'anthropic',
 };
 
 /**

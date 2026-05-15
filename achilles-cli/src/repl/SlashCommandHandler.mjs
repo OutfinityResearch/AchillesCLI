@@ -75,7 +75,7 @@ export const COMMAND_DEFINITIONS = {
     'template': {
         skill: BUILT_IN_SKILLS.GET_TEMPLATE,
         usage: '/template <type>',
-        description: 'Get blank template (tskill, cskill, dcgskill, claude, etc.)',
+        description: 'Get blank template (tskill, cskill, dcgskill, anthropic, etc.)',
         args: 'required',
         needsSkillArg: false,
     },

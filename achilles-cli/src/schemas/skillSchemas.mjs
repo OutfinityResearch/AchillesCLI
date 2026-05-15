@@ -42,10 +42,10 @@ export const SKILL_TYPES = {
         requiredSections: ['Description', 'Prompt'],
         optionalSections: ['Help', 'Argument', 'LLM-Mode', 'Examples'],
     },
-    claude: {
+    anthropic: {
         fileName: 'SKILL.md',
         generatedFileName: null,
-        description: 'Claude skill - LLM loop session with tools (ask-user, run-script, get-resource)',
+        description: 'Anthropic-style skill - portable instruction/resource bundle',
         requiredSections: [],
         optionalSections: ['Help', 'Scripts', 'Resources', 'Examples'],
     },
@@ -318,7 +318,7 @@ Input: { "data": "...", "options": { "format": "json" } }
 Output: { "result": "..." }
 `,
 
-    claude: `# [Skill Name]
+    anthropic: `# [Skill Name]
 
 [One-line summary of what this skill does]
 
@@ -395,14 +395,13 @@ export function detectSkillType(content) {
         return 'cgskill';
     }
 
-    // Check for Claude skill - has Scripts or Resources sections,
-    // or mentions run-script/get-resource/ask-user tools
+    // Check for Anthropic-style skill resource/script sections.
     if (contentLower.includes('## scripts') ||
         contentLower.includes('## resources') ||
         contentLower.includes('run-script') ||
         contentLower.includes('get-resource') ||
         contentLower.includes('ask-user')) {
-        return 'claude';
+        return 'anthropic';
     }
 
     return null;

@@ -276,8 +276,7 @@ achilles-agent-lib/
 │   ├── OrchestratorSkillsSubsystem # oskill: Skill routing
 │   ├── InteractiveSkillsSubsystem  # iskill: Conversational
 │   ├── DBTableSkillsSubsystem      # tskill: Database entities
-│   ├── MCPSkillsSubsystem          # mskill: MCP protocol
-│   └── ClaudeSkillsSubsystem       # Generic skills
+│   └── MCPSkillsSubsystem          # mskill: MCP protocol
 │
 └── utils/
     ├── ActionReporter.mjs      # Real-time progress feedback
