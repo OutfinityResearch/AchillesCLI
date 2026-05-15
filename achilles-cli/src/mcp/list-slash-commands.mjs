@@ -1,9 +1,30 @@
 #!/usr/bin/env node
 
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { discoverSkills } from 'achillesAgentLib/MainAgent';
+import { parseSkillDocument } from 'achillesAgentLib/utils/skillDocumentParser.mjs';
 import { buildSlashCommandCatalog } from '../repl/SlashCommandHandler.mjs';
 
 const OPTIONAL_SKILL_ARG_COMMANDS = new Set(['/test', '/run-tests']);
+const NOOP_LOGGER = { debug() {}, warn() {}, info() {}, log() {}, error() {} };
+
+function normalizeHelpText(value) {
+    return String(value || '')
+        .replace(/\r\n/g, '\n')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join('\n');
+}
+
+function getSkillHelp(skill) {
+    if (!skill?.filePath) {
+        return '';
+    }
+    const descriptor = parseSkillDocument(skill.filePath);
+    return normalizeHelpText(descriptor?.sections?.help);
+}
 
 function readStdin() {
     return new Promise((resolve) => {
@@ -50,22 +71,25 @@ function extractInput(payload) {
     return {};
 }
 
-function buildSkillCompletions(dir) {
-    const skills = discoverSkills(dir || process.cwd(), { logger: { debug() {}, warn() {}, info() {}, log() {}, error() {} } });
-    const names = new Set();
+export function buildSkillCompletions(dir) {
+    const skills = discoverSkills(dir || process.cwd(), { logger: NOOP_LOGGER });
+    const completions = new Map();
     for (const skill of skills) {
         const name = String(skill?.shortName || skill?.name || '').trim();
         if (name) {
-            names.add(name);
+            const current = completions.get(name);
+            const help = getSkillHelp(skill);
+            if (!current || (!current.description && help)) {
+                completions.set(name, {
+                    value: name,
+                    label: name,
+                    description: help,
+                });
+            }
         }
     }
-    return Array.from(names)
-        .sort((a, b) => a.localeCompare(b))
-        .map((name) => ({
-            value: name,
-            label: name,
-            description: '',
-        }));
+    return Array.from(completions.values())
+        .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function commandUsesSkillArgument(command) {
@@ -85,7 +109,7 @@ function buildArgCompletions(command, skillCompletions) {
     return skillCompletions;
 }
 
-function toAutocompleteCatalog(options = {}) {
+export function toAutocompleteCatalog(options = {}) {
     const skillCompletions = buildSkillCompletions(options.dir);
     const commands = buildSlashCommandCatalog().map((command) => ({
         name: command.name,
@@ -109,6 +133,12 @@ function toAutocompleteCatalog(options = {}) {
     };
 }
 
-const payload = parsePayload(await readStdin());
-const input = extractInput(payload);
-process.stdout.write(`${JSON.stringify(toAutocompleteCatalog({ dir: input.dir }))}\n`);
+async function main() {
+    const payload = parsePayload(await readStdin());
+    const input = extractInput(payload);
+    process.stdout.write(`${JSON.stringify(toAutocompleteCatalog({ dir: input.dir }))}\n`);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+    await main();
+}

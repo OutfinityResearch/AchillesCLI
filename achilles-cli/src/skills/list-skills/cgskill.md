@@ -5,6 +5,9 @@ Lists all discovered skills in the catalog.
 ## Description
 Returns a formatted list of all registered skills with their types, summaries, and locations.
 
+## Help
+Input: optional type filter, or empty for all skills.
+
 ## Prompt
 List all skills currently registered in the skill catalog. Format the output to show skill name, type, summary, and path.
 

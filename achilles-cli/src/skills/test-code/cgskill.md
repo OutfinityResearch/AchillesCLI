@@ -5,6 +5,9 @@ Tests generated code by importing and running it.
 ## Description
 Loads and tests generated .mjs code for a skill, optionally with test input.
 
+## Help
+Input: skillName plus optional testInput.
+
 ## Prompt
 Import the generated module and test its exported functions.
 

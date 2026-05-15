@@ -5,6 +5,9 @@ Reads a skill's .specs.md specification file.
 ## Description
 Reads and returns the content of a skill's .specs.md file, which contains code generation prompts and validation requirements.
 
+## Help
+Input: skillName.
+
 ## Prompt
 Extract the skill name from the input and read its .specs.md file. Return the full content.
 

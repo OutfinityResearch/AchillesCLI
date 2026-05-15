@@ -5,6 +5,9 @@ Updates a specific section in a skill definition file.
 ## Description
 Modifies or adds a section (## heading) in a skill file without rewriting the entire file.
 
+## Help
+Input: JSON { skillName, section, content }.
+
 ## Prompt
 Update the specified section in the skill file. If the section doesn't exist, add it.
 

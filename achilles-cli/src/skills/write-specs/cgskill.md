@@ -5,6 +5,9 @@ Creates or updates a skill's .specs.md specification file.
 ## Description
 Creates or updates the .specs.md file for a skill. This file contains code generation prompts, validation requirements, and other specifications.
 
+## Help
+Input: JSON { skillName, content }.
+
 ## Prompt
 Parse the skill name and content to write to the .specs.md file. Create the file if it doesn't exist, or update it if it does.
 

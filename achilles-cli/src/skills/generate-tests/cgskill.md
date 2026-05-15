@@ -5,6 +5,9 @@ Generates comprehensive test files from cskill specifications.
 ## Description
 Reads cskill.md and all specs/*.md files to generate a comprehensive .tests.mjs file with test cases covering examples, constraints, error handling, and edge cases. This skill is specifically designed for cskill (code skill) types that have a specs/ folder.
 
+## Help
+Input: skillName or JSON { skillName, options: { force } }.
+
 ## Prompt
 You are a test generator for code skills (cskill). Given a skill's cskill.md definition and all specification files from specs/*.md, generate a comprehensive test file.
 

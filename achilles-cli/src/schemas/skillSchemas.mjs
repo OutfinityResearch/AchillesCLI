@@ -12,42 +12,42 @@ export const SKILL_TYPES = {
         generatedFileName: 'tskill.generated.mjs',
         description: 'Database table skill - defines entity schema with fields, validators, and business rules',
         requiredSections: ['Table Purpose', 'Fields'],
-        optionalSections: ['Derived Fields', 'Business Rules', 'Relationships'],
+        optionalSections: ['Help', 'Derived Fields', 'Business Rules', 'Relationships'],
     },
     cskill: {
         fileName: 'cskill.md',
         generatedFileName: null, // Uses separate .js file
         description: 'Code skill - LLM generates and executes code based on specs',
         requiredSections: ['Description', 'Input Format', 'Output Format'],
-        optionalSections: ['Constraints', 'Examples'],
+        optionalSections: ['Help', 'Constraints', 'Examples'],
     },
     oskill: {
         fileName: 'oskill.md',
         generatedFileName: null,
         description: 'Orchestrator skill - routes intents to other skills',
         requiredSections: ['Instructions', 'Allowed Skills'],
-        optionalSections: ['Description', 'Routing Logic', 'Fallback Behavior'],
+        optionalSections: ['Description', 'Help', 'Routing Logic', 'Fallback Behavior'],
     },
     mskill: {
         fileName: 'mskill.md',
         generatedFileName: null,
         description: 'MCP skill - uses Model Context Protocol tools',
         requiredSections: ['Description', 'MCP Tools'],
-        optionalSections: ['Configuration'],
+        optionalSections: ['Help', 'Configuration'],
     },
     cgskill: {
         fileName: 'cgskill.md',
         generatedFileName: null,
         description: 'Code generation skill - LLM decides text/code or uses hand-written module',
         requiredSections: ['Description', 'Prompt'],
-        optionalSections: ['Argument', 'LLM-Mode', 'Examples'],
+        optionalSections: ['Help', 'Argument', 'LLM-Mode', 'Examples'],
     },
     claude: {
         fileName: 'SKILL.md',
         generatedFileName: null,
         description: 'Claude skill - LLM loop session with tools (ask-user, run-script, get-resource)',
         requiredSections: [],
-        optionalSections: ['Scripts', 'Resources', 'Examples'],
+        optionalSections: ['Help', 'Scripts', 'Resources', 'Examples'],
     },
 };
 
@@ -56,6 +56,10 @@ export const SKILL_TEMPLATES = {
 
 ## Table Purpose
 [Describe what this table stores and its role in the system]
+
+## Help
+Invoke this skill with the record operation and the relevant field values.
+Example: /exec [skill-name] create name="Example" status="active"
 
 ## Fields
 
@@ -151,6 +155,10 @@ Must be one of the enumerated values.
 ## Description
 [Brief description of the skill's purpose and capabilities]
 
+## Help
+Invoke this skill with the required input described below.
+Example: /exec [skill-name] param1="value" param2="optional value"
+
 ## Input Format
 - **param1**: Description of first parameter
   - Type: string | number | object
@@ -203,6 +211,10 @@ This orchestrator routes user intents to the appropriate skills.
 - Examples:
   - "user says that" → skill_name_2
 
+## Help
+Invoke this orchestrator with the user-facing request it should coordinate.
+Example: /exec [orchestrator-name] describe the workflow or admin task to perform
+
 ## Routing Logic
 
 1. Analyze the user's intent using NLP
@@ -229,6 +241,10 @@ When intent is unclear:
 
 ## Description
 [One-line description of this MCP skill]
+
+## Help
+Invoke this skill with the operation that should be planned through the allowed MCP tools.
+Example: /exec [skill-name] describe the remote tool task to perform
 
 ## MCP Tools
 
@@ -260,6 +276,10 @@ When intent is unclear:
 
 ## Description
 [One-line description of what this skill does]
+
+## Help
+Invoke this skill with the primary input it should process.
+Example: /exec [skill-name] input text or JSON
 
 ## Prompt
 You are a specialized assistant for [task description].
@@ -303,6 +323,10 @@ Output: { "result": "..." }
 [One-line summary of what this skill does]
 
 You are a [role description]. Your task is to [primary objective].
+
+## Help
+Invoke this skill with the concrete user request it should handle.
+Example: /exec [skill-name] describe the task
 
 ## Guidelines
 

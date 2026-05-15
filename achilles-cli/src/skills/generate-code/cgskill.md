@@ -8,6 +8,9 @@ Uses LLM to generate JavaScript code from skill definitions:
 - **oskill**: Generates specs and action function for orchestrator skills with routing logic
 - **cskill**: Generates specs and action function wrapper for code skills
 
+## Help
+Input: skillName to generate code for.
+
 ## Prompt
 Analyze the skill definition and generate corresponding JavaScript/ESM code with all required exports.
 

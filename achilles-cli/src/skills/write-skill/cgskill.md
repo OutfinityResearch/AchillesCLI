@@ -5,6 +5,9 @@ Creates or updates a skill definition file.
 ## Description
 Writes content to a skill file, creating the skill directory if needed.
 
+## Help
+Input: JSON { skillName, fileName, content }.
+
 ## Prompt
 Write the provided content to a skill file. Create the directory if it doesn't exist.
 
