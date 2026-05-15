@@ -1,5 +1,5 @@
 {
-    "container": "docker.io/library/node:22.20-alpine",
+    "container": "docker.io/library/node:24.15.0-alpine",
     "install": "",
     "lite-sandbox": true,
     "env": [
