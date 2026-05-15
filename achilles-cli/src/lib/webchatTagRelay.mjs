@@ -152,6 +152,49 @@ function resolveSharedAttachmentPath(localPath, sharedRoot = '/shared') {
     }
 }
 
+function normalizeWorkspaceUploadAttachmentPath(localPath) {
+    const raw = String(localPath || '').trim();
+    if (!raw || raw.includes('\0')) return null;
+    const normalized = raw.replace(/\\+/g, '/').replace(/^\/+/, '');
+    if (!normalized.startsWith('uploads/')) return null;
+    const segments = normalized.split('/');
+    if (segments.some((segment) => segment === '..')) return null;
+    if (segments.includes('.webchat-upload-metadata')) return null;
+    if (REFERENCE_SECRET_RE.test(normalized)) return null;
+    return normalized;
+}
+
+function resolveWorkspaceUploadAttachmentPath(localPath, options = {}) {
+    const baseDir = options.workingDir || options.workspaceRoot || process.env.PLOINKY_WORKSPACE_ROOT || '';
+    if (!baseDir) return null;
+    const normalizedPath = normalizeWorkspaceUploadAttachmentPath(localPath);
+    if (!normalizedPath) return null;
+    const absoluteBase = path.resolve(baseDir);
+    const resolved = path.resolve(absoluteBase, normalizedPath);
+    const relative = path.relative(absoluteBase, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) return null;
+    try {
+        const real = fs.realpathSync(resolved);
+        const realBase = fs.realpathSync(absoluteBase);
+        const realRelative = path.relative(realBase, real);
+        if (realRelative.startsWith('..') || path.isAbsolute(realRelative)) return null;
+        return real;
+    } catch {
+        return null;
+    }
+}
+
+function resolveTagRelayAttachmentPath(attachment, options = {}) {
+    const sharedPath = resolveSharedAttachmentPath(
+        attachment?.localPath,
+        options.sharedRoot || process.env.PLOINKY_SHARED_DIR || '/shared'
+    );
+    if (sharedPath) {
+        return sharedPath;
+    }
+    return resolveWorkspaceUploadAttachmentPath(attachment?.localPath, options);
+}
+
 function resolveWorkspaceReferencePath(reference, options = {}) {
     const baseDir = options.workingDir || options.workspaceRoot || process.env.PLOINKY_WORKSPACE_ROOT || '';
     if (!baseDir) return { status: 'unsafe' };
@@ -247,11 +290,15 @@ export function materializeTagRelayAttachments(attachments = [], options = {}) {
         if (!attachment || typeof attachment !== 'object') {
             continue;
         }
-        const filePath = resolveSharedAttachmentPath(attachment.localPath, sharedRoot);
+        const filePath = resolveTagRelayAttachmentPath(attachment, {
+            sharedRoot,
+            workingDir: options.workingDir || options.workspaceRoot || process.env.PLOINKY_WORKSPACE_ROOT || '',
+            workspaceRoot: options.workspaceRoot || '',
+        });
         const filename = String(attachment.filename || attachment.id || 'attachment').trim() || 'attachment';
         const mime = String(attachment.mime || 'application/octet-stream').trim() || 'application/octet-stream';
         if (!filePath) {
-            warnings.push(`Attachment '${filename}' is not in shared blob storage and was not forwarded.`);
+            warnings.push(`Attachment '${filename}' is not in supported WebChat attachment storage and was not forwarded.`);
             continue;
         }
         let stat;
@@ -467,8 +514,11 @@ export function createWebchatTagRelay(rawConfig = {}) {
         if (knownTags && !knownTags.has(mention.tag)) {
             return null;
         }
-        const { resources: attachmentResources, warnings: attachmentWarnings } = materializeTagRelayAttachments(message.attachments || []);
         const referenceWorkingDir = context.workingDir || process.env.PLOINKY_WORKSPACE_ROOT || '';
+        const { resources: attachmentResources, warnings: attachmentWarnings } = materializeTagRelayAttachments(
+            message.attachments || [],
+            { workingDir: referenceWorkingDir }
+        );
         const { resources: referenceResources, paths: referencePaths, warnings: referenceWarnings } = materializeWorkspaceReferences(
             message.references || [],
             { workingDir: referenceWorkingDir }
