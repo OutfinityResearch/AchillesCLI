@@ -5,6 +5,9 @@ Shows a diff before applying changes to a skill file.
 ## Description
 Compares current content with proposed changes and displays differences.
 
+## Help
+Input: JSON { skillName, fileName, newContent }.
+
 ## Prompt
 Show the differences between the current file content and the proposed new content.
 

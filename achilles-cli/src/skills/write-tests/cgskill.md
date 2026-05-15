@@ -10,6 +10,9 @@ Uses LLM to generate comprehensive test files for skills:
 
 Creates a `{skillName}.tests.mjs` file in the `tests/` directory that can be run with `/run-tests`.
 
+## Help
+Input: skillName or JSON { skillName, options }.
+
 ## Prompt
 Analyze the skill definition and generated code (if available) to create comprehensive test cases covering:
 1. Valid inputs and expected outputs

@@ -5,6 +5,9 @@ Reads a skill definition file.
 ## Description
 Reads and returns the content of a skill's .md definition file.
 
+## Help
+Input: skillName.
+
 ## Prompt
 Extract the skill name from the input and read its definition file. Return the full content.
 

@@ -5,6 +5,9 @@ Validates a skill file against its schema.
 ## Description
 Checks if a skill definition has all required sections and follows the correct format for its type.
 
+## Help
+Input: skillName.
+
 ## Prompt
 Validate the skill definition and report any errors or warnings.
 

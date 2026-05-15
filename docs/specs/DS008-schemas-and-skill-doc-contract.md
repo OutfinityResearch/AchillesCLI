@@ -22,6 +22,7 @@ Document contract:
 1. Skill documents are markdown-based contract files.
 2. Validation output must be explicit about missing/invalid sections.
 3. Read and write paths must preserve document integrity and expected section order where applicable.
+4. All skill families may include an optional `## Help` section. This section is user-facing invocation guidance and is not used as runtime execution logic.
 
 `.specs.md` sidecar contract:
 1. Skills may include optional `.specs.md` files.
@@ -31,7 +32,8 @@ Document contract:
 Operational invariants:
 1. Schema rules must stay synchronized with built-in skill authoring and validation commands.
 2. Template generation must produce schema-valid initial structures.
-3. Contract changes to required sections must be reflected in both validation logic and documentation.
+3. Template generation must include `## Help` examples that explain how to invoke the generated skill from user-facing command surfaces.
+4. Contract changes to required sections must be reflected in both validation logic and documentation.
 
 ## Conclusion
 Schema and skill-document utilities provide the contract boundary that keeps skill authoring predictable and machine-checkable across CLI workflows.

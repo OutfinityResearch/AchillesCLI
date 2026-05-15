@@ -63,6 +63,8 @@
     (<code>list_achilles_cli_commands</code>) and receives a structured command+subcommand catalog.
     The tool accepts the WebChat working <code>dir</code> and uses AchillesAgentLib discovery to add
     available skill names as argument completions for slash commands that operate on skills.
+    If a skill descriptor contains <code>## Help</code>, that text is returned as the completion description
+    so remote UIs can show invocation guidance beside the skill name.
     If no tools are available, clients silently fall back to an empty command list.
   </div>
 

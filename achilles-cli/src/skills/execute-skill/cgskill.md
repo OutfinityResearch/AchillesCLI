@@ -3,6 +3,9 @@
 ## Description
 Executes a user skill and returns its output.
 
+## Help
+Input: skillName plus optional skillInput text.
+
 ## Prompt
 Execute the specified user skill with the provided input. Parse the input to extract the skill name and any arguments to pass to it.
 

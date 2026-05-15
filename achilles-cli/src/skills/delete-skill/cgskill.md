@@ -5,6 +5,9 @@ Deletes a skill directory and all its contents.
 ## Description
 Removes a skill directory including all definition files and generated code.
 
+## Help
+Input: skillName.
+
 ## Prompt
 Delete the specified skill directory. This action is irreversible.
 

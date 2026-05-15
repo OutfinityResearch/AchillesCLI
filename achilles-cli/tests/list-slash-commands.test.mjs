@@ -1,0 +1,81 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, symlink, unlink, lstat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const localDependencyPath = join(repoRoot, 'node_modules', 'achillesAgentLib');
+const workspaceDependencyPath = resolve(repoRoot, '../../../../ploinky/node_modules/achillesAgentLib');
+
+async function ensureLocalAchillesAgentLib() {
+    try {
+        await lstat(localDependencyPath);
+        return false;
+    } catch {
+        await symlink(workspaceDependencyPath, localDependencyPath, 'dir');
+        return true;
+    }
+}
+
+test('command catalog exposes skill Help as argument completion description', async () => {
+    const createdDependencyLink = await ensureLocalAchillesAgentLib();
+    let toAutocompleteCatalog;
+    try {
+        ({ toAutocompleteCatalog } = await import('../src/mcp/list-slash-commands.mjs'));
+    } finally {
+        if (createdDependencyLink) {
+            await unlink(localDependencyPath);
+        }
+    }
+
+    const tempRoot = await mkdtemp(join(tmpdir(), 'achilles-cli-catalog-'));
+    const skillDir = join(tempRoot, 'skills', 'admin-flow');
+    await mkdir(skillDir, { recursive: true });
+    await writeFile(join(skillDir, 'oskill.md'), [
+        '# Admin Flow',
+        '',
+        '## Description',
+        'Coordinates admin work.',
+        '',
+        '## Help',
+        'Use this for WebAdmin requests.',
+        'Example: /exec admin-flow change admin email to user@example.com',
+        '',
+        '## Instructions',
+        'Route the request.',
+        '',
+        '## Allowed Skills',
+        '- load-admin-context',
+    ].join('\n'));
+
+    const catalog = toAutocompleteCatalog({ dir: tempRoot });
+    const execCommand = catalog.commands.find((command) => command.name === '/exec');
+    const completion = execCommand.argCompletions.find((entry) => entry.value === 'admin-flow');
+
+    assert.equal(completion.description, [
+        'Use this for WebAdmin requests.',
+        'Example: /exec admin-flow change admin email to user@example.com',
+    ].join('\n'));
+});
+
+test('command catalog includes built-in AchillesCLI skills in skill completions', async () => {
+    const createdDependencyLink = await ensureLocalAchillesAgentLib();
+    let toAutocompleteCatalog;
+    try {
+        ({ toAutocompleteCatalog } = await import(`../src/mcp/list-slash-commands.mjs?builtin=${Date.now()}`));
+    } finally {
+        if (createdDependencyLink) {
+            await unlink(localDependencyPath);
+        }
+    }
+
+    const tempRoot = await mkdtemp(join(tmpdir(), 'achilles-cli-catalog-empty-'));
+    const catalog = toAutocompleteCatalog({ dir: tempRoot });
+    const execCommand = catalog.commands.find((command) => command.name === '/exec');
+    const completion = execCommand.argCompletions.find((entry) => entry.value === 'read-skill');
+
+    assert.equal(completion.label, 'read-skill');
+    assert.equal(completion.description, 'Input: skillName.');
+});

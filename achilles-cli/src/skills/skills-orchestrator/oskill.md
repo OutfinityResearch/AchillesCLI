@@ -40,3 +40,6 @@ This orchestrator is specialized for skill management and quality workflows:
 - validation and previews
 - code/test generation and execution
 - iterative refinement loops
+
+## Help
+Input: natural-language skill-management request.

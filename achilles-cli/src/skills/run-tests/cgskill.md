@@ -3,6 +3,9 @@
 ## Description
 Discovers and runs tests for skills. Supports per-skill tests (.tests.mjs files) and running all discovered tests.
 
+## Help
+Input: skillName, all, or JSON { target, options }.
+
 ## Prompt
 Execute tests and report results. The skill can:
 1. Run tests for a specific skill by name

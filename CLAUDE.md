@@ -1,40 +1,45 @@
-# achilles-cli — Local Guide
+# achilles-cli - Local Guide
 
-Achilles CLI: interactive + single-shot skill management. Outer dir = Ploinky repo; inner `achilles-cli/` = Ploinky agent.
+Achilles CLI is the interactive and single-shot skill management CLI used by the AssistOSExplorer workspace. The outer directory is the Ploinky repo; the inner `achilles-cli/` directory is the Ploinky agent.
 
 ## Reading order
 
 1. Parent `~/work/file-parser/AssistOSExplorer/CLAUDE.md` for workspace conventions.
-2. `ARCHITECTURE.md` (same dir) for the full architecture diagram, core components, dependency graph, data flow, and module reference.
-3. `achilles-cli/src/index.mjs` — entry point.
-4. `achilles-cli/manifest.json` — Ploinky agent declaration.
+2. `ARCHITECTURE.md` for the architecture diagram, core components, dependency graph, data flow, and module reference.
+3. `achilles-cli/src/index.mjs` for the CLI entry point.
+4. `achilles-cli/manifest.json` for the Ploinky agent declaration.
+5. `bash-skills/` for bash-implementation reference skills.
 
 ## Scope
 
-- Skill CRUD (create/read/update/delete `cskill.md` / `oskill.md` / `mskill.md` / `tskill.md` / `dcgskill.md` / Anthropic-style `skill.md`).
+- Skill CRUD for `cskill.md`, `oskill.md`, `mskill.md`, `tskill.md`, `dcgskill.md`, and Anthropic-style `skill.md`.
 - Schema validation against `achilles-cli/src/schemas/`.
 - Code generation from skill definitions to executable `.mjs`.
 - Iterative refinement until tests pass.
-- Interactive REPL with history + slash commands.
+- Interactive REPL with history and slash commands.
 
 ## Critical components
 
-- `AchillesCli` (core) — wraps `RecursiveSkilledAgent` from `achillesAgentLib`, `LLMAgent`, `HistoryManager`, `SlashCommandHandler`, `ActionReporter`.
-- `REPLSession` — input loop, history, ESC cancel.
-- `SlashCommandHandler` — `/ls`, `/read`, `/write`, skill exec.
-- `CommandSelector` — arrow nav, filtering, skill picker.
+- `AchillesCli` wraps `RecursiveSkilledAgent` from `achillesAgentLib`, `LLMAgent`, `HistoryManager`, `SlashCommandHandler`, and `ActionReporter`.
+- `REPLSession` owns the input loop, history, and ESC cancel.
+- `SlashCommandHandler` owns `/ls`, `/read`, `/write`, and skill execution.
+- `CommandSelector` owns arrow navigation, filtering, and skill picking.
 
 ## Conventions
 
-- Inherits AssistOSExplorer Node 20+ / `.mjs` / 4-space conventions.
+- Inherits AssistOSExplorer Node 20+, ES module, `.mjs`, and 4-space conventions.
 - Built-in skills live in `achilles-cli/src/skills/`.
-- LLM invocation: through `LLMAgent` from `achillesAgentLib`, never direct vendor HTTP.
+- LLM invocation goes through `LLMAgent` from `achillesAgentLib`, never direct vendor HTTP.
 
 ## Testing
 
-- `tests/` at the outer repo root for integration/test-env runs.
+- `tests/` at the outer repo root contains integration and test-environment runs.
 - Validate skill schema changes against fixtures before refactoring schemas.
 
 ## Commit policy
 
-Inherits workspace commit policy (no AI attribution). See `~/work/file-parser/CLAUDE.md`.
+Inherits workspace commit policy. See `~/work/file-parser/CLAUDE.md`.
+
+## Relationship to standalone Achilles CLI
+
+This checkout is the sibling used by the Explorer workspace. Keep schemas and core CLI behavior aligned with the standalone Achilles CLI checkout; divergence between the two checkouts should be intentional and documented.
