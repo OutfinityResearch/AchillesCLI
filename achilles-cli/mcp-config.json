@@ -6,7 +6,13 @@
             "description": "Return Achilles CLI slash commands and subcommands for webchat autocomplete.",
             "command": "/code/src/mcp/list-slash-commands.mjs",
             "cwd": "/code",
-            "inputSchema": {}
+            "inputSchema": {
+                "dir": {
+                    "type": "string",
+                    "description": "Working directory used to discover available skills for command argument completions.",
+                    "optional": true
+                }
+            }
         }
     ]
 }

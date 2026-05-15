@@ -28,6 +28,7 @@ Primary REPL components and responsibilities:
    - Routes deterministic commands to concrete handlers/skills.
    - Enforces argument validation for slash-command entry points.
    - Supports hierarchical commands with sub-options (e.g., `/list skills`, `/add repo`).
+   - Supports `/update repos` as a repository maintenance command that runs `git pull` in each cloned repository under `.achilles-cli/repos/`.
 4. `NaturalLanguageProcessor.mjs`
     - Routes free-text prompts into orchestrated LLM execution.
     - Applies runtime execution options and context shaping.
@@ -42,6 +43,7 @@ Command routing model:
 2. Commands may have sub-options (e.g., `/list` → `skills`, `repos`). Selecting a command with sub-options opens a secondary menu.
 3. Non-slash inputs are processed directly through the natural-language execution path with no fallback to quick commands.
 4. Command handlers can trigger skill reload when skill definitions change.
+5. Repository update failures must be reported as an aggregated error beginning with `failed to update repos:` followed by one line per failed repository.
 
 Hierarchical command structure:
 1. Commands with `subOptions` in `COMMAND_DEFINITIONS` show a sub-menu when selected.

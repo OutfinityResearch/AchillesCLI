@@ -8,10 +8,12 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 const ACHILLES_CLI_DIR = '.achilles-cli';
 const REPOS_SUBDIR = 'repos';
+const require = createRequire(import.meta.url);
 
 /**
  * Ensure the .achilles-cli directory structure exists.
@@ -43,6 +45,92 @@ export function ensureAchillesCliDir(baseDir = process.cwd()) {
 export function getReposDir(baseDir = process.cwd()) {
     const { reposDir } = ensureAchillesCliDir(baseDir);
     return reposDir;
+}
+
+/**
+ * Resolve the achillesAgentLib package directory visible to this AchillesCLI runtime.
+ *
+ * @returns {string}
+ */
+export function resolveAgentLibDir() {
+    const explicitDir = String(process.env.ACHILLES_AGENT_LIB_DIR || '').trim();
+    if (explicitDir) {
+        return fs.realpathSync(path.resolve(explicitDir));
+    }
+    const packagePath = require.resolve('achillesAgentLib/package.json');
+    return fs.realpathSync(path.dirname(packagePath));
+}
+
+function readLinkTarget(linkPath) {
+    const rawTarget = fs.readlinkSync(linkPath);
+    return path.resolve(path.dirname(linkPath), rawTarget);
+}
+
+/**
+ * Ensure one cloned skill repository can resolve bare imports from achillesAgentLib.
+ *
+ * @param {string} repoPath - Absolute or relative path to a cloned repo.
+ * @returns {{ status: string, path: string, target: string }}
+ */
+export function ensureAgentLibLinkForRepo(repoPath) {
+    if (!repoPath || !fs.existsSync(repoPath)) {
+        throw new Error(`Repository path does not exist: ${repoPath}`);
+    }
+
+    const resolvedRepoPath = path.resolve(repoPath);
+    const agentLibDir = resolveAgentLibDir();
+    const nodeModulesDir = path.join(resolvedRepoPath, 'node_modules');
+    const linkPath = path.join(nodeModulesDir, 'achillesAgentLib');
+
+    fs.mkdirSync(nodeModulesDir, { recursive: true });
+
+    let existing = null;
+    try {
+        existing = fs.lstatSync(linkPath);
+    } catch (error) {
+        if (error?.code !== 'ENOENT') {
+            throw error;
+        }
+    }
+
+    if (existing) {
+        if (!existing.isSymbolicLink()) {
+            return { status: 'preserved', path: linkPath, target: agentLibDir };
+        }
+
+        const currentTarget = readLinkTarget(linkPath);
+        if (currentTarget === agentLibDir) {
+            return { status: 'exists', path: linkPath, target: agentLibDir };
+        }
+
+        fs.unlinkSync(linkPath);
+    }
+
+    fs.symlinkSync(agentLibDir, linkPath, 'dir');
+    return { status: 'linked', path: linkPath, target: agentLibDir };
+}
+
+/**
+ * Repair achillesAgentLib symlinks for all cloned repos in .achilles-cli/repos/.
+ *
+ * @param {string} [baseDir=process.cwd()]
+ * @returns {Array<{ repo: string, status: string, path: string, target: string }>}
+ */
+export function ensureAgentLibLinksForRepos(baseDir = process.cwd()) {
+    const { reposDir } = ensureAchillesCliDir(baseDir);
+    const entries = fs.readdirSync(reposDir, { withFileTypes: true });
+    const results = [];
+
+    for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name.startsWith('.')) {
+            continue;
+        }
+
+        const result = ensureAgentLibLinkForRepo(path.join(reposDir, entry.name));
+        results.push({ repo: entry.name, ...result });
+    }
+
+    return results;
 }
 
 /**
@@ -86,11 +174,13 @@ export function addRepo(url, name, baseDir = process.cwd()) {
     const repoPath = path.join(reposDir, repoName);
 
     if (fs.existsSync(repoPath)) {
+        ensureAgentLibLinkForRepo(repoPath);
         return { status: 'exists', path: repoPath, name: repoName };
     }
 
     console.log(`Cloning ${repoUrl} into ${repoName}...`);
     execSync(`git clone --quiet "${repoUrl}" "${repoPath}"`, { stdio: 'inherit' });
+    ensureAgentLibLinkForRepo(repoPath);
 
     console.log(`✓ Repository '${repoName}' cloned.`);
     return { status: 'cloned', path: repoPath, name: repoName };
@@ -158,11 +248,76 @@ export function removeRepo(name, baseDir = process.cwd()) {
     return { status: 'removed', path: repoPath };
 }
 
+function getGitErrorOutput(error) {
+    const stderr = error?.stderr ? String(error.stderr).trim() : '';
+    const stdout = error?.stdout ? String(error.stdout).trim() : '';
+    const message = String(error?.message || '').trim();
+    return stderr || stdout || message || 'git pull failed';
+}
+
+function formatUpdateRepoFailures(failures) {
+    const details = failures
+        .map((failure) => `${failure.name}: ${failure.error}`)
+        .join('\n');
+    return `failed to update repos:\n${details}`;
+}
+
+/**
+ * Update all cloned repositories in .achilles-cli/repos/ with git pull.
+ *
+ * @param {string} [baseDir=process.cwd()]
+ * @returns {{ status: string, updated: Array<{ name: string, path: string, output: string }> }}
+ */
+export function updateRepos(baseDir = process.cwd()) {
+    const { reposDir } = ensureAchillesCliDir(baseDir);
+    const entries = fs.readdirSync(reposDir, { withFileTypes: true });
+    const updated = [];
+    const failures = [];
+
+    for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name.startsWith('.')) {
+            continue;
+        }
+
+        const repoPath = path.join(reposDir, entry.name);
+        try {
+            const output = execFileSync('git', ['pull'], {
+                cwd: repoPath,
+                encoding: 'utf-8',
+                stdio: ['ignore', 'pipe', 'pipe'],
+            }).trim();
+            updated.push({
+                name: entry.name,
+                path: repoPath,
+                output,
+            });
+        } catch (error) {
+            failures.push({
+                name: entry.name,
+                error: getGitErrorOutput(error),
+            });
+        }
+    }
+
+    if (failures.length > 0) {
+        const error = new Error(formatUpdateRepoFailures(failures));
+        error.failures = failures;
+        error.updated = updated;
+        throw error;
+    }
+
+    return { status: 'updated', updated };
+}
+
 export default {
     ensureAchillesCliDir,
     getReposDir,
+    resolveAgentLibDir,
+    ensureAgentLibLinkForRepo,
+    ensureAgentLibLinksForRepos,
     addRepo,
     listRepos,
     removeRepo,
+    updateRepos,
     extractRepoNameFromUrl,
 };

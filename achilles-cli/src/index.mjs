@@ -5,7 +5,7 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { realpathSync } from 'node:fs';
-import { MainAgent, discoverSkillsFromRoot } from 'achillesAgentLib/MainAgent';
+import { MainAgent, SecuritySupervisor, discoverSkillsFromRoot } from 'achillesAgentLib/MainAgent';
 import { LLMAgent } from 'achillesAgentLib/LLMAgents';
 import { IOServices } from 'achillesAgentLib';
 import { HistoryManager } from './repl/HistoryManager.mjs';
@@ -19,7 +19,7 @@ import { UIContext } from './ui/UIContext.mjs';
 import { createProvider, getProviderNames } from './ui/providers/index.mjs';
 import { BUILT_IN_SKILLS, TIERS } from './lib/constants.mjs';
 import { buildOrchestratorSystemPrompt } from './prompts/orchestrator-prompt.mjs';
-import { ensureAchillesCliDir } from './lib/repoManager.mjs';
+import { ensureAchillesCliDir, ensureAgentLibLinksForRepos } from './lib/repoManager.mjs';
 import { isWebchatEscapeControlChunk, handleWebchatControlChunk } from './lib/webchatControl.mjs';
 import { createWebchatTagRelay, isTruthyRelayFlag, normalizeWebchatMessage } from './lib/webchatTagRelay.mjs';
 
@@ -216,6 +216,7 @@ async function main() {
 
     // Ensure .achilles-cli directory structure exists
     ensureAchillesCliDir(workingDir);
+    ensureAgentLibLinksForRepos(workingDir);
 
     // Merge all skill roots: built-in + bash-skills + CLI flags + node_modules skills
     const allSkillRoots = [
@@ -230,9 +231,12 @@ async function main() {
         logger.log(`Additional skill roots: ${[...cliSkillRoots, ...nodeModulesSkillRoots].join(', ')}`);
     }
 
+    const supervisor = webchatRuntime ? new WebchatProgressSupervisor() : null;
+
     // Initialize MainAgent with all skill roots
     const agent = new MainAgent({
         startDir: workingDir,
+        ...(supervisor ? { supervisor } : {}),
         llmAgentOptions: {
             name: 'achilles-cli-agent',
         },
@@ -594,6 +598,9 @@ async function executeWebchatSkill({ agent, skillName, input, opts = {}, slashSt
         tier: slashState.activeTier,
         ...opts,
     };
+    if (!execOpts.supervisor) {
+        execOpts.supervisor = agent?.supervisor || null;
+    }
     if (slashState.pinnedModel) {
         execOpts.model = slashState.pinnedModel;
     }
@@ -766,6 +773,34 @@ function createSilentOutputWriter() {
         write: async () => {},
         writeError: async () => {},
     };
+}
+
+class WebchatProgressSupervisor extends SecuritySupervisor {
+    async approve() {
+        return 'alwaysApprove';
+    }
+
+    getOutputWriter() {
+        return {
+            write: async (message) => {
+                if (!message || typeof message !== 'object' || message.type !== 'tool_reason') {
+                    return;
+                }
+                const reason = String(message.reason || '').trim();
+                if (!reason) {
+                    return;
+                }
+                const payload = {
+                    __webchatProgress: 1,
+                    type: 'tool_reason',
+                    tool: typeof message.tool === 'string' ? message.tool : '',
+                    reason,
+                    stepIndex: Number.isFinite(message.stepIndex) ? message.stepIndex : null,
+                };
+                process.stdout.write(`${JSON.stringify(payload)}\n`);
+            },
+        };
+    }
 }
 
 function printHelp() {

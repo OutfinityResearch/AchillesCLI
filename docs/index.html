@@ -40,6 +40,20 @@
     In webchat runtime mode (non-TTY stdin), ESC is accepted as a standalone input line to abort the current prompt.
   </div>
 
+  <h2>WebChat Progress</h2>
+  <div class="card">
+    In webchat runtime mode, AchillesCLI emits structured progress metadata before loop-session tool calls.
+    The metadata carries the planner reason for the selected tool and is intended for browser UI progress rendering,
+    not for transcript or final-answer text.
+  </div>
+
+  <h2>Repository Maintenance</h2>
+  <div class="card">
+    Cloned skill repositories live under <code>.achilles-cli/repos/</code>.
+    The slash command <code>/update repos</code> runs <code>git pull</code> in each cloned repository and reports
+    aggregated per-repository failures with a <code>failed to update repos:</code> message.
+  </div>
+
   <h2>MCP Tool Exposure</h2>
   <div class="card">
     AchillesCLI exposes its skill catalog as MCP tools via the AgentServer mechanism.
@@ -47,6 +61,8 @@
     WebChat clients query this catalog at session start to populate slash-command autocomplete menus.
     For AchillesCLI slash commands, WebChat calls the dedicated command-catalog MCP tool
     (<code>list_achilles_cli_commands</code>) and receives a structured command+subcommand catalog.
+    The tool accepts the WebChat working <code>dir</code> and uses AchillesAgentLib discovery to add
+    available skill names as argument completions for slash commands that operate on skills.
     If no tools are available, clients silently fall back to an empty command list.
   </div>
 

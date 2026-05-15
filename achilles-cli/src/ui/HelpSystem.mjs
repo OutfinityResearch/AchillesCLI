@@ -118,6 +118,7 @@ ${C.bold}${C.yellow}Slash Commands${C.reset} ${C.dim}(direct skill execution)${C
   ${C.cyan}/run-tests${C.reset} [skill|all]   Run test files
   ${C.cyan}/refine${C.reset} <skill>          Improve until tests pass
   ${C.cyan}/update${C.reset} <skill> <section> Update a section
+  ${C.cyan}/update repos${C.reset}             Pull cloned repositories
   ${C.cyan}/specs${C.reset} <skill>           Read .specs.md file
   ${C.cyan}/specs-write${C.reset} <skill>     Create/update .specs.md
   ${C.cyan}/exec${C.reset} <skill> [input]    Execute any skill
@@ -506,6 +507,10 @@ ${C.bold}${C.yellow}Listing Repositories:${C.reset}
   ${C.green}>${C.reset} /list-repos
   ${C.dim}Shows all cloned repos with URLs and paths${C.reset}
 
+${C.bold}${C.yellow}Updating Repositories:${C.reset}
+  ${C.green}>${C.reset} /update repos
+  ${C.dim}Runs git pull in every cloned repository and reports per-repo failures${C.reset}
+
 ${C.bold}${C.yellow}Removing a Repository:${C.reset}
   ${C.green}>${C.reset} /remove-repo <name>
   ${C.dim}Deletes .achilles-cli/repos/<name>/${C.reset}
@@ -818,10 +823,13 @@ ${C.bold}${C.cyan}/update - Update Skill Section${C.reset}
 
 ${C.bold}${C.yellow}Usage:${C.reset}
   ${C.green}/update <skill-name> <section>${C.reset}
+  ${C.green}/update repos${C.reset}
 
 ${C.bold}${C.yellow}Description:${C.reset}
   Updates a specific section of a skill definition. The LLM will
   analyze the skill and generate new content for the specified section.
+  With ${C.green}/update repos${C.reset}, pulls every cloned repository in
+  .achilles-cli/repos/ and reports any per-repository git errors.
 
 ${C.bold}${C.yellow}Common Sections:${C.reset}
   ${C.cyan}tskill:${C.reset} Table Purpose, Fields, Business Rules
@@ -831,6 +839,7 @@ ${C.bold}${C.yellow}Common Sections:${C.reset}
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /update equipment Fields
   ${C.green}>${C.reset} /update my-skill "Business Rules"
+  ${C.green}>${C.reset} /update repos
 `,
     },
 
@@ -1170,6 +1179,7 @@ ${C.bold}${C.yellow}Common Slash Commands${C.reset}
   ${C.cyan}/generate${C.reset} <skill> Generate code from tskill
   ${C.cyan}/test${C.reset} <skill>     Test generated code
   ${C.cyan}/refine${C.reset} <skill>   Improve until tests pass
+  ${C.cyan}/update repos${C.reset}      Pull cloned repositories
   ${C.cyan}/add-repo${C.reset} <URL>   Clone a repository
   ${C.cyan}/list-repos${C.reset}       List cloned repositories
   ${C.cyan}/remove-repo${C.reset}      Remove a repository
