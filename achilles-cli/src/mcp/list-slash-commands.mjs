@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
-import { discoverSkills } from 'achillesAgentLib/MainAgent';
+import { dirname, join, resolve } from 'node:path';
+import { discoverSkills, discoverSkillsFromRoot } from 'achillesAgentLib/MainAgent';
 import { parseSkillDocument } from 'achillesAgentLib/utils/skillDocumentParser.mjs';
 import { buildSlashCommandCatalog } from '../repl/SlashCommandHandler.mjs';
 
 const OPTIONAL_SKILL_ARG_COMMANDS = new Set(['/test', '/run-tests']);
 const NOOP_LOGGER = { debug() {}, warn() {}, info() {}, log() {}, error() {} };
+const BUILT_IN_SKILLS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'skills');
 
 function normalizeHelpText(value) {
     return String(value || '')
@@ -24,6 +26,88 @@ function getSkillHelp(skill) {
     }
     const descriptor = parseSkillDocument(skill.filePath);
     return normalizeHelpText(descriptor?.sections?.help);
+}
+
+function isDirectory(candidate) {
+    try {
+        return statSync(candidate).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+function sanitiseSkillName(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+function discoverLegacyCgskills(rootDir, discoveredByFile = new Set()) {
+    if (!rootDir || !existsSync(rootDir)) {
+        return [];
+    }
+
+    const results = [];
+    const queue = [rootDir];
+    const visited = new Set();
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current || visited.has(current)) {
+            continue;
+        }
+        visited.add(current);
+
+        let entries = [];
+        try {
+            entries = readdirSync(current, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+
+        for (const entry of entries) {
+            if (!entry.isDirectory()) {
+                continue;
+            }
+
+            const skillDir = join(current, entry.name);
+            const cgskillPath = join(skillDir, 'cgskill.md');
+            if (existsSync(cgskillPath) && !discoveredByFile.has(cgskillPath)) {
+                const shortName = entry.name;
+                results.push({
+                    name: sanitiseSkillName(`${shortName}-dynamic-code-generation`),
+                    type: 'dynamic-code-generation',
+                    descriptor: null,
+                    filePath: cgskillPath,
+                    skillDir,
+                    shortName,
+                    preparedConfig: null,
+                    isInternal: true,
+                });
+                discoveredByFile.add(cgskillPath);
+            }
+
+            queue.push(skillDir);
+        }
+    }
+
+    return results;
+}
+
+function discoverBuiltInSkills() {
+    if (!isDirectory(BUILT_IN_SKILLS_DIR)) {
+        return [];
+    }
+    const discovered = discoverSkillsFromRoot(BUILT_IN_SKILLS_DIR, { logger: NOOP_LOGGER })
+        .map((skill) => ({ ...skill, isInternal: true }));
+    const discoveredByFile = new Set(discovered.map((skill) => skill?.filePath).filter(Boolean));
+    return [
+        ...discovered,
+        ...discoverLegacyCgskills(BUILT_IN_SKILLS_DIR, discoveredByFile),
+    ];
 }
 
 function readStdin() {
@@ -72,7 +156,10 @@ function extractInput(payload) {
 }
 
 export function buildSkillCompletions(dir) {
-    const skills = discoverSkills(dir || process.cwd(), { logger: NOOP_LOGGER });
+    const skills = [
+        ...discoverSkills(dir || process.cwd(), { logger: NOOP_LOGGER }),
+        ...discoverBuiltInSkills(),
+    ];
     const completions = new Map();
     for (const skill of skills) {
         const name = String(skill?.shortName || skill?.name || '').trim();

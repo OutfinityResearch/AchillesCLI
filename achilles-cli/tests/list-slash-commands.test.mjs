@@ -59,3 +59,23 @@ test('command catalog exposes skill Help as argument completion description', as
         'Example: /exec admin-flow change admin email to user@example.com',
     ].join('\n'));
 });
+
+test('command catalog includes built-in AchillesCLI skills in skill completions', async () => {
+    const createdDependencyLink = await ensureLocalAchillesAgentLib();
+    let toAutocompleteCatalog;
+    try {
+        ({ toAutocompleteCatalog } = await import(`../src/mcp/list-slash-commands.mjs?builtin=${Date.now()}`));
+    } finally {
+        if (createdDependencyLink) {
+            await unlink(localDependencyPath);
+        }
+    }
+
+    const tempRoot = await mkdtemp(join(tmpdir(), 'achilles-cli-catalog-empty-'));
+    const catalog = toAutocompleteCatalog({ dir: tempRoot });
+    const execCommand = catalog.commands.find((command) => command.name === '/exec');
+    const completion = execCommand.argCompletions.find((entry) => entry.value === 'read-skill');
+
+    assert.equal(completion.label, 'read-skill');
+    assert.equal(completion.description, 'Input: skillName.');
+});
