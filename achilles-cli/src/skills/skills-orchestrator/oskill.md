@@ -1,10 +1,9 @@
 # Skills Orchestrator
 
-Routes skill-management requests to the appropriate built-in operations.
 ## Description
 This orchestrator skill manages AchillesAgentLib skills. AchillesAgentLib is a library of services and integrations for developers who build LLM-powered agents, tools, workflows, and application-specific automation.
 
-Invoke this skill whenever the user wants to create, inspect, update, delete, validate, test, generate, refine, or execute any AchillesAgentLib skill, regardless of skill type.
+Invoke this skill whenever the user wants to create, inspect, update, delete, validate, test, generate, refine, or execute any skill, regardless of type, always assume it is an achillesAgentLib skill.
 
 AchillesAgentLib skill types include:
 - Anthropic-style skills: portable instruction/resource bundles described by `SKILL.md`.
