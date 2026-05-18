@@ -6,7 +6,27 @@ import { classifyRisk, RISK_LEVELS } from './riskClassifier.mjs';
 import { executeWithTieredPermission } from './permissions.mjs';
 import { expandGlobsInArgs } from './globExpander.mjs';
 
-export async function action(agent, prompt) {
+function parsePrompt(prompt) {
+    if (typeof prompt !== 'string') {
+        return prompt?.command || '';
+    }
+    const trimmed = prompt.trim();
+    if (!trimmed) {
+        return '';
+    }
+    try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed === 'object' && typeof parsed.command === 'string') {
+            return parsed.command;
+        }
+    } catch {
+        // Plain command text.
+    }
+    return prompt;
+}
+
+export async function action(invocation = {}) {
+    const prompt = parsePrompt(invocation.promptText);
     // Parse the command line
     const { command, args, raw } = parseCommandLine(prompt);
 
@@ -27,11 +47,18 @@ export async function action(agent, prompt) {
     const expandedArgs = expandGlobsInArgs(args);
 
     // Execute with appropriate permission tier
-    const context = agent?.context || {};
+    const context = invocation.context || {};
+    const permissionAgent = {
+        ...invocation,
+        promptReader: invocation.promptReader
+            || (typeof invocation.llmAgent?.inputReader?.read === 'function'
+                ? (promptText) => invocation.llmAgent.inputReader.read(promptText)
+                : null),
+    };
     const result = await executeWithTieredPermission(
         command,
         expandedArgs,
-        agent,
+        permissionAgent,
         { context, risk }
     );
 

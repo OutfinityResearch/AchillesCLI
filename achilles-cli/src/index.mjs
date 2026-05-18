@@ -29,9 +29,6 @@ const __dirname = path.dirname(__filename);
 // Path to built-in skills bundled with this module
 const builtInSkillsDir = path.join(__dirname, 'skills');
 
-// Path to bash command skills (bundled with this repo)
-const bashSkillsDir = path.join(__dirname, '../../bash-skills/skills');
-
 // Re-export classes and functions for library usage
 export {
     // Core agent (from achillesAgentLib)
@@ -192,8 +189,21 @@ async function main() {
     // Configure logger based on verbose flag
     const noop = () => {};
     const achillesDebug = /^(1|true|yes|on)$/i.test(process.env.ACHILLES_DEBUG || '');
-    const debugLog = achillesDebug ? (msg) => console.log(`[DEBUG] ${msg}`) : noop;
-    const infoLog = verbose ? (msg) => console.log(`[INFO] ${msg}`) : noop;
+    const formatLogArgs = (args) => args.map((entry) => {
+        if (entry === null || entry === undefined) {
+            return String(entry);
+        }
+        if (typeof entry === 'object') {
+            try {
+                return JSON.stringify(entry);
+            } catch {
+                return String(entry);
+            }
+        }
+        return String(entry);
+    }).join(' ');
+    const debugLog = achillesDebug ? (...args) => console.log(`[DEBUG] ${formatLogArgs(args)}`) : noop;
+    const infoLog = verbose ? (...args) => console.log(`[INFO] ${formatLogArgs(args)}`) : noop;
     const logger = {
         debug: debugLog,
         info: infoLog,
@@ -218,13 +228,11 @@ async function main() {
     ensureAchillesCliDir(workingDir);
     ensureAgentLibLinksForRepos(workingDir);
 
-    // Merge all skill roots: built-in + bash-skills + CLI flags + node_modules skills
+    // Merge all skill roots: built-in + CLI flags + node_modules skills
     const allSkillRoots = [
         { path: builtInSkillsDir, isInternal: true },
-        // Add bash-skills if the directory exists
-        ...(fs.existsSync(bashSkillsDir) ? [{ path: bashSkillsDir, isInternal: true }] : []),
         ...cliSkillRoots.map((skillRoot) => ({ path: skillRoot, isInternal: false })),
-        ...nodeModulesSkillRoots.map((skillRoot) => ({ path: skillRoot, isInternal: false })),
+        ...nodeModulesSkillRoots.map((skillRoot) => ({ path: skillRoot, isInternal: false, isAgentLibInternal: isAgentLibSkillRoot(skillRoot) })),
     ];
 
     if (verbose && (cliSkillRoots.length > 0 || nodeModulesSkillRoots.length > 0)) {
@@ -941,12 +949,24 @@ function collectNodeModulesSkillRoots(baseDir, logger) {
     return roots;
 }
 
+function isAgentLibSkillRoot(skillRoot) {
+    const normalized = path.normalize(String(skillRoot || ''));
+    const segments = normalized.split(path.sep).filter(Boolean);
+    for (let index = 0; index < segments.length - 1; index += 1) {
+        if (segments[index] === 'achillesAgentLib' && segments[index + 1] === 'skills') {
+            return true;
+        }
+    }
+    return false;
+}
+
 function registerSkillRoots(agent, skillRoots, logger) {
     if (!agent || !Array.isArray(skillRoots) || skillRoots.length === 0) {
         return;
     }
 
     const seen = new Set();
+    const rootSummaries = [];
     for (const root of skillRoots) {
         const skillRoot = root?.path;
         if (!skillRoot || seen.has(skillRoot)) {
@@ -955,6 +975,10 @@ function registerSkillRoots(agent, skillRoots, logger) {
         seen.add(skillRoot);
 
         if (!fs.existsSync(skillRoot)) {
+            continue;
+        }
+        if (root.isAgentLibInternal && agent.disableInternalSkills) {
+            logger?.debug?.(`MainAgent:skipAgentLibInternalSkillRoot: ${skillRoot}: agentLib internal skills disabled`);
             continue;
         }
 
@@ -968,6 +992,17 @@ function registerSkillRoots(agent, skillRoots, logger) {
 
         // Backward compatibility for legacy skill repos that still use cgskill.md.
         discovered = mergeCgskillRecords(skillRoot, discovered);
+        rootSummaries.push({
+            skillRoot,
+            isInternal: Boolean(root.isInternal),
+            discoveredCount: discovered.length,
+            skills: discovered.map((skill) => ({
+                name: skill.name,
+                shortName: skill.shortName,
+                type: skill.type,
+                skillDir: skill.skillDir,
+            })),
+        });
 
         for (const skillRecord of discovered) {
             skillRecord.isInternal = Boolean(root.isInternal);
@@ -976,6 +1011,10 @@ function registerSkillRoots(agent, skillRoots, logger) {
     }
 
     agent._refreshOrchestratedSkillIndex?.();
+    agent.debugSkillRegistrationSummary?.({
+        phase: 'after achilles-cli additional skill roots',
+        additionalRoots: rootSummaries,
+    });
 }
 
 function mergeCgskillRecords(skillRoot, discovered) {

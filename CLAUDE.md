@@ -8,7 +8,7 @@ Achilles CLI is the interactive and single-shot skill management CLI used by the
 2. `ARCHITECTURE.md` for the architecture diagram, core components, dependency graph, data flow, and module reference.
 3. `achilles-cli/src/index.mjs` for the CLI entry point.
 4. `achilles-cli/manifest.json` for the Ploinky agent declaration.
-5. `bash-skills/` for bash-implementation reference skills.
+5. `achilles-cli/src/skills/bash/` for the bundled bash skill.
 
 ## Scope
 

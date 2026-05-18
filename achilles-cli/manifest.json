@@ -1,17 +1,39 @@
 {
-    "container": "docker.io/library/node:24.15.0-alpine",
-    "install": "",
-    "lite-sandbox": true,
-    "env": [
-        "SOUL_GATEWAY_API_KEY",
-        "WORKSPACE_PATH",
-        "ACHILLES_MODEL_PLAN",
-        "ACHILLES_MODEL_CODE",
-        "ACHILLES_DEBUG"
-    ],
-    "webchat": {
-        "auth": "static"
+  "container": "docker.io/library/node:24.15.0-alpine",
+  "install": "",
+  "lite-sandbox": true,
+  "env": [
+    "SOUL_GATEWAY_API_KEY",
+    "WORKSPACE_PATH",
+    "ACHILLES_MODEL_PLAN",
+    "ACHILLES_MODEL_CODE",
+    "ACHILLES_DEBUG"
+  ],
+  "ploinky": "pwd enable",
+  "pwd": {
+    "users": [
+      {
+        "username": "admin",
+        "password": "admin",
+        "roles": [
+          "admin"
+        ]
+      }
+    ]
+  },
+  "webchat": {
+    "auth": "static"
+  },
+  "cli": "node /code/src/index.mjs",
+  "about": "Achilles CLI for managing, generating, and testing skill definition files in skills directories.",
+  "expose": [
+    {
+      "name": "help",
+      "ref": "help"
     },
-    "cli": "node /code/src/index.mjs",
-    "about": "Achilles CLI for managing, generating, and testing skill definition files in skills directories."
+    {
+      "name": "ACHILLES_DEBUG",
+      "value": "true"
+    }
+  ]
 }
