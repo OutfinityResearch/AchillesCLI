@@ -22,6 +22,7 @@ import { buildOrchestratorSystemPrompt } from './prompts/orchestrator-prompt.mjs
 import { ensureAchillesCliDir, ensureAgentLibLinksForRepos } from './lib/repoManager.mjs';
 import { isWebchatEscapeControlChunk, handleWebchatControlChunk } from './lib/webchatControl.mjs';
 import { createWebchatTagRelay, isTruthyRelayFlag, normalizeWebchatMessage } from './lib/webchatTagRelay.mjs';
+import { startIntroSkill } from './lib/introSkillBoot.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -296,6 +297,14 @@ async function main() {
                 logger,
                 skipBashPermissions,
             };
+            await startIntroSkill(agent, {
+                workingDir,
+                context,
+                logger,
+                write: async (message) => {
+                    process.stdout.write(message);
+                },
+            });
 
             let result = await agent.executePrompt(prompt, {
                 context,
@@ -394,6 +403,17 @@ async function runWebchatInteractive(agent, options) {
         skipBashPermissions,
     };
     agent.context = context;
+    await startIntroSkill(agent, {
+        workingDir,
+        context,
+        logger: agent.logger,
+        onStart: async () => {
+            emitWebchatProgress('intro-skill', 'Generating workspace intro');
+        },
+        write: async (message) => {
+            process.stdout.write(message);
+        },
+    });
     const slashHandler = new SlashCommandHandler({
         executeSkill: (skillName, input, opts) => executeWebchatSkill({
             agent,
@@ -732,6 +752,21 @@ function formatHistoryEntries(entries = []) {
         return 'No history entries.';
     }
     return entries.map((entry) => `${entry.index}. ${entry.command}`).join('\n');
+}
+
+function emitWebchatProgress(tool, reason) {
+    const text = String(reason || '').trim();
+    if (!text) {
+        return;
+    }
+    const payload = {
+        __webchatProgress: 1,
+        type: 'tool_reason',
+        tool: typeof tool === 'string' ? tool : '',
+        reason: text,
+        stepIndex: null,
+    };
+    process.stdout.write(`${JSON.stringify(payload)}\n`);
 }
 
 function createCliInputReader() {

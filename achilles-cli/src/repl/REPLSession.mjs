@@ -27,6 +27,7 @@ import { buildOrchestratorSystemPrompt } from '../prompts/orchestrator-prompt.mj
 import { IOServices } from 'achillesAgentLib';
 import { ensureAchillesCliDir, ensureAgentLibLinksForRepos } from '../lib/repoManager.mjs';
 import { showHistory, searchHistory } from '../ui/HelpPrinter.mjs';
+import { startIntroSkill } from '../lib/introSkillBoot.mjs';
 
 // Import tier/model utilities from achillesAgentLib (direct path — not re-exported from index)
 let _listTiersFromCache = null;
@@ -463,6 +464,14 @@ export class REPLSession {
      */
     async start() {
         this._showBanner();
+        await startIntroSkill(this.agent, {
+            workingDir: this.workingDir,
+            context: this.context,
+            logger: this.agent.logger,
+            write: async (message) => {
+                console.log(String(message || '').trimEnd());
+            },
+        });
 
         // Main REPL loop
         while (true) {
