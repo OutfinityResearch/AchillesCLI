@@ -13,6 +13,11 @@ AchillesAgentLib skill types include:
 - Orchestration skills: `oskill.md` skills that coordinate other skills through planning, preparation, and execution.
 - DB table skills: `tskill.md` skills that model table-like data operations.
 
+Skill-management behavior:
+- Before creating or modifying skills, identify the skill type that fits the request.
+- If the correct skill type is not clear from the current request or surrounding context, ask the user which skill type they want before calling "skills-orchestrator".
+- Do not assume facts about existing skills, their sections, allowed tools, or implementation details unless they are present in documentation, available descriptors, prior context, or clear context clues.
+
 Use this orchestrator for skill discovery and inspection, authoring and updates, validation and previews, code/test generation and execution, and iterative refinement loops.
 
 ## Instructions

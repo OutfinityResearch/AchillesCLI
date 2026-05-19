@@ -9,18 +9,6 @@
     "ACHILLES_MODEL_CODE",
     "ACHILLES_DEBUG"
   ],
-  "ploinky": "pwd enable",
-  "pwd": {
-    "users": [
-      {
-        "username": "admin",
-        "password": "admin",
-        "roles": [
-          "admin"
-        ]
-      }
-    ]
-  },
   "webchat": {
     "auth": "static"
   },
