@@ -28,12 +28,8 @@
   "about": "Achilles CLI for managing, generating, and testing skill definition files in skills directories.",
   "expose": [
     {
-      "name": "help",
-      "ref": "help"
-    },
-    {
       "name": "ACHILLES_DEBUG",
-      "value": "true"
+      "ref": "ACHILLES_DEBUG"
     }
   ]
 }
