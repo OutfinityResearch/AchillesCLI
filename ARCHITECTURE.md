@@ -241,13 +241,13 @@ Schema definitions and validation.
 - Provide templates for new skills
 - Detect skill type from file content
 - Validate skill files against schemas
-- Load and format skill specification files (`.specs.md`)
+- Load and format skill specification files from `specs/`
 
 **Key Design Decision:**
 > Skill type detection uses content-based heuristics (checking for specific section headers) rather than relying on file names alone. This is more robust when files are renamed or copied.
 
 **Utility Functions:**
-- `loadSpecsContent(skillDir)` - Lazily loads `.specs.md` from a skill directory
+- `loadSpecsContent(skillDir)` - Lazily loads Markdown files from a skill directory's `specs/` folder
 - `buildSpecsContext(specsContent)` - Formats specs for inclusion in LLM prompts
 
 ---
@@ -272,11 +272,12 @@ achilles-agent-lib/
 │       └── reloadSkills()         # NEW: Re-discover and re-register
 │
 ├── *SkillsSubsystem/              # Skill type handlers
-│   ├── CodeSkillsSubsystem        # cskill: LLM-generated code
-│   ├── OrchestratorSkillsSubsystem # oskill: Skill routing
-│   ├── InteractiveSkillsSubsystem  # iskill: Conversational
-│   ├── DBTableSkillsSubsystem      # tskill: Database entities
-│   └── MCPSkillsSubsystem          # mskill: MCP protocol
+│   ├── CodeSkillsSubsystem         # cskill: executable code in src/
+│   ├── DynamicCodeGenerationSkillsSubsystem # dcgskill: runtime LLM code generation
+│   ├── OrchestratorSkillsSubsystem # oskill: skill routing
+│   ├── DBTableSkillsSubsystem      # tskill/dbtable: database entities
+│   ├── MCPSkillsSubsystem          # mskill: MCP protocol
+│   └── AnthropicSkillsSubsystem    # SKILL.md: Anthropic-style instructions
 │
 └── utils/
     ├── ActionReporter.mjs      # Real-time progress feedback
@@ -319,15 +320,16 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 
 ### 2. Skill Type System
 
-**Decision:** Five distinct skill types with different execution models.
+**Decision:** The CLI follows the skill types recognized by the current agent library.
 
 | Type | File | Purpose |
 |------|------|---------|
-| `tskill` | `tskill.md` | Database table entities with validators/presenters |
-| `cskill` | `cskill.md` | LLM generates and executes code on-the-fly |
-| `iskill` | `iskill.md` | Interactive conversations with user input collection |
-| `oskill` | `oskill.md` | Orchestrators that route to other skills |
-| `mskill` | `mskill.md` | MCP (Model Context Protocol) tool integration |
+| `tskill` / `dbtable` | `tskill.md` | Database table entities with validators/presenters |
+| `cskill` | `cskill.md` | Executes code from `src/index.mjs` or `src/index.js` |
+| `dcgskill` / `dynamic-code-generation` | `dcgskill.md` | Runtime LLM-assisted dynamic code generation |
+| `oskill` / `orchestrator` | `oskill.md` | Orchestrators that route to other skills |
+| `mskill` / `mcp` | `mskill.md` | MCP (Model Context Protocol) tool integration |
+| `anthropic` | `SKILL.md` | Anthropic-style instruction skill |
 
 **Rationale:**
 - Different use cases require different execution models
@@ -407,12 +409,12 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 - Security: Controlled file access patterns
 - Predictability: Same operation = same behavior
 
-### 10. Code Generation for tskills
+### 10. Code Generation for Runtime Skills
 
-**Decision:** LLM generates `.mjs` code from `tskill.md` definitions.
+**Decision:** LLM generates runtime `.mjs` code for generated skill types.
 
 **Rationale:**
-- tskill definitions are declarative; code is imperative
+- tskill/dbtable and cskill definitions are declarative; executable code is imperative
 - Validators, presenters, resolvers require JavaScript logic
 - LLM can interpret natural language validation rules
 - Generated code can be tested and refined iteratively
@@ -437,16 +439,16 @@ This enables multi-source skill discovery without wrapper classes. The CLI uses 
 - Follows single responsibility principle
 - Makes the codebase navigable for new contributors
 
-### 13. Skill Specifications via `.specs.md`
+### 13. Skill Specifications via `specs/`
 
-**Decision:** Optional `.specs.md` files provide additional context for LLM operations on skills.
+**Decision:** Optional Markdown files under `specs/` provide additional context for LLM operations on skills.
 
 **Rationale:**
 - Separates implementation requirements from skill definition
 - Provides constraints without cluttering the main skill file
 - Loaded lazily to avoid overhead for skills without specs
 - Automatically included in code generation and refinement prompts
-- Hidden file (dot prefix) keeps skill directories clean
+- Multiple spec files can describe separate generated files or focused requirements
 
 ---
 
@@ -467,19 +469,19 @@ The CLI ships with these built-in skills in `src/skills/`:
 | `get-template` | cskill | Returns blank skill templates |
 | `update-section` | cskill | Updates specific sections |
 | `preview-changes` | cskill | Shows diff before applying |
-| `generate-code` | cskill | Generates `.mjs` from definitions |
+| `generate-code` | cskill | Generates runtime `.mjs` for tskill/dbtable and cskill definitions |
 | `test-code` | cskill | Tests generated code |
 | `skill-refiner` | oskill | Iterative improvement loop |
 | `execute-skill` | cskill | Executes any skill directly |
 
-### Skill Specifications (`.specs.md`)
+### Skill Specifications (`specs/`)
 
-Skills can optionally include a `.specs.md` file that defines requirements and constraints for the skill. When present, this file is automatically included in LLM context during:
+Skills can optionally include Markdown files under `specs/` that define requirements and constraints for the skill. When present, these files are automatically included in LLM context during:
 - Code generation (`generate-code`)
 - Skill refinement (`skill-refiner`)
 - Skill reading (`read-skill` displays specs alongside the skill definition)
 
-**Example `.specs.md`:**
+**Example `specs/index.mjs.md`:**
 ```markdown
 # Specifications for MySkill
 
@@ -495,7 +497,7 @@ Skills can optionally include a `.specs.md` file that defines requirements and c
 
 **How it works:**
 1. Specs are loaded lazily when a skill is modified (not at registration)
-2. `loadSpecsContent(skillDir)` reads the file if present
+2. `loadSpecsContent(skillDir)` reads Markdown spec files if present
 3. `buildSpecsContext(specsContent)` formats it for LLM prompts
 4. Prompt builders include specs alongside skill definitions
 5. Skills without specs work unchanged (null handling)
@@ -513,7 +515,7 @@ Skills can optionally include a `.specs.md` file that defines requirements and c
        ▼
 3. registerSkillsFromRoot() for each root
    • Iterates subdirectories
-   • Looks for recognized skill files (tskill.md, cskill.md, etc.)
+   • Looks for recognized skill files (tskill.md, cskill.md, dcgskill.md, oskill.md, mskill.md, SKILL.md)
        │
        ▼
 4. parseSkillDocument() extracts metadata
@@ -523,6 +525,7 @@ Skills can optionally include a `.specs.md` file that defines requirements and c
        ▼
 5. ensureSubsystem() creates appropriate handler
    • CodeSkillsSubsystem for cskill
+   • DynamicCodeGenerationSkillsSubsystem for dcgskill
    • OrchestratorSkillsSubsystem for oskill
    • etc.
        │

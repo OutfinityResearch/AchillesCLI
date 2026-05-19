@@ -7,13 +7,13 @@
  * Build the system prompt for the agentic session
  * @param {string} skillName - Name of the skill being refined
  * @param {Object} requirements - The requirements to meet
- * @param {string|null} specsContent - Optional .specs.md content
+ * @param {string|null} specsContent - Optional specs/ content
  * @returns {string} The system prompt
  */
 export function buildSystemPrompt(skillName, requirements, specsContent = null) {
     const specsBlock = specsContent ? `
-## Skill Specifications (.specs.md)
-This skill has a specifications file that defines code generation requirements and constraints.
+## Skill Specifications
+This skill has specs/ content that defines code generation requirements and constraints.
 You can read it using the read_specs tool. These specifications MUST be respected.
 ` : '';
 
@@ -29,18 +29,18 @@ Generated code should be valid and follow best practices.`;
 ## Your Capabilities
 You have access to these tools:
 - read_skill: Read the current skill definition
-- generate_code: Generate .mjs code from tskill definitions
+- generate_code: Generate runtime code for generated tskill/dbtable or cskill definitions
 - test_code: Run tests on the generated code
 - validate_skill: Validate the skill definition against its schema
 - update_section: Update a specific section of the skill definition
 - evaluate_requirements: Check if test results meet requirements
-- read_specs: Read the .specs.md file if available
+- read_specs: Read specs/ content if available
 - final_answer: Report success when all requirements are met
 - cannot_complete: Report failure if the skill cannot be fixed
 
 ## Workflow
 1. **Read**: Start by reading the skill definition to understand its structure
-2. **Generate**: If it's a tskill, generate the .mjs code
+2. **Generate**: If it is a generated tskill/dbtable or cskill, generate runtime code
 3. **Test**: Run tests to check for errors
 4. **Evaluate**: Use evaluate_requirements to check if tests meet requirements
 5. **Fix**: If there are failures, analyze them and use update_section to fix issues
@@ -48,10 +48,10 @@ You have access to these tools:
 
 ## Important Guidelines
 - Always read the skill first before making changes
-- For tskills, always regenerate code after updating sections
+- For generated tskill/dbtable and cskill skills, regenerate code after updating behavior sections
 - Be specific when updating sections - don't change working code
 - If a test fails, analyze the error message carefully
-- Look at the .specs.md file for code generation constraints
+- Look at specs/ content for code generation constraints
 - Maximum attempts should be respected - don't loop forever
 
 ${specsBlock}
@@ -72,7 +72,7 @@ If you cannot fix the skill after multiple attempts, call cannot_complete with t
  * Build the prompt for evaluating test results against requirements
  * @param {*} testResult - The result from running tests
  * @param {Object} requirements - The requirements to check against
- * @param {string|null} specsContent - Optional .specs.md content
+ * @param {string|null} specsContent - Optional specs/ content
  * @returns {string} The prompt for the LLM
  */
 export function buildEvaluationPrompt(testResult, requirements, specsContent = null) {
@@ -110,7 +110,7 @@ Respond in JSON format:
  * @param {string} skillContent - The current skill definition content
  * @param {Array} failures - Array of failure objects from evaluation
  * @param {Array} history - Array of previous iteration results
- * @param {string|null} specsContent - Optional .specs.md content
+ * @param {string|null} specsContent - Optional specs/ content
  * @returns {string} The prompt for the LLM
  */
 export function buildFixesPrompt(skillContent, failures, history, specsContent = null) {

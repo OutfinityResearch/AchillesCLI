@@ -4,7 +4,7 @@
 Generate broader test files for supported skill types.
 
 ## Description
-Call this when a supported generated skill needs a broader test file. It generates tests for `tskill`, `oskill`, and `cskill`.
+Call this when a supported generated runtime skill needs a broader test file. It generates tests for `tskill`/`dbtable` and `cskill`.
 
 ## Help
 Input: skillName or JSON { skillName, options }.

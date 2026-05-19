@@ -4,7 +4,7 @@
 Smoke-test generated runtime code for one skill.
 
 ## Description
-Call this for a quick generated-code smoke test for one skill. It imports the generated `.mjs` module and exercises exported functions.
+Call this for a quick runtime-code smoke test for one skill. It imports `src/index.mjs`, `src/index.js`, or `src/tskill.generated.mjs` and exercises exported functions.
 
 ## Help
 Input: skillName plus optional testInput.
@@ -17,4 +17,4 @@ Returns module load status, executed checks, and errors when import or execution
 
 ## Constraints
 - Use for one-skill smoke checks, not as a replacement for full test suites.
-- The target skill must already have generated/importable code.
+- The target skill must already have runtime code in `src/`.

@@ -1,6 +1,6 @@
 /**
  * Update Section - Updates a specific section in a skill definition file
- * Automatically triggers code regeneration if a .generated.mjs file exists
+ * Automatically triggers code regeneration if a generated runtime file exists
  *
  * Updates skill definitions and regenerates code if needed.
  */
@@ -10,12 +10,15 @@ import path from 'node:path';
 import { updateSkillSection } from '../../../schemas/skillSchemas.mjs';
 
 /**
- * Check if a .generated.mjs file exists in the skill directory
+ * Check if a generated runtime file exists in the skill directory
  */
 function hasGeneratedCode(skillDir) {
     if (!skillDir || !fs.existsSync(skillDir)) return false;
-    const files = fs.readdirSync(skillDir);
-    return files.some(f => f.endsWith('.generated.mjs') || f.endsWith('.generated.js'));
+    return [
+        path.join(skillDir, 'src', 'tskill.generated.mjs'),
+        path.join(skillDir, 'src', 'index.mjs'),
+        path.join(skillDir, 'src', 'index.js'),
+    ].some((candidate) => fs.existsSync(candidate));
 }
 
 /**
@@ -90,7 +93,7 @@ export async function action(invocation = {}) {
         const messages = [`Updated section "## ${section}" in ${skillName}`];
 
         // Check if code regeneration is needed
-        if (hasGeneratedCode(skillDir)) {
+        if (['dbtable', 'tskill', 'cskill'].includes(skillRecord.type) && hasGeneratedCode(skillDir)) {
             messages.push('');
             messages.push('Detected existing generated code. Triggering regeneration...');
 
@@ -100,7 +103,7 @@ export async function action(invocation = {}) {
                 messages.push(`Code regenerated successfully.`);
                 if (typeof regenResult.result === 'string' && regenResult.result.includes('Generated:')) {
                     // Extract just the relevant info
-                    const match = regenResult.result.match(/Generated: (.+\.mjs)/);
+                    const match = regenResult.result.match(/Generated: (.+\.(?:mjs|js))/);
                     if (match) {
                         messages.push(`Output: ${match[1]}`);
                     }

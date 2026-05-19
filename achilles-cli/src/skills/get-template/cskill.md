@@ -10,7 +10,7 @@ Call this before creating a new skill when the correct descriptor shape is neede
 Input: skillType, e.g. tskill, cskill, oskill, mskill.
 
 ## Input Format
-Plain text skill type such as `tskill`, `cskill`, `oskill`, `mskill`, `cgskill`, or `anthropic`.
+Plain text skill type such as `tskill`, `cskill`, `oskill`, `mskill`, `dcgskill`, or `anthropic`.
 
 ## Output Format
 Returns the template text and schema metadata, or an error string listing supported types.

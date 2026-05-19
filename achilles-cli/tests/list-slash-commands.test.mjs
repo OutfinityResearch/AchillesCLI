@@ -46,7 +46,7 @@ test('command catalog exposes skill Help as argument completion description', as
         '## Instructions',
         'Route the request.',
         '',
-        '## Allowed Skills',
+        '## Allowed-Skills',
         '- load-admin-context',
     ].join('\n'));
 

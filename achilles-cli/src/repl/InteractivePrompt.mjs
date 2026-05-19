@@ -628,10 +628,10 @@ export class InteractivePrompt {
 
         // Show command-specific input guidance
         if (commandName === '/exec') {
-            if (skillType === 'code') {
-                process.stdout.write(`${cyan}  Input:${reset} Type your request in natural language\n`);
-            } else if (skillType === 'interactive') {
-                process.stdout.write(`${cyan}  Input:${reset} Provide any initial context or press Enter to start\n`);
+            if (skillType === 'cskill' || skillType === 'dynamic-code-generation') {
+                process.stdout.write(`${cyan}  Input:${reset} Type the request for this skill\n`);
+            } else if (skillType === 'orchestrator') {
+                process.stdout.write(`${cyan}  Input:${reset} Describe the workflow request to coordinate\n`);
             } else {
                 process.stdout.write(`${cyan}  Input:${reset} Type your input or press Enter to execute\n`);
             }
@@ -696,10 +696,10 @@ export class InteractivePrompt {
 
         // Show command-specific input guidance
         if (command === 'exec') {
-            if (skillType === 'code') {
-                process.stdout.write(`${cyan}  Input:${reset} Type your request in natural language\n`);
-            } else if (skillType === 'interactive') {
-                process.stdout.write(`${cyan}  Input:${reset} Provide any initial context or press Enter to start\n`);
+            if (skillType === 'cskill' || skillType === 'dynamic-code-generation') {
+                process.stdout.write(`${cyan}  Input:${reset} Type the request for this skill\n`);
+            } else if (skillType === 'orchestrator') {
+                process.stdout.write(`${cyan}  Input:${reset} Describe the workflow request to coordinate\n`);
             } else {
                 process.stdout.write(`${cyan}  Input:${reset} Type your input or press Enter to execute\n`);
             }

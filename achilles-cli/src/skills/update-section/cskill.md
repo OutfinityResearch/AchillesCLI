@@ -4,7 +4,7 @@
 Add or replace one section in a skill descriptor.
 
 ## Description
-Call this to add or replace exactly one markdown section in an existing skill descriptor. Prefer this over full-file writes for focused edits.
+Call this to add or replace exactly one Markdown section in an existing skill descriptor. Prefer this over full-file writes for focused edits.
 
 ## Help
 Input: JSON { skillName, section, content }.

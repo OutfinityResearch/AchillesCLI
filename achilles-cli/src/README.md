@@ -6,7 +6,7 @@ A CLI agent specialized in managing, generating, and testing skill definition fi
 
 - **Native File Tools** - Fast, reliable file operations (no LLM-generated code for file ops)
 - **Schema Validation** - Validate skill files against their type schemas
-- **Code Generation** - Generate `.mjs` code from `tskill.md` definitions
+- **Code Generation** - Generate runtime `.mjs` code for `tskill.md`/`dbtable` and `cskill.md` definitions
 - **Test Sandbox** - Run and test generated code safely
 - **Diff Preview** - See changes before applying them
 - **Full CRUD** - Create, read, update, delete skills
@@ -141,7 +141,7 @@ await agent.startREPL();
 
 | Tool | Description | Args |
 |------|-------------|------|
-| `generate_skill_code` | Generate .mjs from tskill.md | `skillName` |
+| `generate_skill_code` | Generate runtime .mjs for tskill/dbtable or cskill | `skillName` |
 | `test_generated_code` | Test generated code | `{skillName, testInput?}` |
 
 ### Dynamic Skill Execution
@@ -208,7 +208,7 @@ Routes user intents to appropriate skills.
 ## Instructions
 Route requests to the appropriate skill.
 
-## Allowed Skills
+## Allowed-Skills
 - equipment: Equipment management
 - inventory: Stock tracking
 ```
@@ -219,7 +219,7 @@ Integrates with Model Context Protocol tools.
 
 ## Code Generation Workflow
 
-1. **Create tskill.md** - Define your entity schema
+1. **Create tskill.md or cskill.md** - Define your entity schema or code skill contract
 2. **Validate** - `validate_skill skillName`
 3. **Generate** - `generate_skill_code skillName`
 4. **Test** - `test_generated_code skillName`

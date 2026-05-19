@@ -38,18 +38,18 @@ export async function action(invocation = {}) {
         return `Error: Skill directory not found for "${skillName}"`;
     }
 
-    // Look for generated files - all types use .generated.mjs convention
-    const files = fs.readdirSync(skillDir);
-    const generatedFile = files.find(f =>
-        f.endsWith('.generated.mjs') ||
-        f.endsWith('.generated.js')
-    );
+    const candidateFiles = [
+        path.join(skillDir, 'src', 'index.mjs'),
+        path.join(skillDir, 'src', 'index.js'),
+        path.join(skillDir, 'src', 'tskill.generated.mjs'),
+    ];
+    const fullPath = candidateFiles.find((candidate) => fs.existsSync(candidate));
 
-    if (!generatedFile) {
-        return `Error: No generated code found for "${skillName}".\nRun generate-code first.`;
+    if (!fullPath) {
+        return `Error: No runtime code found for "${skillName}".\nExpected one of: ${candidateFiles.join(', ')}`;
     }
 
-    const fullPath = path.join(skillDir, generatedFile);
+    const generatedFile = path.relative(skillDir, fullPath);
 
     try {
         // Add timestamp to bust cache

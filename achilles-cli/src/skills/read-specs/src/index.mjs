@@ -1,9 +1,34 @@
 /**
- * Read Specs - Reads a skill's .specs.md specification file
+ * Read Specs - Reads a skill's specs/ specification files
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+
+function collectSpecFiles(specsDir) {
+    const files = [];
+    const queue = [specsDir];
+    while (queue.length > 0) {
+        const current = queue.shift();
+        let entries = [];
+        try {
+            entries = fs.readdirSync(current, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+        for (const entry of entries) {
+            const entryPath = path.join(current, entry.name);
+            if (entry.isDirectory()) {
+                if (entry.name !== '.backup') {
+                    queue.push(entryPath);
+                }
+            } else if (entry.name.endsWith('.md') || entry.name.endsWith('.mds')) {
+                files.push(entryPath);
+            }
+        }
+    }
+    return files.sort();
+}
 
 export async function action(invocation = {}) {
     const mainAgent = invocation.mainAgent;
@@ -37,27 +62,33 @@ export async function action(invocation = {}) {
     }
 
     const skillDir = skillRecord.skillDir || path.dirname(skillRecord.filePath);
-    const specsPath = path.join(skillDir, '.specs.md');
+    const specsDir = path.join(skillDir, 'specs');
 
-    if (!fs.existsSync(specsPath)) {
-        return `No .specs.md file found for skill "${skillName}".\nExpected path: ${specsPath}\n\nTo create one, use: /specs-write ${skillName}`;
+    if (!fs.existsSync(specsDir) || !fs.statSync(specsDir).isDirectory()) {
+        return `No specs/ directory found for skill "${skillName}".\nExpected path: ${specsDir}\n\nTo create one, use: /specs-write ${skillName}`;
     }
 
     try {
-        const content = fs.readFileSync(specsPath, 'utf8');
-
-        // Parse sections for summary
-        const sections = [];
-        const sectionMatches = content.matchAll(/^##\s+(.+)$/gm);
-        for (const match of sectionMatches) {
-            sections.push(match[1]);
+        const specFiles = collectSpecFiles(specsDir);
+        if (specFiles.length === 0) {
+            return `No specs files found for skill "${skillName}".\nExpected markdown files under: ${specsDir}`;
         }
 
-        const sectionsInfo = sections.length > 0
-            ? `\nSections: ${sections.join(', ')}`
-            : '';
+        const blocks = specFiles.map((filePath) => {
+            const relPath = path.relative(skillDir, filePath);
+            const content = fs.readFileSync(filePath, 'utf8');
+            const sections = [];
+            const sectionMatches = content.matchAll(/^##\s+(.+)$/gm);
+            for (const match of sectionMatches) {
+                sections.push(match[1]);
+            }
+            const sectionsInfo = sections.length > 0
+                ? `\nSections: ${sections.join(', ')}`
+                : '';
+            return `=== ${relPath} for ${skillName} ===${sectionsInfo}\nPath: ${filePath}\n\n${content}`;
+        });
 
-        return `=== .specs.md for ${skillName} ===${sectionsInfo}\nPath: ${specsPath}\n\n${content}`;
+        return blocks.join('\n\n---\n\n');
     } catch (error) {
         return `Error reading specs file: ${error.message}`;
     }

@@ -3,13 +3,13 @@
  * Prompts used by the generate-code skill for generating .mjs code from skill definitions
  *
  * This module is project-agnostic. Skills can define their own code generation
- * requirements in their .specs.md files using a "## Code Generation Prompt" section.
+ * requirements in their specs/ files using a "## Code Generation Prompt" section.
  */
 
 /**
- * Extract code generation prompt from .specs.md content
+ * Extract code generation prompt from specs content
  *
- * The .specs.md file can include a "## Code Generation Prompt" section that contains
+ * Specs content can include a "## Code Generation Prompt" section that contains
  * the full prompt template for generating code for this specific skill.
  *
  * Template variables supported:
@@ -18,7 +18,7 @@
  * - {{content}} - The full skill definition content
  * - {{sections}} - JSON of parsed sections (for advanced use)
  *
- * @param {string} specsContent - The .specs.md file content
+ * @param {string} specsContent - Specs content content
  * @returns {string|null} The code generation prompt template or null
  */
 function extractCodeGenPromptFromSpecs(specsContent) {
@@ -37,9 +37,9 @@ function extractCodeGenPromptFromSpecs(specsContent) {
 }
 
 /**
- * Extract validation requirements from .specs.md content
+ * Extract validation requirements from specs content
  *
- * @param {string} specsContent - The .specs.md file content
+ * @param {string} specsContent - Specs content content
  * @returns {Object|null} Validation requirements or null
  */
 export function extractValidationRequirements(specsContent) {
@@ -117,13 +117,13 @@ function extractEntityName(skillName) {
  * Build the prompt for code generation from a tskill definition
  *
  * Priority:
- * 1. If .specs.md has a "## Code Generation Prompt" section, use that
- * 2. Otherwise, use the generic prompt with .specs.md as context
+ * 1. If specs content has a "## Code Generation Prompt" section, use that
+ * 2. Otherwise, use the generic prompt with specs content as context
  *
  * @param {string} skillName - The name of the skill
  * @param {string} content - The full skill definition content
  * @param {Object} sections - Parsed sections from the skill definition
- * @param {string|null} specsContent - Optional .specs.md content
+ * @param {string|null} specsContent - Optional specs content
  * @returns {string} The prompt for the LLM
  */
 export function buildCodeGenPrompt(skillName, content, sections, specsContent = null) {
@@ -131,7 +131,7 @@ export function buildCodeGenPrompt(skillName, content, sections, specsContent = 
     const customPrompt = extractCodeGenPromptFromSpecs(specsContent);
 
     if (customPrompt) {
-        // Use custom prompt from .specs.md
+        // Use custom prompt from specs content
         const entityName = extractEntityName(skillName);
         return applyTemplateVars(customPrompt, {
             skillName,
@@ -197,107 +197,14 @@ Generate ONLY the JavaScript code, no markdown code blocks, no explanations.`;
 }
 
 /**
- * Build the prompt for code generation from an oskill (orchestrator) definition
- * @param {string} skillName - The name of the skill
- * @param {string} content - The full skill definition content
- * @param {Object} sections - Parsed sections from the skill definition
- * @param {string|null} specsContent - Optional .specs.md content
- * @returns {string} The prompt for the LLM
- */
-export function buildOskillCodeGenPrompt(skillName, content, sections, specsContent = null) {
-    const specsBlock = specsContent ? `
-## Skill Specifications
-${specsContent}
-
----
-` : '';
-
-    return `Generate JavaScript/ESM code for an orchestrator skill based on this definition.
-
-## Skill Name: ${skillName}
-${specsBlock}
-## Skill Definition:
-${content}
-
-## Requirements:
-1. Generate clean, modern ESM code (export functions and objects, no CommonJS)
-2. Export a \`specs\` object containing skill metadata
-3. Export an async \`action\` function that handles orchestration logic
-4. Parse "Allowed-Skills" section to know which skills can be called
-5. Parse "Description" section to understand routing patterns
-6. Use the "Instructions" section as guidance for the LLM when routing
-
-## Expected Structure:
-
-\`\`\`javascript
-/**
- * ${skillName} - Orchestrator Skill
- * [Description from the skill definition]
- */
-
-export const specs = {
-    name: '${skillName}',
-    description: '[From Description section]',
-    type: 'orchestrator',
-    allowedSkills: ['skill1', 'skill2'], // From Allowed-Skills section
-    intents: {
-        // From Description section
-        intentName: 'Description of this intent',
-    },
-};
-
-export async function action(input, context) {
-    const { llmAgent, skilledAgent } = context;
-
-    // Use LLM to determine intent and route to appropriate skill
-    const instructions = \`[From Instructions section]\`;
-
-    const routingPrompt = \`\${instructions}
-
-User request: \${input}
-
-Determine the intent and which skill to use. Return JSON:
-{"intent": "...", "skill": "...", "input": "..."}\`;
-
-    const routing = await llmAgent.executePrompt(routingPrompt, {
-        responseShape: 'json',
-        mode: 'fast',
-    });
-
-    // Execute the routed skill
-    if (routing.skill && specs.allowedSkills.includes(routing.skill)) {
-        return await skilledAgent.executeSkill({
-            skillName: routing.skill,
-            input: routing.input,
-            context,
-        });
-    }
-
-    return 'Could not determine appropriate action';
-}
-
-export default { specs, action };
-\`\`\`
-
-## Code Style:
-- Use arrow functions for simple operations
-- Use async/await for all skill calls
-- Handle routing errors gracefully
-- Include JSDoc comments
-
-Generate ONLY the JavaScript code, no markdown code blocks, no explanations.`;
-}
-
-/**
  * Build the prompt for code generation from a cskill (code) definition
  * @param {string} skillName - The name of the skill
  * @param {string} content - The full skill definition content
  * @param {Object} sections - Parsed sections from the skill definition
- * @param {string|null} specsContent - Optional .specs.md content
+ * @param {string|null} specsContent - Optional specs content
  * @returns {string} The prompt for the LLM
  */
 export function buildCskillCodeGenPrompt(skillName, content, sections, specsContent = null) {
-    const llmMode = sections['LLM-Mode'] || sections['LLM Mode'] || 'fast';
     const specsBlock = specsContent ? `
 ## Skill Specifications
 ${specsContent}
@@ -305,7 +212,7 @@ ${specsContent}
 ---
 ` : '';
 
-    return `Generate JavaScript/ESM code for a code skill based on this definition.
+    return `Generate JavaScript/ESM code for a cskill runtime module compatible with achillesAgentLib CodeSkillsSubsystem.
 
 ## Skill Name: ${skillName}
 ${specsBlock}
@@ -313,73 +220,37 @@ ${specsBlock}
 ${content}
 
 ## Requirements:
-1. Generate clean, modern ESM code (export functions and objects, no CommonJS)
-2. Export a \`specs\` object containing skill metadata and argument definitions
-3. Export an async \`action\` function that executes the skill logic
-4. The "Prompt" section defines what the LLM should do - use it as the system prompt
-5. Parse "Arguments" section to define expected inputs
+1. Generate clean modern ESM code, no CommonJS.
+2. Export an async \`action(invocation = {})\` function.
+3. The function receives a single invocation object from agentLib, including \`promptText\`, \`mainAgent\`, \`llmAgent\`, \`context\`, \`user\`, \`attachments\`, and optional \`signal\`.
+4. Use the descriptor's "Input Format" section as the public argument contract.
+5. Return a string or JSON-serializable value.
+6. Do not require a second context argument; CodeSkillsSubsystem calls \`module.action(invocation)\`.
 
 ## Expected Structure:
 
 \`\`\`javascript
-/**
- * ${skillName} - Code Skill
- * [Description from Description section]
- */
-
-export const specs = {
-    name: '${skillName}',
-    description: '[From Description section]',
-    type: 'code',
-    llmMode: '${llmMode.trim().toLowerCase()}',
-    arguments: {
-        // From Arguments section
-        input: {
-            description: 'Primary input for the skill',
-            type: 'string',
-            required: true,
-        },
-    },
-};
-
-export async function action(input, context) {
-    const { llmAgent } = context;
-
-    if (!llmAgent) {
-        throw new Error('LLM agent required for code skill execution');
+export async function action(invocation = {}) {
+    const { promptText = '', llmAgent = null, signal = null } = invocation;
+    if (signal?.aborted) {
+        const error = new Error('Skill execution cancelled.');
+        error.name = 'AbortError';
+        throw error;
     }
-
-    // The prompt from the skill definition
-    const systemPrompt = \`[From Prompt section]\`;
-
-    // Build the full prompt with user input
-    const fullPrompt = \`\${systemPrompt}
-
-User input: \${typeof input === 'string' ? input : JSON.stringify(input)}\`;
-
-    // Execute with the specified LLM mode
-    const result = await llmAgent.executePrompt(fullPrompt, {
-        mode: specs.llmMode,
-    });
-
-    return result;
+    return String(promptText || '').trim();
 }
-
-export default { specs, action };
 \`\`\`
 
 ## Code Style:
-- Use arrow functions for simple operations
-- Use async/await for LLM calls
-- Handle missing input gracefully
-- Include JSDoc comments
-- Use the LLM mode specified in the skill definition (${llmMode.trim().toLowerCase()})
+- Keep the module self-contained.
+- Use async/await for asynchronous work.
+- Check \`signal.aborted\` before expensive operations.
+- Throw clear errors for invalid input.
 
 Generate ONLY the JavaScript code, no markdown code blocks, no explanations.`;
 }
 
 export default {
     buildCodeGenPrompt,
-    buildOskillCodeGenPrompt,
     buildCskillCodeGenPrompt,
 };

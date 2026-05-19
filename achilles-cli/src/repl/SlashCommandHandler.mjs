@@ -82,7 +82,7 @@ export const COMMAND_DEFINITIONS = {
     'generate': {
         skill: BUILT_IN_SKILLS.GENERATE_CODE,
         usage: '/generate <skill-name>',
-        description: 'Generate .mjs code from tskill',
+        description: 'Generate runtime code for tskill/dbtable or cskill',
         args: 'required',
         needsSkillArg: true,
     },
@@ -132,14 +132,14 @@ export const COMMAND_DEFINITIONS = {
     'specs': {
         skill: BUILT_IN_SKILLS.READ_SPECS,
         usage: '/specs <skill-name>',
-        description: "Read a skill's .specs.md file",
+        description: "Read a skill's specs/ files",
         args: 'required',
         needsSkillArg: true,
     },
     'specs-write': {
         skill: BUILT_IN_SKILLS.WRITE_SPECS,
         usage: '/specs-write <skill-name> [content]',
-        description: "Create/update a skill's .specs.md file",
+        description: "Create/update a skill's specs/ files",
         args: 'required',
         needsSkillArg: true,
     },

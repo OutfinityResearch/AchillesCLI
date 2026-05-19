@@ -1,7 +1,7 @@
 /**
- * Write Specs - Creates or updates a skill's .specs.md specification file
+ * Write Specs - Creates or updates a skill's specs/ specification file
  *
- * Writes or updates a skill's .specs.md file.
+ * Writes or updates a skill's specs/ file.
  */
 
 import fs from 'node:fs';
@@ -23,7 +23,7 @@ The **${skillName}** skill is a database table skill (tskill) that manages ${ent
 ## Skill Type
 
 - **Type**: \`tskill\` (Table Skill / Database Table Skill)
-- **Generated File**: \`tskill.generated.mjs\`
+- **Generated File**: \`src/tskill.generated.mjs\`
 - **Definition File**: \`tskill.md\`
 
 ## Purpose
@@ -155,6 +155,30 @@ Generate ONLY JavaScript code, no markdown code blocks, no explanations.
 `;
 }
 
+function getDefaultSpecFile(skillType) {
+    if (skillType === 'dbtable' || skillType === 'tskill') {
+        return 'tskill.generated.mjs.md';
+    }
+    if (skillType === 'cskill') {
+        return 'index.mjs.md';
+    }
+    return 'notes.md';
+}
+
+function safeSpecFileName(value, skillType) {
+    const requested = String(value || getDefaultSpecFile(skillType)).trim();
+    const normalized = requested
+        .replace(/\\/g, '/')
+        .replace(/^\/+/, '')
+        .replace(/^specs\//, '');
+    if (!normalized || normalized.includes('..')) {
+        return getDefaultSpecFile(skillType);
+    }
+    return normalized.endsWith('.md') || normalized.endsWith('.mds')
+        ? normalized
+        : `${normalized}.md`;
+}
+
 export async function action(invocation = {}) {
     const mainAgent = invocation.mainAgent;
     const prompt = invocation.promptText;
@@ -202,12 +226,15 @@ export async function action(invocation = {}) {
         skillDir = path.join(skillsDir, skillName);
     }
 
-    const specsPath = path.join(skillDir, '.specs.md');
+    const skillType = skillRecord?.type || 'cskill';
+    const specFile = safeSpecFileName(args.fileName || args.specFile || args.path, skillType);
+    const specsDir = path.join(skillDir, 'specs');
+    const specsPath = path.join(specsDir, specFile);
 
     // Handle section update
     if (section && sectionContent !== undefined) {
         if (!fs.existsSync(specsPath)) {
-            return `Error: No .specs.md file exists for "${skillName}". Create one first with: /specs-write ${skillName}`;
+            return `Error: No specs file exists for "${skillName}". Create one first with: /specs-write ${skillName}`;
         }
 
         try {
@@ -222,12 +249,11 @@ export async function action(invocation = {}) {
             if (existingContent.match(sectionRegex)) {
                 existingContent = existingContent.replace(sectionRegex, `$1${sectionContent}\n`);
             } else {
-                // Section doesn't exist, append it
                 existingContent += `\n## ${section}\n\n${sectionContent}\n`;
             }
 
             fs.writeFileSync(specsPath, existingContent, 'utf8');
-            return `Updated section "${section}" in ${skillName}/.specs.md`;
+            return `Updated section "${section}" in ${skillName}/specs/${specFile}`;
         } catch (error) {
             return `Error updating section: ${error.message}`;
         }
@@ -237,7 +263,6 @@ export async function action(invocation = {}) {
     let finalContent = content;
 
     if (!finalContent && generateTemplate) {
-        const skillType = skillRecord?.type || 'cskill';
         finalContent = generateSpecsTemplate(skillName, skillType);
     }
 
@@ -247,15 +272,13 @@ export async function action(invocation = {}) {
 
     try {
         // Create directory if needed
-        if (!fs.existsSync(skillDir)) {
-            fs.mkdirSync(skillDir, { recursive: true });
-        }
+        fs.mkdirSync(specsDir, { recursive: true });
 
         const existed = fs.existsSync(specsPath);
         fs.writeFileSync(specsPath, finalContent, 'utf8');
 
         const action = existed ? 'Updated' : 'Created';
-        return `${action}: ${skillName}/.specs.md (${finalContent.length} bytes)\nPath: ${specsPath}`;
+        return `${action}: ${skillName}/specs/${specFile} (${finalContent.length} bytes)\nPath: ${specsPath}`;
     } catch (error) {
         return `Error writing specs file: ${error.message}`;
     }

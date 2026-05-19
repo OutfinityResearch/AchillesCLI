@@ -3,7 +3,7 @@ id: DS008
 title: Schemas and Skill Documentation Contracts
 status: active
 owner: AchillesCLI Maintainers
-summary: Defines skill schema detection, validation rules, templates, and `.specs.md` integration.
+summary: Defines skill schema detection, validation rules, templates, and `specs/` integration.
 ---
 
 # DS008-schemas-and-skill-doc-contract
@@ -24,10 +24,10 @@ Document contract:
 3. Read and write paths must preserve document integrity and expected section order where applicable.
 4. All skill families may include an optional `## Help` section. This section is user-facing invocation guidance and is not used as runtime execution logic.
 
-`.specs.md` sidecar contract:
-1. Skills may include optional `.specs.md` files.
+`specs/` sidecar contract:
+1. Skills may include optional Markdown files under `specs/`.
 2. Sidecar specifications are loaded on demand and included in relevant generation/refinement/read flows.
-3. Missing sidecar files are valid and must not break normal skill execution.
+3. Missing `specs/` directories are valid and must not break normal skill execution.
 
 Operational invariants:
 1. Schema rules must stay synchronized with built-in skill authoring and validation commands.

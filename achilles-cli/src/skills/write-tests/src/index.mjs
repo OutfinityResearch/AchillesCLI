@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { detectSkillType, parseSkillSections, loadSpecsContent } from '../../../schemas/skillSchemas.mjs';
-import { SKILL_TYPE_NAMES, FILE_NAMES, FILE_EXTENSIONS, TIERS, RESPONSE_SHAPES } from '../../../lib/constants.mjs';
+import { SKILL_TYPE_NAMES, FILE_NAMES, TIERS, RESPONSE_SHAPES } from '../../../lib/constants.mjs';
 
 /**
  * Parse input to extract skillName and options
@@ -47,11 +47,10 @@ function parseInput(prompt) {
  * Read generated code if it exists
  */
 function readGeneratedCode(skillDir, skillType, skillName) {
-    // Try different generated file patterns
     const patterns = [
-        path.join(skillDir, FILE_NAMES.TSKILL_GENERATED),
-        path.join(skillDir, `${skillName}${FILE_EXTENSIONS.GENERATED_MJS}`),
-        path.join(skillDir, `${skillName}.mjs`),
+        path.join(skillDir, 'src', FILE_NAMES.TSKILL_GENERATED),
+        path.join(skillDir, 'src', 'index.mjs'),
+        path.join(skillDir, 'src', 'index.js'),
     ];
 
     for (const filePath of patterns) {
@@ -79,7 +78,7 @@ function buildTskillTestPrompt(skillName, definition, sections, generatedCode, s
         : '\n\nNo generated code found yet. Generate basic structural tests.';
 
     const specsInfo = specsContent
-        ? `\n\n## Specifications (.specs.md)\n${specsContent}`
+        ? `\n\n## Specifications\n${specsContent}`
         : '';
 
     return `Generate a comprehensive test file for the "${skillName}" tskill (database table skill).
@@ -118,7 +117,7 @@ const __dirname = path.dirname(__filename);
 // Import the generated module
 let skillModule;
 try {
-    skillModule = await import('../skills/${skillName}/tskill.generated.mjs');
+    skillModule = await import('../skills/${skillName}/src/tskill.generated.mjs');
 } catch (e) {
     skillModule = null;
 }
@@ -176,12 +175,11 @@ Generate the complete test file with actual tests based on the skill definition.
 }
 
 /**
- * Build test generation prompt for cskill/oskill
+ * Build test generation prompt for cskill
  */
 function buildCodeSkillTestPrompt(skillName, skillType, definition, sections, generatedCode, specsContent) {
     const typeDesc = {
-        cskill: 'code skill (LLM-generated code)',
-        oskill: 'orchestrator skill (routes to other skills)',
+        cskill: 'code skill executed from src/index.mjs or src/index.js',
     }[skillType] || 'skill';
 
     const generatedInfo = generatedCode
@@ -189,7 +187,7 @@ function buildCodeSkillTestPrompt(skillName, skillType, definition, sections, ge
         : '\n\nNo generated code found yet. Generate tests for the action function interface.';
 
     const specsInfo = specsContent
-        ? `\n\n## Specifications (.specs.md)\n${specsContent}`
+        ? `\n\n## Specifications\n${specsContent}`
         : '';
 
     return `Generate a comprehensive test file for the "${skillName}" ${skillType} (${typeDesc}).
@@ -204,9 +202,9 @@ ${specsInfo}${generatedInfo}
 
 Create a test file that:
 1. Exports a default async function that returns { passed: number, failed: number, errors: string[] }
-2. Tests the action(agent, prompt) function with various inputs
+2. Tests the action(invocation) function with various inputs
 3. Tests edge cases (empty input, invalid input, etc.)
-4. Mocks the agent parameter appropriately
+4. Mocks the invocation object appropriately
 5. Uses descriptive test names
 
 ## Test File Template
@@ -225,10 +223,10 @@ const __dirname = path.dirname(__filename);
 // Import the skill module
 let skillModule;
 try {
-    skillModule = await import('../skills/${skillName}/${skillName}.mjs');
+    skillModule = await import('../skills/${skillName}/src/index.mjs');
 } catch (e) {
     try {
-        skillModule = await import('../skills/${skillName}/${skillName}.generated.mjs');
+        skillModule = await import('../skills/${skillName}/src/index.js');
     } catch (e2) {
         skillModule = null;
     }
@@ -373,8 +371,10 @@ export async function action(invocation = {}) {
     let testGenPrompt;
     if (skillType === SKILL_TYPE_NAMES.TSKILL) {
         testGenPrompt = buildTskillTestPrompt(skillName, definition, sections, generatedCode, specsContent);
-    } else {
+    } else if (skillType === SKILL_TYPE_NAMES.CSKILL) {
         testGenPrompt = buildCodeSkillTestPrompt(skillName, skillType, definition, sections, generatedCode, specsContent);
+    } else {
+        return `Error: write-tests supports generated runtime tests for ${SKILL_TYPE_NAMES.TSKILL} and ${SKILL_TYPE_NAMES.CSKILL} only.\nThis skill is type: ${skillType}`;
     }
 
     // Generate tests using LLM

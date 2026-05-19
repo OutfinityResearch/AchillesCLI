@@ -9,41 +9,74 @@ import path from 'node:path';
 export const SKILL_TYPES = {
     tskill: {
         fileName: 'tskill.md',
+        runtimeType: 'dbtable',
         generatedFileName: 'tskill.generated.mjs',
         description: 'Database table skill - defines entity schema with fields, validators, and business rules',
         requiredSections: ['Table Purpose', 'Fields'],
-        optionalSections: ['Help', 'Derived Fields', 'Business Rules', 'Relationships'],
+        optionalSections: [
+            'Instructions',
+            'Help',
+            'Role Access Policy',
+            'Delete Guard',
+            'Interactive Fields',
+            'List Extra Fields',
+            'Derived Fields',
+            'Business Rules',
+            'Relationships',
+        ],
     },
     cskill: {
         fileName: 'cskill.md',
-        generatedFileName: null, // Uses separate .js file
-        description: 'Code skill - LLM generates and executes code based on specs',
-        requiredSections: ['Description', 'Input Format', 'Output Format'],
+        runtimeType: 'cskill',
+        generatedFileName: null,
+        description: 'Code skill - executes a module and uses Input Format for argument extraction',
+        requiredSections: ['Input Format'],
         optionalSections: ['Help', 'Constraints', 'Examples'],
+        recommendedSections: ['Description', 'Output Format'],
     },
     oskill: {
         fileName: 'oskill.md',
+        runtimeType: 'orchestrator',
         generatedFileName: null,
         description: 'Orchestrator skill - routes intents to other skills',
-        requiredSections: ['Instructions', 'Allowed Skills'],
-        optionalSections: ['Description', 'Help', 'Routing Logic', 'Fallback Behavior'],
+        requiredSections: [],
+        optionalSections: ['Description', 'Instructions', 'Preparation', 'Allowed-Skills', 'Allowed-Prep-Skills', 'Session-Type', 'Help'],
+        sectionAliases: {
+            Instructions: ['instructions', 'guidance', 'overview', 'orchestration-guidance'],
+            Preparation: ['preparation', 'prep', 'context-prep'],
+            'Allowed-Skills': ['allowed-skills', 'skill-allowlist', 'skill-allow-list', 'skills'],
+            'Allowed-Prep-Skills': ['allowed-prep-skills', 'allowed-preparation-skills', 'prep-skills'],
+            'Session-Type': ['session', 'session type', 'session-type', 'session_type'],
+        },
     },
     mskill: {
         fileName: 'mskill.md',
+        runtimeType: 'mcp',
         generatedFileName: null,
         description: 'MCP skill - uses Model Context Protocol tools',
-        requiredSections: ['Description', 'MCP Tools'],
-        optionalSections: ['Help', 'Configuration'],
+        requiredSections: [],
+        optionalSections: ['Description', 'Instructions', 'Allowed-Tools', 'Light-SOP-Lang', 'Help', 'Configuration'],
+        sectionAliases: {
+            Instructions: ['instructions', 'guidance', 'system-prompt', 'overview', 'mcp-guidance'],
+            'Allowed-Tools': ['allowed-tools', 'tool-allowlist', 'tool-allow-list', 'tools'],
+            'Light-SOP-Lang': ['light-sop-lang', 'lightsoplang', 'script', 'plan-script'],
+        },
     },
-    cgskill: {
-        fileName: 'cgskill.md',
+    dcgskill: {
+        fileName: 'dcgskill.md',
+        runtimeType: 'dynamic-code-generation',
         generatedFileName: null,
-        description: 'Code generation skill - LLM decides text/code or uses hand-written module',
-        requiredSections: ['Description', 'Prompt'],
-        optionalSections: ['Help', 'Argument', 'LLM-Mode', 'Examples'],
+        description: 'Dynamic code generation skill - LLM decides whether to answer directly or execute generated JavaScript',
+        requiredSections: [],
+        optionalSections: ['Description', 'Help', 'Prompt', 'Argument', 'Input', 'Parameters', 'LLM Model', 'Examples'],
+        sectionAliases: {
+            Argument: ['argument', 'input', 'parameters'],
+            'LLM Model': ['llm model', 'llm-model', 'model'],
+        },
     },
     anthropic: {
         fileName: 'SKILL.md',
+        runtimeType: 'anthropic',
         generatedFileName: null,
         description: 'Anthropic-style skill - portable instruction/resource bundle',
         requiredSections: [],
@@ -55,233 +88,221 @@ export const SKILL_TEMPLATES = {
     tskill: `# [Entity Name]
 
 ## Table Purpose
-[Describe what this table stores and its role in the system]
+[Explain what entity this table stores, which user workflow it supports, and what record identity means for create/read/update/delete operations.]
 
 ## Help
-Invoke this skill with the record operation and the relevant field values.
+[User-facing invocation guidance shown by hosts. This section does not add generated table behavior.]
 Example: /exec [skill-name] create name="Example" status="active"
 
 ## Fields
+[Each field is declared as a ### subsection. Field-level sections below describe runtime parsing, validation, normalization, presentation, derivation, and identity behavior.]
 
 ### field_id
-- Description: Unique identifier for this record
-- Type: string
-- Required: true
-- PrimaryKey: true
-- Indexed: true
-- Aliases: ["id", "record_id"]
+#### Description
+[Human-readable purpose of this field.]
+
+#### PrimaryKey
+[Primary record identifier. Production table skills should normally define one primary key so record identity is stable.]
+
+#### Aliases
+[Alternative names the user or LLM may use for this field.]
+["id", "record_id"]
+
+#### Field Value Is Required
+[Whether this field must be present during create/update flows.]
+Always required.
 
 #### Field Value Validator
-Must match pattern: [ENTITY]-####  (e.g., ENTITY-0001)
-Auto-generates if not provided.
+[Rules that incoming values must satisfy before the generated runtime accepts them.]
+Must match pattern: [ENTITY]-####.
 
 ### name
-- Description: Human-readable name
-- Type: string
-- Required: true
-- Indexed: true
-- Aliases: ["title", "label"]
+#### Description
+[Human-readable name, title, or display label for the record.]
+
+#### Aliases
+["title", "label"]
+
+#### Field Value Resolver
+[Normalization applied before validation or storage.]
+Trim whitespace.
 
 #### Field Value Validator
-- Minimum length: 2 characters
-- Maximum length: 100 characters
-- Must be unique within table
+[Validation rules for accepted values.]
+Must be between 2 and 100 characters.
 
 #### Field Value Presenter
-Capitalizes first letter of each word.
+[Display formatting used in confirmations, lists, or responses.]
+Display in Title Case.
 
 ### status
-- Description: Current status of the record
-- Type: string
-- Required: true
-- Default: "active"
+#### Description
+[State or lifecycle value for this record.]
 
 #### Field Value Enumerator
+[Allowed finite values for this field.]
 ["active", "inactive", "archived"]
 
-#### Field Value Validator
-Must be one of the enumerated values.
-
-### description
-- Description: Optional detailed description
-- Type: string
-- Required: false
-- Aliases: ["notes", "details"]
-
-### created_at
-- Description: Timestamp when record was created
-- Type: datetime
-- Required: true
-- Default: current timestamp
-
-### updated_at
-- Description: Timestamp of last modification
-- Type: datetime
-- Required: false
-
-## Derived Fields
-
-### is_active
-- Type: boolean
-- Calculation: status === "active"
-- Description: Convenience field for filtering active records
+#### Default Value
+[Default value used when the user does not provide one.]
+"active"
 
 ### display_name
-- Type: string
-- Calculation: \`\${name} (\${field_id})\`
-- Description: Formatted display string
+#### Description
+[Generated or computed field used for presentation.]
+
+#### Field Value Derivator
+[How to derive this field from other record fields.]
+Combine name and status.
+
+## Role Access Policy
+[Optional authorization policy by role and operation. Use only when runtime behavior depends on role-specific access.]
+- admin: create, read, update, delete
+- user: read
+
+## Delete Guard
+[Optional rules that prevent deletion when references, state, or business constraints make deletion unsafe.]
+- Do not delete active records.
+
+## Interactive Fields
+[Optional fields that should ask for user input or confirmation when missing or ambiguous.]
+- name
+- status
+
+## List Extra Fields
+[Optional fields to include in list/select responses beyond the primary display fields.]
+- status
+
+## Derived Fields
+[Optional computed values derived from stored fields. Prefer field-level derivators when the behavior belongs to one field.]
+- is_active: [Explain the derived value and its calculation, e.g. status === "active".]
 
 ## Business Rules
+[Optional domain constraints that generated behavior or tests should enforce.]
 
-1. Records cannot be deleted if referenced by other entities
-2. Status transitions: active → inactive → archived (one-way)
-3. Name must be unique within the same parent context
+1. Names must be unique within the relevant parent scope.
+2. Archived records cannot return to active status.
 
 ## Relationships
-
-### Parent: [ParentEntity]
-- Foreign key: parent_id
-- Cascade: restrict delete
-
-### Children: [ChildEntity]
-- Referenced by: parent_id in ChildEntity
-- Cascade: set null on delete
+[Optional parent/child references to other tables or entities.]
+- Parent [ParentEntity]: foreign key parent_id, cascade behavior restrict delete.
+- Child [ChildEntity]: referenced by parent_id, cascade behavior set null on delete.
 `,
 
     cskill: `# [Skill Name]
 
-[One-line description of what this skill does]
-
 ## Description
-[Brief description of the skill's purpose and capabilities]
+[Public capability contract for this code skill. The runtime executes src/index.mjs or src/index.js; this descriptor explains what that module is expected to do.]
 
 ## Help
-Invoke this skill with the required input described below.
+[User-facing invocation guidance shown by hosts. This section is informational and does not replace Input Format.]
 Example: /exec [skill-name] param1="value" param2="optional value"
 
 ## Input Format
-- **param1**: Description of first parameter
+[Required by the Code Skills subsystem. Used for argument extraction before calling the module action.]
+- **param1**: [Description of first parameter]
   - Type: string | number | object
   - Required: true | false
-- **param2**: Description of second parameter (optional)
+- **param2**: [Description of second parameter]
+  - Type: string | number | object
+  - Required: false
 
 ## Output Format
+[Expected return shape from the module action. Useful for callers, tests, and generation workflows.]
 - **Type**: string | object | array
 - **Success Example**: "Expected successful output"
 - **Error Example**: "Error: Description of error case"
 
 ## Constraints
-- [Constraint 1: e.g., "Must handle null/undefined inputs gracefully"]
-- [Constraint 2: e.g., "Maximum input length: 1000 characters"]
-- [Constraint 3: e.g., "Must return within 5 seconds"]
+[Operational limits the runtime implementation must respect.]
+- [Constraint 1]
+- [Constraint 2]
+- [Constraint 3]
 
 ## Examples
-
-### Example 1: Basic usage
+[Concrete examples for users, tests, or generation/refinement workflows.]
 - **Input**: \`"example input"\`
 - **Expected Output**: \`"example output"\`
-
-### Example 2: With options
 - **Input**: \`{ "data": "...", "options": { "format": "json" } }\`
 - **Expected Output**: \`{ "result": "..." }\`
 `,
 
     oskill: `# [Orchestrator Name]
 
-## Instructions
-This orchestrator routes user intents to the appropriate skills.
-[Additional context about the domain]
+## Preparation
+[Optional setup instructions executed before the main orchestration session. Use this to load context or inspect state before the main workflow. If omitted, no separate preparation block runs.]
 
-## Allowed Skills
-- skill_name_1: [When to use this skill]
-- skill_name_2: [When to use this skill]
-- skill_name_3: [When to use this skill]
+## Allowed-Prep-Skills
+[Optional allowlist for preparation. If omitted, preparation uses the main Allowed-Skills list. If present but empty, no preparation skills are available.]
+- context-loader
+
+## Allowed-Skills
+[Execution allowlist for the main orchestrator. If omitted or empty, agentLib exposes all discovered skills except this orchestrator. Declare this explicitly when the workflow must be bounded.]
+- skill_name_1: [When this downstream skill should be used]
+- skill_name_2: [When this downstream skill should be used]
+
+## Instructions
+[Main orchestration guidance. Explain how to choose among allowed skills, how to sequence them, how to handle ambiguity, and what completion quality means.]
+1. Determine which allowed skill should be used first.
+2. Keep execution bounded to the declared allowlist.
+3. Return a concise final answer after delegated work is complete.
+
+## Session-Type
+[Controls which agentic session implementation runs this orchestrator. Accepted values:]
+- sop: [Default when omitted. Plan-first execution: the LLM first creates a Plan SOPlang script over the bounded skill surface, then the interpreter executes that plan. Best when the workflow should be inspectable and structured.]
+- loop: [Adaptive reasoning-and-action execution: the LLM chooses one tool at a time, observes results, and continues until completion or a bounded stop condition. Best when the workflow needs iterative decisions after each result.]
+sop
 
 ## Description
-
-### Intent Category 1
-- Keywords: ["keyword1", "keyword2"]
-- Routes to: skill_name_1
-- Examples:
-  - "user says this" → skill_name_1
-
-### Intent Category 2
-- Keywords: ["keyword3", "keyword4"]
-- Routes to: skill_name_2
-- Examples:
-  - "user says that" → skill_name_2
+[Short operational summary of the workflow. This helps discovery and selection; routing, sequencing, fallback, and completion rules belong in Instructions.]
 
 ## Help
-Invoke this orchestrator with the user-facing request it should coordinate.
+[User-facing invocation guidance shown by hosts. This is not part of the orchestration prompt contract.]
 Example: /exec [orchestrator-name] describe the workflow or admin task to perform
-
-## Routing Logic
-
-1. Analyze the user's intent using NLP
-2. Match against known intent patterns
-3. Validate user has permission for the target skill
-4. Execute the skill with appropriate context
-5. Format and return the response
-
-## Post-Processing Rules
-
-- After successful operations: [what to do]
-- After errors: [how to handle]
-- Logging: [what to log]
-
-## Fallback Behavior
-
-When intent is unclear:
-1. List possible interpretations
-2. Ask for clarification
-3. Suggest most likely option based on context
 `,
 
     mskill: `# [MCP Skill Name]
 
 ## Description
-[One-line description of this MCP skill]
+[Short summary of the MCP capability and the remote/tooling domain it exposes.]
 
 ## Help
-Invoke this skill with the operation that should be planned through the allowed MCP tools.
+[User-facing invocation guidance shown by hosts. This section is informational and does not replace Instructions or Allowed-Tools.]
 Example: /exec [skill-name] describe the remote tool task to perform
 
-## MCP Tools
+## Instructions
+[Planning guidance used when no explicit Light-SOP-Lang script is present. Accepted aliases: Guidance, System-Prompt, Overview, MCP-Guidance.]
+Use the allowed MCP tools to satisfy the request.
 
-### tool_name_1
-- Description: [What this tool does]
-- Parameters:
-  - param1: [type] - [description]
-  - param2: [type] - [description]
-- Returns: [description of return value]
+## Allowed-Tools
+[Allowlist of MCP tool names this skill may call. Accepted aliases: Tool-Allowlist, Tool-Allow-List, Tools. If omitted, the subsystem may use the available tools exposed by the MCP client.]
+- tool_name_1
+- tool_name_2
 
-### tool_name_2
-- Description: [What this tool does]
-- Parameters:
-  - param1: [type] - [description]
-- Returns: [description of return value]
+## Light-SOP-Lang
+[Optional explicit Plan SOPlang script. Accepted aliases: LightSOPLang, Script, Plan-Script. When present, this script is the plan source and bypasses LLM-generated MCP planning.]
+@prompt
+@tool_name_1 $prompt
 
 ## Configuration
-
-### Server Connection
+[Optional human/host documentation for connection details. The current MCP subsystem does not treat this section as a substitute for the actual MCP client configuration.]
 - URL: [MCP server URL or local path]
 - Authentication: [auth method if required]
-
-### Default Options
 - timeout: 30000
 - retries: 3
 `,
 
-    cgskill: `# [Skill Name]
+    dcgskill: `# [Skill Name]
 
 ## Description
-[One-line description of what this skill does]
+[Short public summary of the dynamic code generation capability.]
 
 ## Help
-Invoke this skill with the primary input it should process.
+[User-facing invocation guidance shown by hosts. This section is informational and does not change the dynamic execution path.]
 Example: /exec [skill-name] input text or JSON
 
 ## Prompt
+[Behavioral guidance for the text-or-code decision prompt. The subsystem asks the LLM whether to answer directly or generate JavaScript, then returns text or executes the generated snippet.]
 You are a specialized assistant for [task description].
 
 Your responsibilities:
@@ -298,59 +319,80 @@ Output format:
 Error handling:
 - [How to handle errors]
 
-## Arguments
-- input: The primary input data to process
-- options: Optional configuration object
-  - format: Output format (json | text | markdown)
-  - verbose: Include detailed output (true | false)
+## Argument
+[Description of the expected input. Accepted aliases: Input, Parameters. This does not rename the runtime argument: the operative argument key is always input.]
+Primary natural-language instruction or text payload.
 
-## LLM Mode
-fast
+## LLM Model
+[Model selector for the dynamic decision prompt. Accepted aliases: LLM-Model, Model. If omitted, agentLib uses the configured code model.]
+code
 
 ## Examples
-
-### Example 1: Basic usage
-Input: "example input"
-Output: "example output"
-
-### Example 2: With options
-Input: { "data": "...", "options": { "format": "json" } }
-Output: { "result": "..." }
+[Concrete inputs and expected outcomes for users and refinement workflows.]
+- Input: "example input"
+  Output: "example output"
+- Input: { "data": "...", "options": { "format": "json" } }
+  Output: { "result": "..." }
 `,
 
     anthropic: `# [Skill Name]
 
-[One-line summary of what this skill does]
+## Overview
+[Operational guidance used as part of the loop-session prompt. Anthropic-style skills do not have a fixed narrow section set; write this file as direct runtime instructions, not loose documentation.]
 
 You are a [role description]. Your task is to [primary objective].
 
 ## Help
-Invoke this skill with the concrete user request it should handle.
+[User-facing invocation guidance shown by hosts. This section is informational; the raw descriptor body still provides the runtime guidance.]
 Example: /exec [skill-name] describe the task
 
 ## Guidelines
-
+[Behavioral rules the loop-session runtime should follow.]
 - [Guideline 1]
 - [Guideline 2]
 - [Guideline 3]
 
 ## Scripts
-
-If a \`scripts/\` directory exists alongside this file, you can run shell scripts using the \`run-script\` tool.
+[Optional helper surface. If a scripts/ directory exists alongside this file, files in it are exposed through the run-script tool.]
 Example: Place executable scripts in \`scripts/\` and invoke them by path (e.g., \`scripts/build.sh\`).
 
 ## Resources
-
-If a \`resources/\` directory exists alongside this file, you can read files using the \`get-resource\` tool.
+[Optional helper surface. If a resources/ directory exists alongside this file, files in it are exposed through the get-resource tool.]
 Example: Place reference files in \`resources/\` and read them by path (e.g., \`resources/config.json\`).
 
 ## Examples
-
-### Example 1
-User: "[example user input]"
-Assistant: "[example assistant response]"
+[Concrete user requests and expected assistant behavior.]
+- User: "[example user input]"
+  Assistant: "[example assistant response]"
 `,
 };
+
+function createSectionKey(heading) {
+    return String(heading || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function getSectionKeys(content) {
+    const keys = new Set();
+    const headingRegex = /^#{1,6}\s+(.+)$/gm;
+    let match;
+    while ((match = headingRegex.exec(content)) !== null) {
+        keys.add(createSectionKey(match[1]));
+    }
+    return keys;
+}
+
+function getSectionAliases(schema, section) {
+    const aliases = schema?.sectionAliases?.[section] || [];
+    return [section, ...aliases].map(createSectionKey).filter(Boolean);
+}
+
+function hasSection(sectionKeys, schema, section) {
+    return getSectionAliases(schema, section).some((alias) => sectionKeys.has(alias));
+}
 
 /**
  * Detect skill type from file content
@@ -363,41 +405,46 @@ export function detectSkillType(content) {
     }
 
     const contentLower = content.toLowerCase();
+    const sectionKeys = getSectionKeys(content);
 
-    // Check for table/entity indicators (tskill)
-    if (contentLower.includes('## table purpose') ||
-        contentLower.includes('## fields') ||
+    if (sectionKeys.has('table-purpose') ||
+        sectionKeys.has('fields') ||
         contentLower.includes('### field value validator')) {
         return 'tskill';
     }
 
-    // Check for orchestrator indicators (oskill)
-    if (contentLower.includes('## allowed skills') ||
-        contentLower.includes('## allowed-skills') ||
-        contentLower.includes('## intent recognition') ||
-        contentLower.includes('## routing logic')) {
+    if (sectionKeys.has('allowed-skills') ||
+        sectionKeys.has('skill-allowlist') ||
+        sectionKeys.has('skill-allow-list') ||
+        sectionKeys.has('orchestration-guidance') ||
+        sectionKeys.has('routing-logic')) {
         return 'oskill';
     }
 
-    // Check for MCP indicators (mskill)
-    if (contentLower.includes('## mcp tools') ||
+    if (sectionKeys.has('allowed-tools') ||
+        sectionKeys.has('tool-allowlist') ||
+        sectionKeys.has('tool-allow-list') ||
+        sectionKeys.has('light-sop-lang') ||
+        sectionKeys.has('lightsoplang') ||
+        sectionKeys.has('mcp-tools') ||
         contentLower.includes('### server connection')) {
         return 'mskill';
     }
 
-    // Check for code skill (cskill) - has Input Format and Output Format
-    if (contentLower.includes('## input format') && contentLower.includes('## output format')) {
+    if (sectionKeys.has('input-format')) {
         return 'cskill';
     }
 
-    // Check for code generation skill (cgskill) - has Description and Prompt
-    if (contentLower.includes('## description') && contentLower.includes('## prompt')) {
-        return 'cgskill';
+    if (sectionKeys.has('prompt') ||
+        sectionKeys.has('argument') ||
+        sectionKeys.has('parameters') ||
+        sectionKeys.has('llm-model') ||
+        sectionKeys.has('model')) {
+        return 'dcgskill';
     }
 
-    // Check for Anthropic-style skill resource/script sections.
-    if (contentLower.includes('## scripts') ||
-        contentLower.includes('## resources') ||
+    if (sectionKeys.has('scripts') ||
+        sectionKeys.has('resources') ||
         contentLower.includes('run-script') ||
         contentLower.includes('get-resource') ||
         contentLower.includes('ask-user')) {
@@ -432,10 +479,11 @@ export function validateSkillContent(content, skillType = null) {
         return { valid: false, errors: [`Unknown skill type: ${type}`], warnings: [] };
     }
 
+    const sectionKeys = getSectionKeys(content);
+
     // Check required sections
     for (const section of schema.requiredSections) {
-        const sectionPattern = new RegExp(`##\\s+${section}`, 'i');
-        if (!sectionPattern.test(content)) {
+        if (!hasSection(sectionKeys, schema, section)) {
             errors.push(`Missing required section: ## ${section}`);
         }
     }
@@ -445,14 +493,9 @@ export function validateSkillContent(content, skillType = null) {
         errors.push('Skill file should start with a # title');
     }
 
-    // Check optional sections and warn if missing
-    // Normalize content for comparison (treat hyphens and spaces as equivalent)
-    const normalizedContent = content.toLowerCase().replace(/-/g, ' ');
-    for (const section of schema.optionalSections || []) {
-        const normalizedSection = section.toLowerCase().replace(/-/g, ' ');
-        const sectionPattern = new RegExp(`##\\s+${normalizedSection.replace(/\s+/g, '[\\s-]+')}`, 'i');
-        if (!sectionPattern.test(content)) {
-            warnings.push(`Optional section not present: ## ${section}`);
+    for (const section of schema.recommendedSections || []) {
+        if (!hasSection(sectionKeys, schema, section)) {
+            warnings.push(`Recommended section not present: ## ${section}`);
         }
     }
 
@@ -469,11 +512,9 @@ export function validateSkillContent(content, skillType = null) {
         // No additional validation needed beyond required sections
     }
 
-    if (type === 'cgskill') {
-        // Check for LLM mode (accept both "## LLM Mode" and "## LLM-Mode")
-        const hasLLMMode = /##\s+llm[\s-]+mode/i.test(content);
-        if (!hasLLMMode) {
-            warnings.push('Code generation skill should specify ## LLM Mode (fast or deep)');
+    if (type === 'dcgskill') {
+        if (!hasSection(sectionKeys, schema, 'Prompt')) {
+            warnings.push('Dynamic code generation skill has no ## Prompt section; agentLib will use its default decision prompt.');
         }
     }
 
@@ -547,26 +588,44 @@ function escapeRegex(string) {
  */
 export function loadSpecsContent(skillDir) {
     if (!skillDir) return null;
-    const specsPath = path.join(skillDir, '.specs.md');
+    const chunks = [];
+    const specsDir = path.join(skillDir, 'specs');
     try {
-        if (fs.existsSync(specsPath)) {
-            return fs.readFileSync(specsPath, 'utf8');
+        if (fs.existsSync(specsDir) && fs.statSync(specsDir).isDirectory()) {
+            const files = [];
+            const queue = [specsDir];
+            while (queue.length > 0) {
+                const current = queue.shift();
+                const entries = fs.readdirSync(current, { withFileTypes: true });
+                for (const entry of entries) {
+                    const entryPath = path.join(current, entry.name);
+                    if (entry.isDirectory()) {
+                        if (entry.name !== '.backup') queue.push(entryPath);
+                    } else if (entry.name.toLowerCase().endsWith('.md') || entry.name.toLowerCase().endsWith('.mds')) {
+                        files.push(entryPath);
+                    }
+                }
+            }
+            for (const filePath of files.sort()) {
+                const relPath = path.relative(skillDir, filePath);
+                chunks.push(`# ${relPath}\n\n${fs.readFileSync(filePath, 'utf8')}`);
+            }
         }
     } catch (error) {
         // Specs are optional, silently ignore errors
     }
-    return null;
+    return chunks.length ? chunks.join('\n\n---\n\n') : null;
 }
 
 /**
  * Format specs content for inclusion in LLM prompts
- * @param {string|null} specsContent - The .specs.md file content
+ * @param {string|null} specsContent - The specs/ file content
  * @returns {string} - Formatted specs block or empty string
  */
 export function buildSpecsContext(specsContent) {
     if (!specsContent) return '';
     return `
-## Skill Specifications (.specs.md)
+## Skill Specifications
 The following specifications define requirements and constraints for this skill:
 
 ${specsContent}
@@ -577,12 +636,12 @@ IMPORTANT: Ensure all modifications comply with the above specifications.
 }
 
 /**
- * Extract validation requirements from .specs.md content
+ * Extract validation requirements from specs content
  *
- * The .specs.md file can include a "## Validation Requirements" section that defines
+ * Specs files can include a "## Validation Requirements" section that defines
  * custom validation rules for the skill.
  *
- * @param {string} specsContent - The .specs.md file content
+ * @param {string} specsContent - The specs content
  * @returns {Object|null} Validation requirements or null
  */
 export function extractValidationRequirements(specsContent) {
@@ -625,10 +684,10 @@ export function extractValidationRequirements(specsContent) {
 }
 
 /**
- * Validate a tskill using requirements from its .specs.md file
+ * Validate a tskill using requirements from its specs content
  * @param {string} skillName - The skill name
  * @param {string} content - The tskill.md content
- * @param {string} specsContent - The .specs.md content
+ * @param {string} specsContent - The specs content
  * @returns {{isValid: boolean, errors: string[], warnings: string[]}}
  */
 export function validateTskillWithSpecs(skillName, content, specsContent = null) {
@@ -666,10 +725,10 @@ export function validateTskillWithSpecs(skillName, content, specsContent = null)
 }
 
 /**
- * Validate generated code using requirements from .specs.md
+ * Validate generated code using requirements from specs content
  * @param {string} code - The generated .mjs code
  * @param {string} skillName - The skill name
- * @param {string} specsContent - The .specs.md content
+ * @param {string} specsContent - The specs content
  * @returns {{isValid: boolean, errors: string[], warnings: string[]}}
  */
 export function validateGeneratedCodeWithSpecs(code, skillName, specsContent = null) {
@@ -717,7 +776,7 @@ export default {
     updateSkillSection,
     loadSpecsContent,
     buildSpecsContext,
-    // Specs-based validation (uses .specs.md for custom requirements)
+    // Specs-based validation (uses specs content for custom requirements)
     extractValidationRequirements,
     validateTskillWithSpecs,
     validateGeneratedCodeWithSpecs,

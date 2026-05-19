@@ -113,14 +113,14 @@ ${C.bold}${C.yellow}Slash Commands${C.reset} ${C.dim}(direct skill execution)${C
   ${C.cyan}/validate${C.reset} <skill>        Validate against schema
   ${C.cyan}/template${C.reset} <type>         Get blank template
   ${C.cyan}/build${C.reset}                   Build pending skills from specs
-  ${C.cyan}/generate${C.reset} <skill>        Generate .mjs from tskill
+  ${C.cyan}/generate${C.reset} <skill>        Generate runtime code
   ${C.cyan}/test${C.reset} [skill]            Test skill code
   ${C.cyan}/run-tests${C.reset} [skill|all]   Run test files
   ${C.cyan}/refine${C.reset} <skill>          Improve until tests pass
   ${C.cyan}/update${C.reset} <skill> <section> Update a section
   ${C.cyan}/update repos${C.reset}             Pull cloned repositories
-  ${C.cyan}/specs${C.reset} <skill>           Read .specs.md file
-  ${C.cyan}/specs-write${C.reset} <skill>     Create/update .specs.md
+  ${C.cyan}/specs${C.reset} <skill>           Read specs/ files
+  ${C.cyan}/specs-write${C.reset} <skill>     Create/update specs/ files
   ${C.cyan}/exec${C.reset} <skill> [input]    Execute any skill
   ${C.cyan}/raw${C.reset}                     Toggle markdown rendering
   ${C.cyan}/tier${C.reset} [name]             Show/switch LLM tier
@@ -143,32 +143,32 @@ ${C.bold}${C.cyan}Skill Types${C.reset}
 
 ${C.bold}${C.yellow}tskill${C.reset} - Database Table Skill
   ${C.dim}Defines entity schemas with fields, validators, and business rules.${C.reset}
-  ${C.green}File:${C.reset} tskill.md → ${C.cyan}generates${C.reset} tskill.generated.mjs
-  ${C.green}Sections:${C.reset} Table Purpose, Fields, Derived Fields, Business Rules
+  ${C.green}File:${C.reset} tskill.md -> ${C.cyan}generates${C.reset} src/tskill.generated.mjs
+  ${C.green}Sections:${C.reset} Table Purpose, Fields, Role Access Policy, Delete Guard
   ${C.green}Use for:${C.reset} Equipment, Materials, Areas, Jobs, etc.
 
 ${C.bold}${C.yellow}cskill${C.reset} - Code Skill
-  ${C.dim}LLM generates code from specs/ folder during discovery.${C.reset}
-  ${C.green}File:${C.reset} cskill.md + specs/*.md → src/*.mjs
+  ${C.dim}Executes src/index.mjs or src/index.js; can be generated from specs/.${C.reset}
+  ${C.green}File:${C.reset} cskill.md + specs/*.md -> src/*.mjs
   ${C.green}Sections:${C.reset} Description, Input Format, Output Format, Constraints
   ${C.green}Use for:${C.reset} Complex business logic from natural language specs
 
 ${C.bold}${C.yellow}dcgskill${C.reset} - Dynamic Code Generation Skill
-  ${C.dim}LLM decides text/code at runtime or uses hand-written module.${C.reset}
-  ${C.green}File:${C.reset} dcgskill.md (+ optional module)
-  ${C.green}Sections:${C.reset} Summary, Prompt, Arguments, LLM Mode, Examples
+  ${C.dim}LLM decides text/code at runtime and may execute generated snippets.${C.reset}
+  ${C.green}File:${C.reset} dcgskill.md
+  ${C.green}Sections:${C.reset} Description, Prompt, Argument, LLM Model, Examples
   ${C.green}Use for:${C.reset} Utilities, agent API access, deterministic tools
 
 ${C.bold}${C.yellow}oskill${C.reset} - Orchestrator Skill
   ${C.dim}Routes user intents to other skills.${C.reset}
   ${C.green}File:${C.reset} oskill.md
-  ${C.green}Sections:${C.reset} Instructions, Allowed Skills, Intent Recognition
+  ${C.green}Sections:${C.reset} Preparation, Allowed-Prep-Skills, Instructions, Allowed-Skills, Session-Type, Description
   ${C.green}Use for:${C.reset} Domain routers, skill coordinators
 
 ${C.bold}${C.yellow}mskill${C.reset} - MCP Skill
   ${C.dim}Uses Model Context Protocol tools.${C.reset}
   ${C.green}File:${C.reset} mskill.md
-  ${C.green}Sections:${C.reset} Description, MCP Tools, Configuration
+  ${C.green}Sections:${C.reset} Description, Instructions, Allowed-Tools, Light-SOP-Lang, Configuration
   ${C.green}Use for:${C.reset} External tool integrations
 
 ${C.dim}Type /template <type> to get a blank template.${C.reset}
@@ -214,22 +214,22 @@ ${C.bold}${C.yellow}Workflow:${C.reset}
   1. ${C.cyan}/write my-entity tskill${C.reset} - Create from template
   2. Edit the tskill.md file
   3. ${C.cyan}/validate my-entity${C.reset} - Check for errors
-  4. ${C.cyan}/generate my-entity${C.reset} - Generate .mjs code
+  4. ${C.cyan}/generate my-entity${C.reset} - Generate runtime code
   5. ${C.cyan}/test my-entity${C.reset} - Run tests
 
-${C.dim}See /help specs for adding requirements via .specs.md files.${C.reset}
+${C.dim}See /help specs for adding requirements via specs/ files.${C.reset}
 `,
     },
 
     // Specifications
     specs: {
-        title: 'Skill Specifications (.specs.md)',
+        title: 'Skill Specifications (specs/)',
         aliases: ['specifications', 'requirements', 'constraints'],
         content: `
-${C.bold}${C.cyan}Skill Specifications (.specs.md)${C.reset}
+${C.bold}${C.cyan}Skill Specifications (specs/)${C.reset}
 
-Each skill can have a .specs.md file that defines additional requirements
-and constraints. These are used during code generation and refinement.
+Generated cskill and tskill/dbtable workflows use markdown files under specs/
+to define implementation requirements and constraints.
 
 ${C.bold}${C.yellow}Creating a Specs File:${C.reset}
   ${C.green}>${C.reset} /specs-write my-skill
@@ -237,7 +237,7 @@ ${C.bold}${C.yellow}Creating a Specs File:${C.reset}
 ${C.bold}${C.yellow}Reading a Specs File:${C.reset}
   ${C.green}>${C.reset} /specs my-skill
 
-${C.bold}${C.yellow}Example .specs.md:${C.reset}
+${C.bold}${C.yellow}Example specs/index.mjs.md:${C.reset}
   ${C.dim}# Specifications for Equipment
 
   ## Requirements
@@ -426,8 +426,8 @@ ${C.bold}${C.yellow}2. Iterative Refinement${C.reset}
    ${C.green}>${C.reset} /refine equipment           ${C.dim}Auto-improve until tests pass${C.reset}
 
 ${C.bold}${C.yellow}3. Add Specifications${C.reset}
-   ${C.green}>${C.reset} /specs-write equipment      ${C.dim}Create .specs.md template${C.reset}
-   ${C.dim}(edit .specs.md with requirements)${C.reset}
+   ${C.green}>${C.reset} /specs-write equipment      ${C.dim}Create specs/ template${C.reset}
+   ${C.dim}(edit specs/ files with requirements)${C.reset}
    ${C.green}>${C.reset} /generate equipment         ${C.dim}Regenerate with specs${C.reset}
 
 ${C.bold}${C.yellow}4. Update a Skill Section${C.reset}
@@ -463,7 +463,7 @@ ${C.bold}${C.cyan}Available Help Topics${C.reset}
   ${C.green}/help commands${C.reset}          Full command reference
   ${C.green}/help skills${C.reset}            Skill types explained
   ${C.green}/help tskill${C.reset}            Database table skills in detail
-  ${C.green}/help specs${C.reset}             Using .specs.md files
+  ${C.green}/help specs${C.reset}             Using specs/ files
   ${C.green}/help testing${C.reset}           Testing and refinement
   ${C.green}/help natural-language${C.reset}  Using natural language
   ${C.green}/help shortcuts${C.reset}         Keyboard shortcuts
@@ -566,7 +566,7 @@ ${C.bold}${C.yellow}Usage:${C.reset}
 
 ${C.bold}${C.yellow}Description:${C.reset}
   Displays the full content of a skill's definition file (tskill.md,
-  cskill.md, etc.). Also shows the skill's .specs.md file if one exists.
+  cskill.md, etc.).
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /read equipment
@@ -590,7 +590,7 @@ ${C.bold}${C.yellow}Usage:${C.reset}
 ${C.bold}${C.yellow}Skill Types:${C.reset}
   ${C.cyan}tskill${C.reset}  - Database table skill
   ${C.cyan}cskill${C.reset}  - Code skill (LLM generates from specs)
-  ${C.cyan}dcgskill${C.reset} - Dynamic code generation skill (module or runtime LLM)
+  ${C.cyan}dcgskill${C.reset} - Dynamic code generation skill
   ${C.cyan}oskill${C.reset}  - Orchestrator skill
   ${C.cyan}mskill${C.reset}  - MCP tool skill
   ${C.cyan}anthropic${C.reset} - Anthropic-style skill bundle
@@ -622,7 +622,7 @@ ${C.bold}${C.yellow}What It Checks:${C.reset}
   ${C.green}•${C.reset} Required sections are present (e.g., ## Table Purpose)
   ${C.green}•${C.reset} File starts with a # title
   ${C.green}•${C.reset} Type-specific requirements (e.g., fields for tskill)
-  ${C.green}•${C.reset} Specs validation if .specs.md exists
+  ${C.green}•${C.reset} Specs validation if specs/ files exist
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /validate equipment
@@ -642,7 +642,7 @@ ${C.bold}${C.yellow}Usage:${C.reset}
   ${C.green}/generate <skill-name>${C.reset}
 
 ${C.bold}${C.yellow}Description:${C.reset}
-  Generates a .mjs file (tskill.generated.mjs) from a tskill.md definition.
+  Generates runtime code for supported generated skill types.
   The generated code includes validators, presenters, resolvers, and
   enumerators based on the field definitions.
 
@@ -658,7 +658,7 @@ ${C.bold}${C.yellow}What Gets Generated:${C.reset}
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /generate equipment
-  ${C.dim}Generated: skills/equipment/tskill.generated.mjs${C.reset}
+  ${C.dim}Generated: skills/equipment/src/tskill.generated.mjs${C.reset}
 
 ${C.bold}${C.yellow}After Generation:${C.reset}
   Run ${C.cyan}/test equipment${C.reset} to verify the generated code works.
@@ -737,7 +737,7 @@ ${C.bold}${C.yellow}How It Works:${C.reset}
 
 ${C.bold}${C.yellow}Prerequisites:${C.reset}
   ${C.green}•${C.reset} The skill must have a test file (tests/{skill}.tests.mjs)
-  ${C.green}•${C.reset} The skill should have a .specs.md file (recommended)
+  ${C.green}•${C.reset} The skill should have specs/ files when generated code depends on detailed requirements
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /refine equipment
@@ -785,13 +785,13 @@ ${C.bold}${C.yellow}Usage:${C.reset}
   ${C.green}/specs <skill-name>${C.reset}
 
 ${C.bold}${C.yellow}Description:${C.reset}
-  Displays the .specs.md file for a skill. This file contains
-  requirements and constraints used during code generation.
+  Displays specs/ files for a skill. These files contain requirements
+  and constraints used during code generation.
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /specs equipment
 
-${C.dim}Related: /specs-write creates or updates the .specs.md file.${C.reset}
+${C.dim}Related: /specs-write creates or updates specs/ files.${C.reset}
 ${C.dim}See /help specs for more about specifications.${C.reset}
 `,
     },
@@ -806,7 +806,7 @@ ${C.bold}${C.yellow}Usage:${C.reset}
   ${C.green}/specs-write <skill-name> <content>${C.reset}  Write specific content
 
 ${C.bold}${C.yellow}Description:${C.reset}
-  Creates or updates the .specs.md file for a skill. If called without
+  Creates or updates a specs/ file for a skill. If called without
   content, generates a template based on the skill type.
 
 ${C.bold}${C.yellow}Examples:${C.reset}
@@ -834,7 +834,7 @@ ${C.bold}${C.yellow}Description:${C.reset}
 ${C.bold}${C.yellow}Common Sections:${C.reset}
   ${C.cyan}tskill:${C.reset} Table Purpose, Fields, Business Rules
   ${C.cyan}cskill:${C.reset} Description, Input Format, Output Format, Constraints
-  ${C.cyan}oskill:${C.reset} Instructions, Allowed Skills, Description
+  ${C.cyan}oskill:${C.reset} Preparation, Allowed-Prep-Skills, Instructions, Allowed-Skills, Session-Type, Description
 
 ${C.bold}${C.yellow}Examples:${C.reset}
   ${C.green}>${C.reset} /update equipment Fields
@@ -901,8 +901,8 @@ ${C.bold}${C.yellow}Description:${C.reset}
 
 ${C.bold}${C.yellow}What Gets Deleted:${C.reset}
   ${C.green}•${C.reset} The skill definition file (tskill.md, cskill.md, etc.)
-  ${C.green}•${C.reset} Generated code (tskill.generated.mjs)
-  ${C.green}•${C.reset} Specifications (.specs.md)
+  ${C.green}•${C.reset} Generated code (src/tskill.generated.mjs or src/index.mjs)
+  ${C.green}•${C.reset} Specifications (specs/)
   ${C.green}•${C.reset} The entire skill directory
 
 ${C.bold}${C.yellow}Examples:${C.reset}

@@ -9,12 +9,53 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { LoopAgentSession } from 'achillesAgentLib/LLMAgents/AgenticSession.mjs';
+import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { detectSkillType, loadSpecsContent } from '../../schemas/skillSchemas.mjs';
 import { buildSystemPrompt, buildEvaluationPrompt } from './skillRefiner.prompts.mjs';
 import { runTestFile } from '../../lib/testDiscovery.mjs';
 import { TIERS, RESPONSE_SHAPES } from '../../lib/constants.mjs';
 import { formatTestResult } from '../../ui/TestResultFormatter.mjs';
+
+const require = createRequire(import.meta.url);
+let LoopAgentSessionClass = null;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function resolveAgentLibPackagePath() {
+    for (const packageName of ['achillesAgentLib', 'ploinky-agent-lib']) {
+        try {
+            return require.resolve(`${packageName}/package.json`);
+        } catch {
+        }
+    }
+
+    let current = __dirname;
+    for (let i = 0; i < 10; i++) {
+        for (const candidate of [
+            path.join(current, 'node_modules', 'achillesAgentLib', 'package.json'),
+            path.join(current, 'ploinky', 'node_modules', 'achillesAgentLib', 'package.json'),
+        ]) {
+            if (fs.existsSync(candidate)) return candidate;
+        }
+        const parent = path.dirname(current);
+        if (parent === current) break;
+        current = parent;
+    }
+
+    throw new Error('Could not locate achillesAgentLib package');
+}
+
+async function loadLoopAgentSession() {
+    if (LoopAgentSessionClass) return LoopAgentSessionClass;
+    const packagePath = resolveAgentLibPackagePath();
+    const modulePath = path.join(path.dirname(packagePath), 'LLMAgents', 'AgenticSession.mjs');
+    const module = await import(pathToFileURL(modulePath).href);
+    LoopAgentSessionClass = module.LoopAgentSession || module.default;
+    if (!LoopAgentSessionClass) {
+        throw new Error('LoopAgentSession is not available in achillesAgentLib');
+    }
+    return LoopAgentSessionClass;
+}
 
 /**
  * Parse input to extract skill name, requirements, and options
@@ -251,12 +292,12 @@ function buildTools(mainAgent, skillName, skillRecord, requirements, specsConten
         },
 
         'read_specs': {
-            description: `Read the .specs.md file for "${skillName}" if available. Contains code generation requirements and constraints.`,
+            description: `Read specs/ content for "${skillName}" if available. Contains code generation requirements and constraints.`,
             handler: async (agent, input) => {
                 if (!specsContent) {
                     return JSON.stringify({
                         success: false,
-                        message: 'No .specs.md file available for this skill'
+                        message: 'No specs/ content available for this skill'
                     });
                 }
                 return JSON.stringify({
@@ -271,7 +312,9 @@ function buildTools(mainAgent, skillName, skillRecord, requirements, specsConten
 /**
  * Main action function for the skill refiner using LoopAgentSession
  */
-export async function action(mainAgent, prompt) {
+export async function action(invocation = {}) {
+    const mainAgent = invocation.mainAgent;
+    const prompt = invocation.promptText;
     const llmAgent = mainAgent?.llmAgent;
 
     // Parse input
@@ -305,6 +348,8 @@ export async function action(mainAgent, prompt) {
     // Build system prompt
     const systemPrompt = buildSystemPrompt(skillName, requirements, specsContent);
 
+    const LoopAgentSession = await loadLoopAgentSession();
+
     // Create agentic session
     const session = new LoopAgentSession({
         agent: llmAgent,
@@ -327,7 +372,7 @@ export async function action(mainAgent, prompt) {
 
 Your workflow should be:
 1. First, read_skill to understand the current definition
-2. If it's a tskill, use generate_code to create the .mjs file
+2. If it is a generated tskill/dbtable or cskill, use generate_code to create runtime code
 3. Run tests using either:
    - run_skill_tests (preferred) - runs .tests.mjs file if available
    - test_code - runs basic code tests
@@ -335,7 +380,7 @@ Your workflow should be:
 5. If evaluation shows failures, use update_section to fix the problematic sections
 6. Repeat steps 2-5 until all requirements are met
 
-${specsContent ? 'Note: This skill has a .specs.md file with additional requirements. Use read_specs to view them.' : ''}
+${specsContent ? 'Note: This skill has specs/ content with additional requirements. Use read_specs to view it.' : ''}
 
 Requirements to meet:
 ${JSON.stringify(requirements, null, 2) || 'All tests should pass without errors.'}

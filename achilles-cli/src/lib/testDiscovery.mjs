@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
  * @returns {string|null} Path to tests directory or null
  */
 function getTestsDir(agent) {
-    const workingDir = agent?.startDir || process.cwd();
+    const workingDir = agent?.context?.workingDir || agent?.options?.startDir || agent?.startDir || process.cwd();
 
     const testsDir = path.join(workingDir, 'tests');
     return fs.existsSync(testsDir) ? testsDir : null;
@@ -38,7 +38,7 @@ function getTestsDir(agent) {
 export function discoverSkillTests(agent) {
     const tests = [];
 
-    if (!agent || typeof agent.getSkills !== 'function') {
+    if (!agent || (typeof agent.getSkills !== 'function' && !(agent.skillCatalog instanceof Map))) {
         return tests;
     }
 
@@ -47,7 +47,12 @@ export function discoverSkillTests(agent) {
         return tests;
     }
 
-    const skills = agent.getSkills();
+    const skills = typeof agent.getSkills === 'function'
+        ? agent.getSkills()
+        : Array.from(agent.skillCatalog.values()).map((record, index) => ({
+            name: record.name || Array.from(agent.skillCatalog.keys())[index],
+            ...record,
+        }));
     for (const record of skills) {
         const shortName = record.shortName || record.name;
         const testFile = path.join(testsDir, `${shortName}.tests.mjs`);
@@ -74,7 +79,13 @@ export function discoverSkillTests(agent) {
  * @returns {Object|null} Test info or null if no tests
  */
 export function discoverSkillTest(agent, skillName) {
-    const skillRecord = agent?.getSkillRecord?.(skillName);
+    let skillRecord = agent?.getSkillRecord?.(skillName);
+    if (!skillRecord && typeof agent?.findSkillFile === 'function') {
+        const found = agent.findSkillFile(skillName);
+        skillRecord = found?.record
+            ? { ...found.record, filePath: found.filePath }
+            : null;
+    }
     if (!skillRecord) return null;
 
     const testsDir = getTestsDir(agent);
@@ -126,19 +137,24 @@ export async function runTestFile(testFile, options = {}) {
                 }
             }
 
-            run()
-                .then(result => {
-                    console.log(JSON.stringify({ success: true, result }));
-                    process.exit(result?.failed > 0 ? 1 : 0);
-                })
-                .catch(error => {
-                    console.log(JSON.stringify({
-                        success: false,
-                        error: error.message,
-                        stack: error.stack
-                    }));
-                    process.exit(1);
+            function emit(payload) {
+                return new Promise((resolve) => {
+                    process.stdout.write(JSON.stringify(payload) + '\\n', resolve);
                 });
+            }
+
+            try {
+                const result = await run();
+                await emit({ success: true, result });
+                process.exitCode = result?.failed > 0 ? 1 : 0;
+            } catch (error) {
+                await emit({
+                    success: false,
+                    error: error.message,
+                    stack: error.stack
+                });
+                process.exitCode = 1;
+            }
         `;
 
         const child = spawn('node', ['--input-type=module', '-e', wrapperCode], {

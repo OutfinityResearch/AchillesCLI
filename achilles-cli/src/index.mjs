@@ -895,7 +895,7 @@ BUILT-IN SKILLS:
 SKILL TYPES:
   tskill   Database table (fields, validators, presenters)
   cskill   Code skill (LLM-generated code execution)
-  cgskill  Code generation (text/code or module)
+  dcgskill Dynamic code generation (text/code or module)
   oskill   Orchestrator (routes to other skills)
   mskill   MCP tool integration
 
@@ -1025,8 +1025,6 @@ function registerSkillRoots(agent, skillRoots, logger) {
             continue;
         }
 
-        // Backward compatibility for legacy skill repos that still use cgskill.md.
-        discovered = mergeCgskillRecords(skillRoot, discovered);
         rootSummaries.push({
             skillRoot,
             isInternal: Boolean(root.isInternal),
@@ -1050,68 +1048,6 @@ function registerSkillRoots(agent, skillRoots, logger) {
         phase: 'after achilles-cli additional skill roots',
         additionalRoots: rootSummaries,
     });
-}
-
-function mergeCgskillRecords(skillRoot, discovered) {
-    const discoveredByFile = new Set(
-        discovered
-            .map((record) => record?.filePath)
-            .filter(Boolean)
-    );
-    const legacyCgskills = discoverLegacyCgskills(skillRoot, discoveredByFile);
-    return [...discovered, ...legacyCgskills];
-}
-
-function discoverLegacyCgskills(rootDir, discoveredByFile = new Set()) {
-    if (!rootDir || !fs.existsSync(rootDir)) {
-        return [];
-    }
-
-    const results = [];
-    const queue = [rootDir];
-    const visited = new Set();
-
-    while (queue.length > 0) {
-        const current = queue.shift();
-        if (!current || visited.has(current)) {
-            continue;
-        }
-        visited.add(current);
-
-        let entries = [];
-        try {
-            entries = fs.readdirSync(current, { withFileTypes: true });
-        } catch {
-            continue;
-        }
-
-        for (const entry of entries) {
-            if (!entry.isDirectory()) {
-                continue;
-            }
-
-            const skillDir = path.join(current, entry.name);
-            const cgskillPath = path.join(skillDir, 'cgskill.md');
-            if (fs.existsSync(cgskillPath) && !discoveredByFile.has(cgskillPath)) {
-                const shortName = path.basename(skillDir);
-                const canonical = sanitiseSkillName(`${shortName}-dynamic-code-generation`);
-                results.push({
-                    name: canonical,
-                    type: 'dynamic-code-generation',
-                    descriptor: null,
-                    filePath: cgskillPath,
-                    skillDir,
-                    shortName,
-                    preparedConfig: null,
-                });
-                discoveredByFile.add(cgskillPath);
-            }
-
-            queue.push(skillDir);
-        }
-    }
-
-    return results;
 }
 
 function sanitiseSkillName(value) {

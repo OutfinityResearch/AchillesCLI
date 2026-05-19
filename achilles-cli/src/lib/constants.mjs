@@ -77,7 +77,6 @@ export const DOC_SCAFFOLD_TYPES = [
  * Well-known file names used across the codebase
  */
 export const FILE_NAMES = {
-  SPECS: '.specs.md',
   HISTORY: '.achilles-cli-history',
   TSKILL_GENERATED: 'tskill.generated.mjs',
 };
@@ -98,8 +97,6 @@ export const SKILL_FILE_NAMES = [
  * Generated file extensions
  */
 export const FILE_EXTENSIONS = {
-  GENERATED_MJS: '.generated.mjs',
-  GENERATED_JS: '.generated.js',
 };
 
 /**

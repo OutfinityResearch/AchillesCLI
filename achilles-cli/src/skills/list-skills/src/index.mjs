@@ -6,8 +6,6 @@
  * Use "list all skills" to include internal skills.
  */
 
-import { Sanitiser } from 'achillesAgentLib/utils/Sanitiser.mjs';
-
 export async function action(invocation = {}) {
     const mainAgent = invocation.mainAgent;
     const prompt = invocation.promptText;
@@ -72,16 +70,19 @@ export async function action(invocation = {}) {
 
     // Format output
     const output = filtered.map(s => {
-        const toolName = `execute_${Sanitiser.sanitiseName(s.name).replace(/-/g, '_')}`;
         const descriptorSections = s.descriptor?.sections || {};
-        const usesDescription = ['cskill', 'cgskill', 'mskill', 'oskill'].includes(s.type);
-        const description = usesDescription
-            ? (descriptorSections.description || 'No description')
-            : (s.descriptor?.summary || 'No summary');
-        const label = usesDescription ? 'Description' : 'Summary';
+        let label = 'Description';
+        let description = descriptorSections.description || '';
+        if (s.type === 'dbtable') {
+            label = 'Table Purpose';
+            description = descriptorSections['table-purpose'] || description;
+        } else if (s.type === 'anthropic') {
+            label = 'Overview';
+            description = descriptorSections.overview || descriptorSections.description || s.descriptor?.summary || '';
+        }
         return [
             `[${s.type}] ${s.shortName || s.name}`,
-            `   ${label}: ${description}`,
+            `   ${label}: ${description || 'Not specified'}`,
             `   Path: ${s.skillDir || 'unknown'}`,
         ].join('\n');
     });

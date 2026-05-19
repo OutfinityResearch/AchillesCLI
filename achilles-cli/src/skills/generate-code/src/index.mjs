@@ -1,5 +1,5 @@
 /**
- * Generate Code - Generates .mjs code from skill definitions (tskill, oskill, cskill)
+ * Generate Code - Generates runtime .mjs code from tskill/dbtable and cskill definitions
  *
  * Generates code for supported skill definitions.
  */
@@ -9,14 +9,13 @@ import path from 'node:path';
 import { detectSkillType, parseSkillSections, loadSpecsContent } from '../../../schemas/skillSchemas.mjs';
 import {
     buildCodeGenPrompt,
-    buildOskillCodeGenPrompt,
     buildCskillCodeGenPrompt,
 } from '../codeGeneration.prompts.mjs';
 import { runTestFile } from '../../../lib/testDiscovery.mjs';
 import { formatTestResult } from '../../../ui/TestResultFormatter.mjs';
-import { SKILL_TYPE_NAMES, FILE_NAMES, FILE_EXTENSIONS, TIERS, RESPONSE_SHAPES } from '../../../lib/constants.mjs';
+import { SKILL_TYPE_NAMES, FILE_NAMES, TIERS, RESPONSE_SHAPES } from '../../../lib/constants.mjs';
 
-const SUPPORTED_TYPES = [SKILL_TYPE_NAMES.TSKILL, SKILL_TYPE_NAMES.OSKILL, SKILL_TYPE_NAMES.CSKILL];
+const SUPPORTED_TYPES = [SKILL_TYPE_NAMES.TSKILL, SKILL_TYPE_NAMES.CSKILL];
 
 /**
  * Parse skill name from prompt (handles string and object inputs)
@@ -38,8 +37,8 @@ function parseSkillName(prompt) {
 /**
  * Check if regeneration is needed by comparing file modification times.
  * Returns true if sources are newer than the generated file.
- * @param {string} generatedPath - Path to the .generated.mjs file
- * @param {string[]} sourcePaths - Paths to source files (.md, .specs.md, etc.)
+ * @param {string} generatedPath - Path to the generated runtime file
+ * @param {string[]} sourcePaths - Paths to source files.
  * @returns {{needsRegen: boolean, reason: string}}
  */
 function checkNeedsRegeneration(generatedPath, sourcePaths) {
@@ -58,7 +57,7 @@ function checkNeedsRegeneration(generatedPath, sourcePaths) {
     // Check each source file
     for (const sourcePath of sourcePaths) {
         if (!fs.existsSync(sourcePath)) {
-            continue; // Skip non-existent optional files like .specs.md
+            continue;
         }
 
         try {
@@ -74,6 +73,44 @@ function checkNeedsRegeneration(generatedPath, sourcePaths) {
     }
 
     return { needsRegen: false, reason: 'generated file is up to date' };
+}
+
+function collectSpecSourcePaths(skillDir) {
+    const specsDir = path.join(skillDir, 'specs');
+    const sourcePaths = [];
+
+    if (fs.existsSync(specsDir)) {
+        const queue = [specsDir];
+        while (queue.length > 0) {
+            const current = queue.shift();
+            let entries = [];
+            try {
+                entries = fs.readdirSync(current, { withFileTypes: true });
+            } catch {
+                continue;
+            }
+            for (const entry of entries) {
+                const entryPath = path.join(current, entry.name);
+                if (entry.isDirectory()) {
+                    queue.push(entryPath);
+                } else if (entry.name.endsWith('.md') || entry.name.endsWith('.mds')) {
+                    sourcePaths.push(entryPath);
+                }
+            }
+        }
+    }
+
+    return sourcePaths;
+}
+
+function getOutputPath(skillDir, skillType) {
+    if (skillType === SKILL_TYPE_NAMES.TSKILL) {
+        return path.join(skillDir, 'src', FILE_NAMES.TSKILL_GENERATED);
+    }
+    if (skillType === SKILL_TYPE_NAMES.CSKILL) {
+        return path.join(skillDir, 'src', 'index.mjs');
+    }
+    return null;
 }
 
 export async function action(invocation = {}) {
@@ -111,18 +148,11 @@ export async function action(invocation = {}) {
         return `Error: Code generation is only supported for: ${SUPPORTED_TYPES.join(', ')}.\nThis skill is type: ${skillType || 'unknown'}`;
     }
 
-    // Determine output file path
-    const outFileName = skillType === SKILL_TYPE_NAMES.TSKILL
-        ? FILE_NAMES.TSKILL_GENERATED
-        : `${skillName}${FILE_EXTENSIONS.GENERATED_MJS}`;
-    const outPath = path.join(skillDir, outFileName);
+    const outPath = getOutputPath(skillDir, skillType);
+    const outFileName = path.relative(skillDir, outPath);
 
     // Build list of source files to check (skill definition + optional specs)
-    const specsPath = path.join(skillDir, FILE_NAMES.SPECS);
-    const sourcePaths = [filePath];
-    if (fs.existsSync(specsPath)) {
-        sourcePaths.push(specsPath);
-    }
+    const sourcePaths = [filePath, ...collectSpecSourcePaths(skillDir)];
 
     // Check if regeneration is needed based on file timestamps
     const { needsRegen, reason } = checkNeedsRegeneration(outPath, sourcePaths);
@@ -145,9 +175,6 @@ export async function action(invocation = {}) {
     switch (skillType) {
         case SKILL_TYPE_NAMES.TSKILL:
             codeGenPrompt = buildCodeGenPrompt(skillName, content, sections, specsContent);
-            break;
-        case SKILL_TYPE_NAMES.OSKILL:
-            codeGenPrompt = buildOskillCodeGenPrompt(skillName, content, sections, specsContent);
             break;
         case SKILL_TYPE_NAMES.CSKILL:
             codeGenPrompt = buildCskillCodeGenPrompt(skillName, content, sections, specsContent);
@@ -174,7 +201,7 @@ export async function action(invocation = {}) {
             return 'Error: LLM returned empty or invalid code';
         }
 
-        // Write the generated file
+        fs.mkdirSync(path.dirname(outPath), { recursive: true });
         fs.writeFileSync(outPath, generatedCode, 'utf8');
 
         const outputLines = [

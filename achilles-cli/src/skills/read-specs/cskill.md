@@ -1,7 +1,7 @@
 # Read Specs
 
 ## Summary
-Read a skill specs file.
+Read a skill's specs/ files.
 
 ## Description
 Call this when the user asks about implementation requirements or before changing generation specs for a skill.
@@ -13,7 +13,7 @@ Input: skillName.
 Plain text skill name, or JSON with `skillName` or `name`.
 
 ## Output Format
-Returns the specs file path and content, or an error string when no specs file exists.
+Returns specs file paths and content, or an error string when no specs/ files exist.
 
 ## Constraints
 - Use for generated-code requirements, not for descriptor content.
