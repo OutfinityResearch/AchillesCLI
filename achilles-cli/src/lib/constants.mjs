@@ -30,9 +30,6 @@ export const BUILT_IN_SKILLS = {
   READ_SPECS: 'read-specs',
   WRITE_SPECS: 'write-specs',
 
-  // Test generation (spec-driven)
-  GENERATE_TESTS: 'generate-tests',
-
   // Execution and refinement
   EXECUTE: 'execute-skill',
   SKILL_REFINER: 'skill-refiner',

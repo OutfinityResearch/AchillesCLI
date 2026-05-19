@@ -16,5 +16,5 @@ Plain text skill name, or JSON with `skillName` and optional `options`.
 Returns a generated test file summary, or an error string.
 
 ## Constraints
-- Use `generate-tests` for cskill tests derived specifically from cskill specs.
+- Use this skill for all supported generated runtime test creation, including cskill tests derived from specs.
 - Run tests after writing them when verification is requested.

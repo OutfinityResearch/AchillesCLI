@@ -16,5 +16,5 @@ Plain text skill name, `all`, or JSON with `target` and optional `options`.
 Returns formatted test results with pass/fail counts and failure details.
 
 ## Constraints
-- This runs existing tests only; use `generate-tests` or `write-tests` to create tests.
+- This runs existing tests only; use `write-tests` to create tests.
 - Use `all` only when broad test execution is requested.

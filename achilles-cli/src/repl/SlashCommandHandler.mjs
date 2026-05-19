@@ -150,13 +150,6 @@ export const COMMAND_DEFINITIONS = {
         args: 'required',
         needsSkillArg: true,
     },
-    'gen-tests': {
-        skill: BUILT_IN_SKILLS.GENERATE_TESTS,
-        usage: '/gen-tests <skill-name>',
-        description: 'Generate tests from cskill specs (spec-driven)',
-        args: 'required',
-        needsSkillArg: true,
-    },
     'scaffold': {
         skill: BUILT_IN_SKILLS.SCAFFOLD_DOC,
         usage: '/scaffold <doc-type> <skill-name>',
@@ -855,7 +848,7 @@ export class SlashCommandHandler {
         if (cmdDef) {
             const argPrefix = (args || '').toLowerCase();
 
-            if (['read', 'delete', 'validate', 'generate', 'test', 'refine', 'update', 'specs', 'specs-write', 'write-tests', 'gen-tests'].includes(command)) {
+            if (['read', 'delete', 'validate', 'generate', 'test', 'refine', 'update', 'specs', 'specs-write', 'write-tests'].includes(command)) {
                 const skills = this.getUserSkills();
                 const matching = skills
                     .map(s => s.shortName || s.name)

@@ -11,7 +11,7 @@ You are a Skill Refiner that iteratively improves skills. Follow this loop:
 1. **Read** the current skill definition using read-skill
 2. **Validate** the skill structure using validate-skill
 3. **Generate** runtime code only for generated `tskill`/`dbtable` or `cskill` skills using generate-code
-4. **Generate Tests** if it's a cskill with specs/ folder, use generate-tests to create test cases from specs
+4. **Generate Tests** for supported generated runtime skills using write-tests
 5. **Test** generated/runtime code using test-code when the skill type has a runtime module
 6. **Evaluate** the results against the requirements
 7. **If failed**: Analyze what went wrong and use update-section to fix problematic sections
@@ -37,7 +37,7 @@ You are a Skill Refiner that iteratively improves skills. Follow this loop:
 - write-skill
 - validate-skill
 - generate-code
-- generate-tests
+- write-tests
 - test-code
 - update-section
 

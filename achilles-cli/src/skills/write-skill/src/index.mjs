@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { SKILL_FILE_NAMES } from '../../../lib/constants.mjs';
+import { requestWorkspaceSkillsRefresh } from '../../../lib/workspaceSkillRefresh.mjs';
 
 export async function action(invocation = {}) {
     const mainAgent = invocation.mainAgent;
@@ -61,6 +62,11 @@ export async function action(invocation = {}) {
 
         // Write file
         fs.writeFileSync(filePath, content, 'utf8');
+        requestWorkspaceSkillsRefresh(mainAgent, {
+            operation: 'write-skill',
+            skillName,
+            filePath,
+        });
 
         const action = existed ? 'Updated' : 'Created';
 

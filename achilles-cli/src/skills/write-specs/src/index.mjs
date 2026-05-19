@@ -6,6 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { requestWorkspaceSkillsRefresh } from '../../../lib/workspaceSkillRefresh.mjs';
 
 /**
  * Generate a basic specs template for a skill
@@ -253,6 +254,11 @@ export async function action(invocation = {}) {
             }
 
             fs.writeFileSync(specsPath, existingContent, 'utf8');
+            requestWorkspaceSkillsRefresh(mainAgent, {
+                operation: 'write-specs',
+                skillName,
+                filePath: specsPath,
+            });
             return `Updated section "${section}" in ${skillName}/specs/${specFile}`;
         } catch (error) {
             return `Error updating section: ${error.message}`;
@@ -276,6 +282,11 @@ export async function action(invocation = {}) {
 
         const existed = fs.existsSync(specsPath);
         fs.writeFileSync(specsPath, finalContent, 'utf8');
+        requestWorkspaceSkillsRefresh(mainAgent, {
+            operation: 'write-specs',
+            skillName,
+            filePath: specsPath,
+        });
 
         const action = existed ? 'Updated' : 'Created';
         return `${action}: ${skillName}/specs/${specFile} (${finalContent.length} bytes)\nPath: ${specsPath}`;

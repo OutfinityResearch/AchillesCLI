@@ -38,7 +38,6 @@ Built-in skill responsibilities (`src/skills/`):
    - `skill-refiner`
 5. Test-generation helpers:
    - `write-tests`
-   - `generate-tests`
    - `run-tests`
 
 Execution behavior:

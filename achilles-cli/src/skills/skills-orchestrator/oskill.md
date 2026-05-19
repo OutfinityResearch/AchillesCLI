@@ -3,7 +3,7 @@
 ## Description
 This orchestrator skill manages AchillesAgentLib skills. AchillesAgentLib is a library of services and integrations for developers who build LLM-powered agents, tools, workflows, and application-specific automation.
 
-Invoke this skill whenever the user wants to create, inspect, update, delete, validate, test, generate, refine, or execute any skill, regardless of type, always assume it is an achillesAgentLib skill.
+Invoke this skill whenever the user wants to create, inspect, update, delete, validate, test, generate, refine, or execute any AchillesAgentLib skill.
 
 AchillesAgentLib skill types include:
 - Anthropic-style skills: portable instruction/resource bundles described by `SKILL.md`.
@@ -16,7 +16,10 @@ AchillesAgentLib skill types include:
 Skill-management behavior:
 - Before creating or modifying skills, identify the skill type that fits the request.
 - If the correct skill type is not clear from the current request or surrounding context, ask the user which skill type they want before calling "skills-orchestrator".
-- Do not assume facts about existing skills, their sections, allowed tools, or implementation details unless they are present in documentation, available descriptors, prior context, or clear context clues.
+- Do not assume facts about skill names, skill types, intended behavior, sections, allowed tools, implementation details, file names, or generated artifacts unless they are explicitly provided by the user, present in documentation, available descriptors, prior context, or clear context clues.
+- When creating a new skill, do not invent a skill name, type, scope, or behavior. Deduce missing details only when the current context makes them unambiguous; otherwise ask the user for the missing details before writing files or calling low-level write/generation operations.
+- When updating or deleting a skill, do not guess which skill the user means. If the target name is missing or ambiguous, list or inspect available skills as needed, then ask for clarification.
+- If a request can be interpreted in multiple reasonable ways, state the ambiguity briefly and ask the smallest clarifying question needed to continue.
 
 Use this orchestrator for any operations related to skills.
 
@@ -27,7 +30,7 @@ Your job is to handle all AchillesAgentLib skill-management requests by selectin
 
 General execution rules:
 1. Prefer deterministic low-level operations for CRUD, validation, generation, testing, and execution.
-2. Ask for clarification before destructive actions, ambiguous skill names, ambiguous skill types, or broad rewrites.
+2. Ask for clarification before destructive actions, ambiguous or missing skill names, ambiguous or missing skill types, underspecified create requests, or broad rewrites.
 3. For updates, inspect the current skill first with `read-skill` before writing.
 4. Prefer `update-section` for changing one descriptor section; use `write-skill` only when creating a new file or replacing a full file.
 5. After any create/update/delete-adjacent flow, validate the resulting skill with `validate-skill` when the skill still exists.
@@ -44,7 +47,6 @@ Low-level skill usage:
 - `validate-skill`: Use after creating or changing a descriptor, or when the user asks if a skill is valid. Input is the skill name.
 - `generate-code`: Use only for skill types that have generated runtime code in the current agentLib contract: `tskill`/`dbtable` and `cskill`. Input is the skill name.
 - `test-code`: Use to import and smoke-test runtime code for one generated/runtime module skill. Input is the skill name plus optional test input.
-- `generate-tests`: Use for `cskill` test generation from `cskill.md` plus `specs/*.md`. Input is a skill name or JSON with `skillName` and `options`.
 - `write-tests`: Use to create broader test files for supported generated runtime skill types (`tskill`/`dbtable`, `cskill`). Input is a skill name or JSON with options.
 - `run-tests`: Use to run existing test files for one skill or all skills. Input is `skillName`, `all`, or JSON with `target` and `options`.
 - `read-specs`: Use before changing generation requirements or when the user asks about implementation specs. Input is the skill name.
@@ -54,14 +56,14 @@ Low-level skill usage:
 
 Build behavior by skill type:
 - `tskill`: Create/update `tskill.md`, validate it, then call `generate-code`, `write-tests`, and `run-tests` when implementation or verification is requested.
-- `cskill`: Create/update `cskill.md`; if behavior is nontrivial, create/update specs with `write-specs`; validate; generate implementation with `generate-code`; generate tests with `generate-tests` or `write-tests`; run tests.
+- `cskill`: Create/update `cskill.md`; if behavior is nontrivial, create/update specs with `write-specs`; validate; generate implementation with `generate-code`; generate tests with `write-tests`; run tests.
 - `oskill`: Create/update `oskill.md` with clear instructions, allowed skills, and session type; validate. Do not call `generate-code`; agentLib executes orchestrators directly from the descriptor.
 - `mskill`: Create/update `mskill.md` with instructions, allowed tools, and optional Light-SOP-Lang; validate. Do not generate code.
 - `dcgskill`: Create/update the descriptor with description, prompt, argument, model, and examples; validate. Do not call `generate-code`; agentLib executes it through the dynamic-code-generation subsystem.
 - `anthropic`: Create/update `SKILL.md` plus resources/scripts if requested; validate if supported by the schema. Do not treat it as a generated code skill.
 
 Example flows:
-- User wants a new `cskill`: call `get-template` for `cskill`, compose the descriptor, call `write-skill`, optionally call `write-specs`, then `validate-skill`, `generate-code`, `generate-tests`, and `run-tests`.
+- User wants a new `cskill`: call `get-template` for `cskill`, compose the descriptor, call `write-skill`, optionally call `write-specs`, then `validate-skill`, `generate-code`, `write-tests`, and `run-tests`.
 - User wants to modify one section of an existing skill: call `read-skill`, decide the exact section, call `update-section`, then `validate-skill`; if it is a generated `tskill`/`dbtable` or `cskill`, run generation and tests as needed.
 - User wants to delete a skill: if explicit, call `delete-skill`; otherwise ask confirmation first. Do not validate after deletion.
 - User wants to improve a failing skill: call `skill-refiner` with the skill name and requirements, or manually chain `read-skill`, `validate-skill`, `test-code`/`run-tests`, `update-section`, and repeat.
@@ -80,7 +82,6 @@ Example flows:
 - write-specs
 - generate-code
 - test-code
-- generate-tests
 - write-tests
 - run-tests
 - skill-refiner

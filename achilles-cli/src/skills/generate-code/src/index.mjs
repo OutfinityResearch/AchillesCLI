@@ -14,6 +14,7 @@ import {
 import { runTestFile } from '../../../lib/testDiscovery.mjs';
 import { formatTestResult } from '../../../ui/TestResultFormatter.mjs';
 import { SKILL_TYPE_NAMES, FILE_NAMES, TIERS, RESPONSE_SHAPES } from '../../../lib/constants.mjs';
+import { requestWorkspaceSkillsRefresh } from '../../../lib/workspaceSkillRefresh.mjs';
 
 const SUPPORTED_TYPES = [SKILL_TYPE_NAMES.TSKILL, SKILL_TYPE_NAMES.CSKILL];
 
@@ -203,6 +204,11 @@ export async function action(invocation = {}) {
 
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
         fs.writeFileSync(outPath, generatedCode, 'utf8');
+        requestWorkspaceSkillsRefresh(mainAgent, {
+            operation: 'generate-code',
+            skillName,
+            filePath: outPath,
+        });
 
         const outputLines = [
             `Generated: ${outFileName}`,

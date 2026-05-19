@@ -23,6 +23,11 @@ import { ensureAchillesCliDir, ensureAgentLibLinksForRepos } from './lib/repoMan
 import { isWebchatEscapeControlChunk, handleWebchatControlChunk } from './lib/webchatControl.mjs';
 import { createWebchatTagRelay, isTruthyRelayFlag, normalizeWebchatMessage } from './lib/webchatTagRelay.mjs';
 import { startIntroSkill } from './lib/introSkillBoot.mjs';
+import {
+    drainWorkspaceSkillsRefresh,
+    installWorkspaceSkillRefreshHook,
+    refreshWorkspaceSkillsNow,
+} from './lib/workspaceSkillRefresh.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -253,6 +258,7 @@ async function main() {
     });
 
     registerSkillRoots(agent, allSkillRoots, logger);
+    installWorkspaceSkillRefreshHook(agent);
 
     // Set up I/O (LLMAgent API fallback to global IOServices)
     const inputReader = createCliInputReader();
@@ -311,6 +317,7 @@ async function main() {
                 mode,
                 systemPrompt: buildOrchestratorSystemPrompt(),
             });
+            await drainWorkspaceSkillsRefresh(agent, { logger });
 
             // Format result
             if (typeof result === 'string') {
@@ -330,6 +337,7 @@ async function main() {
 
             console.log(result);
         } catch (error) {
+            await drainWorkspaceSkillsRefresh(agent, { logger });
             console.error('Error:', error.message);
             if (verbose) {
                 console.error(error.stack);
@@ -425,7 +433,7 @@ async function runWebchatInteractive(agent, options) {
         getUserSkills: () => agent.getSkills().filter((skill) => !skill.isInternal),
         getSkills: () => agent.getSkills(),
         buildSkills: async () => {
-            await agent.buildSkills();
+            await refreshWorkspaceSkillsNow(agent, { logger: agent.logger });
         },
         historyManager,
     });
@@ -507,6 +515,7 @@ async function runWebchatInteractive(agent, options) {
                         model: slashState.pinnedModel || undefined,
                         tier: slashState.activeTier,
                     });
+                    await drainWorkspaceSkillsRefresh(agent, { logger: agent.logger });
 
                     if (typeof result === 'string') {
                         try {
@@ -533,6 +542,7 @@ async function runWebchatInteractive(agent, options) {
                     process.stdout.write(`[error] ${error.message}\n`);
                 }
             } finally {
+                await drainWorkspaceSkillsRefresh(agent, { logger: agent.logger });
                 isProcessing = false;
                 activeAbortController = null;
             }
@@ -634,12 +644,16 @@ async function executeWebchatSkill({ agent, skillName, input, opts = {}, slashSt
     }
 
     try {
-        return await agent.executeSkill(skillName, input, execOpts);
-    } catch (error) {
-        if (!isSkillNotFoundError(error)) {
-            throw error;
+        try {
+            return await agent.executeSkill(skillName, input, execOpts);
+        } catch (error) {
+            if (!isSkillNotFoundError(error)) {
+                throw error;
+            }
+            return await executeBuiltInSkillModule(skillName, agent, input);
         }
-        return executeBuiltInSkillModule(skillName, agent, input);
+    } finally {
+        await drainWorkspaceSkillsRefresh(agent, { logger: agent.logger });
     }
 }
 
@@ -695,6 +709,7 @@ async function executeWebchatSlashCommand({
         return { exit: true, output: 'Exit is not supported in webchat. Close the tab to end the session.' };
     }
     if (result.reloadSkills) {
+        await refreshWorkspaceSkillsNow(context.skilledAgent, { logger: context.skilledAgent?.logger });
         return { output: `Indexed ${context.skilledAgent.getSkills().length} skill(s).` };
     }
     if (result.showHistory) {

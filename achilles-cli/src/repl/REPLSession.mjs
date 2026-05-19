@@ -28,6 +28,11 @@ import { IOServices } from 'achillesAgentLib';
 import { ensureAchillesCliDir, ensureAgentLibLinksForRepos } from '../lib/repoManager.mjs';
 import { showHistory, searchHistory } from '../ui/HelpPrinter.mjs';
 import { startIntroSkill } from '../lib/introSkillBoot.mjs';
+import {
+    drainWorkspaceSkillsRefresh,
+    installWorkspaceSkillRefreshHook,
+    refreshWorkspaceSkillsNow,
+} from '../lib/workspaceSkillRefresh.mjs';
 
 // Import tier/model utilities from achillesAgentLib (direct path — not re-exported from index)
 let _listTiersFromCache = null;
@@ -69,6 +74,7 @@ export class REPLSession {
         // Ensure .achilles-cli directory structure exists
         ensureAchillesCliDir(this.workingDir);
         ensureAgentLibLinksForRepos(this.workingDir);
+        installWorkspaceSkillRefreshHook(agent);
 
         // Active LLM tier for all prompt executions
         this.activeTier = options.tier || TIERS.FAST;
@@ -210,12 +216,16 @@ export class REPLSession {
             execOpts.model = this.pinnedModel;
         }
         try {
-            return await this.agent.executeSkill(skillName, input, execOpts);
-        } catch (error) {
-            if (!this._isSkillNotFoundError(error)) {
-                throw error;
+            try {
+                return await this.agent.executeSkill(skillName, input, execOpts);
+            } catch (error) {
+                if (!this._isSkillNotFoundError(error)) {
+                    throw error;
+                }
+                return await this._executeBuiltInSkillModule(skillName, input);
             }
-            return this._executeBuiltInSkillModule(skillName, input);
+        } finally {
+            await drainWorkspaceSkillsRefresh(this.agent, { logger: this.agent.logger });
         }
     }
 
@@ -250,14 +260,10 @@ export class REPLSession {
     /**
      * Reload skills from disk
      */
-    reloadSkills() {
-        // MainAgent doesn't expose reloadSkills directly, so we re-run buildSkills
-        // which is safe to call multiple times (already-built skills are skipped)
+    async reloadSkills() {
         try {
-            const before = this.agent.getSkills().length;
-            this.agent.buildSkills();
-            const after = this.agent.getSkills().length;
-            return after;
+            await refreshWorkspaceSkillsNow(this.agent, { logger: this.agent.logger });
+            return this.agent.getSkills().length;
         } catch (e) {
             return this.agent.getSkills().length;
         }
@@ -278,7 +284,12 @@ export class REPLSession {
         if (this.pinnedModel) {
             execOpts.model = this.pinnedModel;
         }
-        let result = await this.agent.executePrompt(userPrompt, execOpts);
+        let result;
+        try {
+            result = await this.agent.executePrompt(userPrompt, execOpts);
+        } finally {
+            await drainWorkspaceSkillsRefresh(this.agent, { logger: this.agent.logger });
+        }
 
         // If result is a JSON string, parse it to get the object
         if (typeof result === 'string') {
@@ -546,7 +557,7 @@ export class REPLSession {
                     return true;
                 }
                 if (result.reloadSkills) {
-                    const count = this.reloadSkills();
+                    const count = await this.reloadSkills();
                     spinner.succeed(`Indexed ${count} skill(s). Use /build to generate pending code.`);
                 } else if (result.showHistory) {
                     spinner.stop();

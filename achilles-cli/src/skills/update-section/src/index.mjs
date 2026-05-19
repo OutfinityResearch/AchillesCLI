@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { updateSkillSection } from '../../../schemas/skillSchemas.mjs';
+import { requestWorkspaceSkillsRefresh } from '../../../lib/workspaceSkillRefresh.mjs';
 
 /**
  * Check if a generated runtime file exists in the skill directory
@@ -89,6 +90,11 @@ export async function action(invocation = {}) {
 
     try {
         fs.writeFileSync(filePath, updatedContent, 'utf8');
+        requestWorkspaceSkillsRefresh(mainAgent, {
+            operation: 'update-section',
+            skillName,
+            filePath,
+        });
 
         const messages = [`Updated section "## ${section}" in ${skillName}`];
 

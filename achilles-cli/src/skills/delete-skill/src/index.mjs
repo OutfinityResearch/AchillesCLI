@@ -4,6 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { requestWorkspaceSkillsRefresh } from '../../../lib/workspaceSkillRefresh.mjs';
 
 export async function action(invocation = {}) {
     const mainAgent = invocation.mainAgent;
@@ -44,6 +45,11 @@ export async function action(invocation = {}) {
 
     try {
         fs.rmSync(skillDir, { recursive: true, force: true });
+        requestWorkspaceSkillsRefresh(mainAgent, {
+            operation: 'delete-skill',
+            skillName,
+            filePath: skillDir,
+        });
         return `Deleted skill: ${skillName}\nRemoved ${files.length} file(s): ${files.join(', ')}\n\nRemember to reload skills after deletion.`;
     } catch (error) {
         return `Error deleting skill: ${error.message}`;
